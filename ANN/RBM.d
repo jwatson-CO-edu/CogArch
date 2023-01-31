@@ -4,6 +4,10 @@ module RBM;
 RBM.d
 James Watson, 2023-01
 Simplest Restricted Boltzmann Machine (RBM) example
+From:
+* Hinton, Geoffrey E. "A practical guide to training restricted Boltzmann machines." 
+  Neural Networks: Tricks of the Trade: Second Edition (2012): 599-619.
+* FIXME: LINK YT LECTURES
 
 rdmd RBM.d
 */
@@ -12,6 +16,11 @@ rdmd RBM.d
 
 import std.stdio; // ------ `writeln`
 import core.stdc.stdlib; // `malloc`
+
+
+
+////////// UTILITY FUNCTIONS ///////////////////////////////////////////////////////////////////////
+
 
 void[] allocate_zero( size_t size ){
     // allocate_zero a block of untyped bytes that can be managed as a slice.
@@ -29,6 +38,7 @@ void[] allocate_zero( size_t size ){
     return ptr[0 .. size];
 }
 
+
 T[][] alloc_2D_array(T)( size_t rows, size_t cols ){
     // allocate_zero a 2D `T` array with `rows*cols` elements and return a pointer to it
     // Original Author: Michael Parker, https://dlang.org/blog/2017/09/25/go-your-own-way-part-two-the-heap/
@@ -37,6 +47,7 @@ T[][] alloc_2D_array(T)( size_t rows, size_t cols ){
     // array element type!
     return cast(T[][])allocate_zero(T.sizeof * rows * cols); 
 }
+
 
 T[] alloc_array(T)( size_t count ){ 
     // allocate_zero a `T` array with `count` elements and return a pointer to it
@@ -51,6 +62,8 @@ T[] alloc_array(T)( size_t count ){
 ////////// RESTRICTED BOLTZMANN MACHINE ////////////////////////////////////////////////////////////
 
 struct RBM{
+    // Simplest Restricted Boltzmann Machine
+
     float[][] W; // Weight matrix
     float[]   b; // Hidden unit biases
     float[]   c; // Input  unit biases
@@ -58,13 +71,19 @@ struct RBM{
     float[]   x; // Input  unit values
 
     this( uint inputDim, uint hiddenDim ){
+        // Allocate arrays and init all values to zero
+
         // Init weights
         W = alloc_2D_array!float( inputDim, hiddenDim );
+        // Init hidden units
         b = alloc_array!float( hiddenDim );
         h = alloc_array!float( hiddenDim );
+        // Init input units
         c = alloc_array!float( inputDim );
-        
+        x = alloc_array!float( inputDim );
     }
+
+    // FIXME, START HERE: ENERGY FUNCTION
 }
 
 
