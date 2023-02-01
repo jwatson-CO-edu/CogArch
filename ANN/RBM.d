@@ -14,8 +14,9 @@ rdmd RBM.d
 
 ////////// INIT ////////////////////////////////////////////////////////////////////////////////////
 
-import std.stdio; // ------ `writeln`
-import core.stdc.stdlib; // `malloc`
+import std.stdio; // ---------- `writeln`
+import core.stdc.stdlib; // --- `malloc`
+import std.math.exponential; // `exp`
 
 
 
@@ -59,31 +60,83 @@ T[] alloc_array(T)( size_t count ){
 }
 
 
+
+////////// MATH FUNCTIONS //////////////////////////////////////////////////////////////////////////
+
+float sigmoid( float x ){  return 1.0f / (1.0f + exp(-x));  }
+
+
+
 ////////// RESTRICTED BOLTZMANN MACHINE ////////////////////////////////////////////////////////////
 
 struct RBM{
-    // Simplest Restricted Boltzmann Machine
+    // Simplest Restricted Boltzmann Machine 
 
-    float[][] W; // Weight matrix
-    float[]   b; // Hidden unit biases
-    float[]   c; // Input  unit biases
-    float[]   h; // Hidden unit values
-    float[]   x; // Input  unit values
+    uint /**/ dI; // Input  dimensions
+    uint /**/ dH; // Hidden dimensions
+    float[][] W; //- Weight matrix
+    float[]   b; //- Hidden unit biases
+    float[]   c; //- Input  unit biases
+    float[]   h; //- Hidden unit values
+    float[]   x; //- Input  unit values
+    float     lr; // Learning rate
 
-    this( uint inputDim, uint hiddenDim ){
+    this( uint inputDim, uint hiddenDim, float learnRate ){
         // Allocate arrays and init all values to zero
 
+        // Set params
+        dI = inputDim;
+        dH = hiddenDim;
+        lr = learnRate;
+
         // Init weights
-        W = alloc_2D_array!float( inputDim, hiddenDim );
+        W = alloc_2D_array!float( dI, dH );
         // Init hidden units
-        b = alloc_array!float( hiddenDim );
-        h = alloc_array!float( hiddenDim );
+        b = alloc_array!float( dH );
+        h = alloc_array!float( dH );
         // Init input units
-        c = alloc_array!float( inputDim );
-        x = alloc_array!float( inputDim );
+        c = alloc_array!float( dI );
+        x = alloc_array!float( dI );
     }
 
-    // FIXME, START HERE: ENERGY FUNCTION
+    float energy(){
+        // Calc the (binary) energy function given the current network state
+        float netNRG = 0.0;
+        float inpNRG = 0.0;
+        float hidNRG = 0.0;
+
+        for( uint j = 0; j < dH; j++ ){
+            for( uint k = 0; k < dI; k++ ){
+                netNRG -= W[k][j] * h[j] * x[k];
+            }
+            hidNRG -= b[j] * h[j];
+        }
+
+        for( uint k = 0; k < dI; k++ ){
+            inpNRG -= c[k] * x[k];
+        }
+
+        return netNRG + inpNRG + hidNRG;
+    }
+
+    float p_h_given_x(){
+        // Conditional probabolity of the current hidden values given the current input
+        float rtnProd = 1.0;
+        float dotProd = 0.0;
+        for( uint j = 0; j < dH; j++ ){
+            dotProd = 0.0;
+            for( uint k = 0; k < dI; k++ ){
+                dotProd += W[k][j] * x[k];
+            }
+            rtnProd *= sigmoid( b[j] + dotProd );
+        }
+        return rtnProd;
+    }
+
+    float p_x_given_h(){
+        // Conditional probabolity of the current input given the current hidden values
+
+    }
 }
 
 
