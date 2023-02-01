@@ -135,7 +135,16 @@ struct RBM{
 
     float p_x_given_h(){
         // Conditional probabolity of the current input given the current hidden values
-
+        float rtnProd = 1.0;
+        float dotProd = 0.0;
+        for( uint k = 0; k < dI; k++ ){
+            dotProd = 0.0;
+            for( uint j = 0; j < dH; j++ ){    
+                dotProd += W[k][j] * h[j];
+            }
+            rtnProd *= sigmoid( c[k] + dotProd );
+        }
+        return rtnProd;
     }
 }
 
