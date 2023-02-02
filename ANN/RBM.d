@@ -17,7 +17,10 @@ rdmd RBM.d
 import std.stdio; // ---------- `writeln`
 import core.stdc.stdlib; // --- `malloc`
 import std.math.exponential; // `exp`
+import std.random;
 
+// Randomness
+Mt19937 rnd;
 
 
 ////////// UTILITY FUNCTIONS ///////////////////////////////////////////////////////////////////////
@@ -75,10 +78,11 @@ struct RBM{
     uint /**/ dI; // Input  dimensions
     uint /**/ dH; // Hidden dimensions
     float[][] W; //- Weight matrix
-    float[]   b; //- Hidden unit biases
-    float[]   c; //- Input  unit biases
-    float[]   h; //- Hidden unit values
-    float[]   x; //- Input  unit values
+    float[]   b; //- Hidden  unit biases
+    float[]   c; //- Visible unit biases
+    float[]   h; //- Hidden  unit values
+    float[]   v; //- Visible unit values
+    float[]   x; //- Input values
     float     lr; // Learning rate
 
     this( uint inputDim, uint hiddenDim, float learnRate ){
@@ -96,7 +100,23 @@ struct RBM{
         h = alloc_array!float( dH );
         // Init input units
         c = alloc_array!float( dI );
+        v = alloc_array!float( dI );
         x = alloc_array!float( dI );
+    }
+
+    void set_input( float[] input ){
+        // Populate the input vector
+        for( uint k = 0; k < dI; k++ ){
+            x[k] = input[k];
+        }
+    }
+
+    void load_visible(){
+        // Populate the visible units with the input vector
+        for( uint k = 0; k < dI; k++ ){
+            v[k] = x[k];
+        }
+
     }
 
     float energy(){
@@ -107,13 +127,13 @@ struct RBM{
 
         for( uint j = 0; j < dH; j++ ){
             for( uint k = 0; k < dI; k++ ){
-                netNRG -= W[k][j] * h[j] * x[k];
+                netNRG -= W[k][j] * h[j] * v[k];
             }
             hidNRG -= b[j] * h[j];
         }
 
         for( uint k = 0; k < dI; k++ ){
-            inpNRG -= c[k] * x[k];
+            inpNRG -= c[k] * v[k];
         }
 
         return netNRG + inpNRG + hidNRG;
@@ -126,7 +146,7 @@ struct RBM{
         for( uint j = 0; j < dH; j++ ){
             dotProd = 0.0;
             for( uint k = 0; k < dI; k++ ){
-                dotProd += W[k][j] * x[k];
+                dotProd += W[k][j] * v[k];
             }
             rtnProd *= sigmoid( b[j] + dotProd );
         }
@@ -146,11 +166,64 @@ struct RBM{
         }
         return rtnProd;
     }
+
+    void Gibbs_sample_visible( uint n = 0 ){
+        // Run Gibbs sampling on the visibile units for `n` steps, `n` wraps
+        uint l = 0;
+        float p_l = 0.0;
+
+        if( n == 0 )  n = dI;
+
+        for( uint i = 0; i < n; i++ ){
+            l = i%dI;
+            p_l = c[l];
+            for( uint j = 0; j < dH; j++ ){     
+                p_l += h[j] * W[l][j];
+            }
+
+            if( uniform( 0.0f, 1.0f, rnd ) <= p_l )
+                x[l] = 1.0;
+            else
+                x[l] = 0.0;
+
+        }
+    }
+
+
+    void hidden_update(){
+        // Update the hidden neurons
+
+        /* Section 3.1: Assuming that the hidden units are binary and that you are using Contrastive Divergence, 
+        the hidden units should have stochastic binary states when they are being driven by a data-vector. 
+        The probability of turning on ahiddenunit,j, is computed by applying the logistic function */
+
+        float p_j = 0.0;
+
+        for( uint j = 0; j < dH; j++ ){    
+            p_j = b[j];
+            for( uint k = 0; k < dI; k++ ){
+                p_j += v[k] * W[k][j];
+            }
+
+            if( uniform( 0.0f, 1.0f, rnd ) <= p_j )
+                h[j] = 1.0;
+            else
+                h[j] = 0.0;
+            
+        }
+
+    }
+
+    void Contrastive_Divergence_iter( uint n = 0 ){
+        // Run a single iteration of `n`-Step (Persistent) Contrastive Divergence
+        // FIXME, START HERE: CD-n
+    }
 }
 
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
 
 void main(){
+    rnd = Random( unpredictableSeed );
 
 }
