@@ -167,30 +167,25 @@ struct RBM{
         return rtnProd;
     }
 
-    void Gibbs_sample_visible( uint n = 0 ){
+    void Gibbs_sample_visible(){
         // Run Gibbs sampling on the visibile units for `n` steps, `n` wraps
-        uint l = 0;
         float p_l = 0.0;
 
-        if( n == 0 )  n = dI;
-
-        for( uint i = 0; i < n; i++ ){
-            l = i%dI;
-            p_l = c[l];
+        for( uint k = 0; k < dI; k++ ){
+            p_l = c[k];
             for( uint j = 0; j < dH; j++ ){     
-                p_l += h[j] * W[l][j];
+                p_l += h[j] * W[k][j];
             }
 
             if( uniform( 0.0f, 1.0f, rnd ) <= p_l )
-                x[l] = 1.0;
+                v[k] = 1.0;
             else
-                x[l] = 0.0;
-
+                v[k] = 0.0;
         }
     }
 
 
-    void hidden_update(){
+    void Gibbs_sample_hidden(){
         // Update the hidden neurons
 
         /* Section 3.1: Assuming that the hidden units are binary and that you are using Contrastive Divergence, 
@@ -209,14 +204,27 @@ struct RBM{
                 h[j] = 1.0;
             else
                 h[j] = 0.0;
-            
         }
 
     }
 
-    void Contrastive_Divergence_iter( uint n = 0 ){
-        // Run a single iteration of `n`-Step (Persistent) Contrastive Divergence
-        // FIXME, START HERE: CD-n
+    void Contrastive_Divergence_iter(){
+        // Run a single iteration of (Persistent) Contrastive Divergence
+        
+        // 1. Generate a negative sample using n steps of Gibbs sampling
+        /* One iteration of alternating Gibbs sampling consists of updating all of the hidden units 
+        in parallel followed by updating all of the visible units in parallel. */
+        Gibbs_sample_hidden();
+        Gibbs_sample_visible();
+
+        // 2. Update parameters
+        // FIXME : THIS IS WRONG
+        for( uint j = 0; j < dH; j++ ){
+            for( uint k = 0; k < dI; k++ ){
+                W[k][j] += lr * (h[j]*x[k]*x[k] - h[j]*v[k]*v[k]);
+            }
+            
+        }
     }
 }
 
