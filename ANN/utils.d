@@ -50,11 +50,12 @@ string[] read_lines( string fName ){
     File     file = File( fName, "r");
     string   line;
     string[] lines;
-    while ( (line = file.readln() ) !is null){
+    while( (line = file.readln() ) !is null){
         lines ~= line;
     }
     return lines;
 }
+
 
 T[][] file_to_matx_ws(T)( string fName ){
     // Convert a file to a matrix of `T`, with each line of a the file being a row of the matrix, 
@@ -65,16 +66,36 @@ T[][] file_to_matx_ws(T)( string fName ){
     string[] fLines = read_lines( fName ); // Lines of raw text
 
     // 2. Determine columns
-    string[] oneCol = fLines[0].split!isWhite;
-    ulong    nCols  = oneCol.length;
+    string[] oneRow = fLines[0].split!isWhite;
+    ulong    nCols  = oneRow.length;
+    ulong    mRows  = 0;
 
     // 3. Determine rows
     foreach( string fRow; fLines ){ 
-        oneCol = fRow.split!isWhite;
-        // FIXME, START HERE: COUNT ROWS, REJECT ALL EMPTY ROWS
+        // oneRow = fRow.split!isWhite;
+        if( fRow.length > 2 ) mRows++;
     }
 
+    // 4. Alloc arr
+    T[][] rtnArr = alloc_2D_array!T( mRows, nCols );
+    
+    // 5. Populate arr
+    ulong i /**/ = 0;
+    ulong j /**/ = 0;
+    foreach( string fRow; fLines ){ 
+        if( fRow.length > 2 ){
+            oneRow = fRow.split!isWhite;
+            j /**/ = 0;
+            foreach( string col_j; oneRow ){
+                rtnArr[i][j] = col_j.to!T;
+                j++;
+            }
+        }
+        i++;
+    }
 
+    // N. return
+    return rtnArr;
 }
 
 // void main(){
