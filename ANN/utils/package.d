@@ -1,6 +1,10 @@
 module ANN.utils;
 
 import std.stdio;
+import std.array; // `split`
+import std.conv; // String conversion
+import std.ascii; // `isWhite
+import core.stdc.stdlib; // `calloc`
 
 ////////// MEMORY //////////////////////////////////////////////////////////////////////////////////
 
@@ -78,6 +82,7 @@ T[][] file_to_matx_ws(T)( string fName ){
 
     // 4. Alloc arr
     T[][] rtnArr = alloc_2D_array!T( mRows, nCols );
+    writeln( mRows.to!string ~ ", " ~ nCols.to!string );
     
     // 5. Populate arr
     ulong i /**/ = 0;
