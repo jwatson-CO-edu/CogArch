@@ -103,6 +103,40 @@ T[][] file_to_matx_ws(T)( string fName ){
     return rtnArr;
 }
 
+T[][] file_to_dyn_matx_ws(T)( string fName ){
+    // Convert a file to a matrix of `T`, with each line of a the file being a row of the matrix, 
+    // cols separated by whitespace
+    // NOTE: This function assumes a uniform number of columns across all non-empty lines of the file
+
+    // 1. Read the file
+    string[] fLines = read_lines( fName ); // Lines of raw text
+
+    // 2. Structs
+    string[] oneRow;
+    T[]      typRow;
+
+    // 4. Alloc arr
+    T[][] rtnArr;
+    
+    // 5. Populate arr
+    foreach( string fRow; fLines ){ 
+        if( fRow.length > 2 ){
+            oneRow = fRow.split!isWhite;
+            typRow = [];
+            // writeln( oneRow.length );
+            foreach( string col_j; oneRow ){
+                // writeln( col_j );
+                try{ typRow ~= col_j.to!T; }
+                catch(Throwable){ /*NO-OP*/ }
+            }
+            rtnArr ~= typRow;
+        }
+    }
+
+    // N. return
+    return rtnArr;
+}
+
 // void main(){
     
 
