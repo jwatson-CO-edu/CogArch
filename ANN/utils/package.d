@@ -143,5 +143,12 @@ T[][] file_to_dyn_matx_ws(T)( string fName ){
 
 struct Set(T){
     ulong[T] members;
-    // FIXME, START HERE: ONLY ALLOW UNIQUE MEMBERS TO BE ADDED, COUNT ADDS OF AN EXISTING MEMBER
+
+    void add( T elem ){
+        // Either add an element to the set or count a repeat add
+        if( elem in members ){  members[ elem ] += 1;  }
+        else{  members[ elem ] = 1;  }
+    }
+
+    T[] get_members(){  return members.keys;  } // Get all unique elements of the set
 }
