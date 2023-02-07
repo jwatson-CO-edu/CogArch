@@ -127,7 +127,7 @@ T[][] file_to_dyn_matx_ws(T)( string fName ){
             foreach( string col_j; oneRow ){
                 // writeln( col_j );
                 try{ typRow ~= col_j.to!T; }
-                catch(Throwable){ /*NO-OP*/ }
+                catch(Throwable){ /*NO-OP*/ } // Assume a conversion that fails to be trailing whitespace
             }
             rtnArr ~= typRow;
         }
@@ -137,7 +137,11 @@ T[][] file_to_dyn_matx_ws(T)( string fName ){
     return rtnArr;
 }
 
-// void main(){
-    
 
-// }
+
+////////// DATA STRUCTURES /////////////////////////////////////////////////////////////////////////
+
+struct Set(T){
+    ulong[T] members;
+    // FIXME, START HERE: ONLY ALLOW UNIQUE MEMBERS TO BE ADDED, COUNT ADDS OF AN EXISTING MEMBER
+}
