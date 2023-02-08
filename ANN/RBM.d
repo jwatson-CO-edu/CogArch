@@ -33,49 +33,6 @@ Now, the difference v(0)−v(1) can be considered as the reconstruction error th
 in subsequent steps of the training process. So the weights are adjusted in each iteration so as to 
 minimize this error.
 
-
-///// Problem /////
-
-Let us assume that some people were asked to rate a set of movies on a scale of 1–5 and each movie 
-could be explained in terms of a set of latent factors such as drama, fantasy, action and many more.
-Given the inputs, the RMB then tries to discover latent factors in the data that can explain the 
-movie choices and each hidden neuron represents one of the latent factors.
-
-After the training phase, the goal is to predict a binary rating for the movies that had not been seen yet. 
-Given the *training data of a specific user*, 
-the network is able to identify the latent factors based on the user’s preference and sample from 
-Bernoulli distribution can be used to find out which of the visible neurons now become active.
-
-1. Train the network on the data of all users
-2. During inference-time, take the training data of a specific user
-3. Use this data to obtain the activations of hidden neurons
-4. Use the hidden neuron values to get the activations of input neurons
-5. The new values of input neurons show the rating the user would give yet unseen movies
-
-In order to build the RBM, we need a matrix with the users’ ratings. 
-This matrix will have the 
-*users as the rows* 
-and 
-*the movies as the columns*.
-
-We use -1 to represent movies that a user never rated. We then convert the ratings that were 
-*rated 1 and 2 to 0*
-and movies that were rated 
-*3, 4 and, 5 to 1*. 
-We do this for both the test set and the training set.
-
-
-///// Architecture /////
-We initialize the weight and bias. 
-We do this randomly *using a normal distribution*.
-Now we set the 
-*number of visible nodes to the length of the input vector* 
-and 
-*the number of hidden nodes to 100*.
-
-*There are 10 epochs*
-
-
 */
 
 ////////// INIT ////////////////////////////////////////////////////////////////////////////////////
@@ -85,6 +42,7 @@ import std.stdio; // ---------- `writeln`
 import core.stdc.stdlib; // --- `malloc`
 import std.math.exponential; // `exp`
 import std.random; // ---------- RNG
+import std.conv; // ------------ `to!string`
 
 /// Local Imports ///
 import utils;
@@ -282,11 +240,65 @@ struct RBM{
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
 
+/* ///// Problem /////
+
+Let us assume that some people were asked to rate a set of movies on a scale of 1–5 and each movie 
+could be explained in terms of a set of latent factors such as drama, fantasy, action and many more.
+Given the inputs, the RMB then tries to discover latent factors in the data that can explain the 
+movie choices and each hidden neuron represents one of the latent factors.
+
+After the training phase, the goal is to predict a binary rating for the movies that had not been seen yet. 
+Given the *training data of a specific user*, 
+the network is able to identify the latent factors based on the user’s preference and sample from 
+Bernoulli distribution can be used to find out which of the visible neurons now become active.
+
+1. Train the network on the data of all users
+2. During inference-time, take the training data of a specific user
+3. Use this data to obtain the activations of hidden neurons
+4. Use the hidden neuron values to get the activations of input neurons
+5. The new values of input neurons show the rating the user would give yet unseen movies
+
+In order to build the RBM, we need a matrix with the users’ ratings. 
+This matrix will have the 
+*users as the rows* 
+and 
+*the movies as the columns*.
+
+We use -1 to represent movies that a user never rated. We then convert the ratings that were 
+*rated 1 and 2 to 0*
+and movies that were rated 
+*3, 4 and, 5 to 1*. 
+We do this for both the test set and the training set.
+
+
+///// Architecture /////
+We initialize the weight and bias. 
+We do this randomly *using a normal distribution*.
+Now we set the 
+*number of visible nodes to the length of the input vector* 
+and 
+*the number of hidden nodes to 100*.
+
+*There are 10 epochs*
+*/
+
 void main(){
     /// Init Random ///
     rnd = Random( unpredictableSeed );
 
     /// Load Data ///
-    ulong[][] movieData = file_to_dyn_matx_ws!ulong( "../Data/ml-100k/u1.base" );
+    long[][] movieData = file_to_dyn_matx_ws!long( "../Data/ml-100k/u1.base" );
+    Set!long userID  = Set!long();
+    Set!long moviID = Set!long();
+    foreach( long[] row; movieData ){
+        userID.add( row[0] );
+        moviID.add( row[1] );
+    } 
+    long[] userList = userID.get_members();
+    long[] moviList = moviID.get_members();
+    writeln( "There are " ~ userList.length.to!string ~ " unique users." );
+    writeln( "There are " ~ moviList.length.to!string ~ " unique movies." );
+    /* There are  943 unique users.
+       There are 1650 unique movies. */
     
 }
