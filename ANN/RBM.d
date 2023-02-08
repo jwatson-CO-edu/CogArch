@@ -296,9 +296,26 @@ void main(){
     } 
     long[] userList = userID.get_members();
     long[] moviList = moviID.get_members();
-    writeln( "There are " ~ userList.length.to!string ~ " unique users." );
-    writeln( "There are " ~ moviList.length.to!string ~ " unique movies." );
+    ulong  N_users = userList.length;
+    ulong  N_movis = moviList.length;
+    writeln( "There are " ~ N_users.to!string ~ " unique users." );
+    writeln( "There are " ~ N_movis.to!string ~ " unique movies." );
     /* There are  943 unique users.
        There are 1650 unique movies. */
+
+    /// Create Training Vectors ///
+    long[][] trainData;
+    long[]   ratingRow;
+    foreach( long user; userList ){
+        ratingRow = [];
+        for( ulong i = 0; i < N_movis; i++ )  ratingRow ~= -1;
+        foreach( long[] row; movieData ){
+            if( row[0] == user ){
+                
+            }
+        }
+        trainData ~= ratingRow;
+    }
+    
     
 }
