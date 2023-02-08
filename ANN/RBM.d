@@ -38,11 +38,13 @@ minimize this error.
 ////////// INIT ////////////////////////////////////////////////////////////////////////////////////
 
 /// Standard Imports ///
-import std.stdio; // ---------- `writeln`
-import core.stdc.stdlib; // --- `malloc`
-import std.math.exponential; // `exp`
-import std.random; // ---------- RNG
-import std.conv; // ------------ `to!string`
+import std.stdio; // ------------- `writeln`
+import core.stdc.stdlib; // ------ `malloc`
+import std.math.exponential; // -- `exp`
+import std.random; // ------------ RNG
+import std.conv; // -------------- `to!string`
+import std.algorithm.searching; // `countUntil`, linear search
+
 
 /// Local Imports ///
 import utils;
@@ -206,9 +208,6 @@ struct RBM{
     }
 
 
-    
-
-
     void Contrastive_Divergence_iter(){
         // Run a single iteration of (Persistent) Contrastive Divergence
         float p_hjv = 0.0;
@@ -306,12 +305,18 @@ void main(){
     /// Create Training Vectors ///
     long[][] trainData;
     long[]   ratingRow;
+    ulong    founDex  = 0;
+    long     currMovi = 0;
+    long     rating   = 0;
     foreach( long user; userList ){
         ratingRow = [];
         for( ulong i = 0; i < N_movis; i++ )  ratingRow ~= -1;
         foreach( long[] row; movieData ){
             if( row[0] == user ){
-                
+                currMovi = row[1];
+                founDex  = moviList.countUntil!( m => m == currMovi );
+                rating   = row[2];
+                ratingRow[ founDex ] = (rating < 3 ? 0 : 1);
             }
         }
         trainData ~= ratingRow;

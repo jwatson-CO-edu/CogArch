@@ -113,7 +113,7 @@ T[][] file_to_dyn_matx_ws(T)( string fName ){
 
     // 2. Structs
     string[] oneRow;
-    T[]      typRow;
+    T[] /**/ typRow;
 
     // 4. Alloc arr
     T[][] rtnArr;
