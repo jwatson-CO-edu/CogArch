@@ -44,6 +44,8 @@ import std.math.exponential; // -- `exp`
 import std.random; // ------------ RNG
 import std.conv; // -------------- `to!string`
 import std.algorithm.searching; // `countUntil`, linear search
+import std.math.exponential; // Natural `log`
+import std.math; // -------------- `cos`, `sqrt`
 
 
 /// Local Imports ///
@@ -58,7 +60,13 @@ Mt19937 rnd;
 
 float sigmoid( float x ){  return 1.0f / (1.0f + exp(-x));  }
 
-
+float Box_Muller_normal_sample(){
+    // Transform 2 uniform samples into a zero-mean normal sample
+    // Source: https://www.baeldung.com/cs/uniform-to-normal-distribution
+    float u1 = uniform( 0.0f, 1.0f, rnd );
+    float u2 = uniform( 0.0f, 1.0f, rnd );
+    return sqrt( -2.0 * log( u1 ) ) * cos( 2.0 * PI * u2 );
+}
 
 ////////// RESTRICTED BOLTZMANN MACHINE ////////////////////////////////////////////////////////////
 
@@ -92,6 +100,22 @@ struct RBM{
         c = alloc_array!float( dI );
         v = alloc_array!float( dI );
         x = alloc_array!float( dI );
+    }
+
+
+    void random_weight_init(){
+        // Set all weights and biases to normally-distributed random numbers
+        
+        for( uint j = 0; j < dH; j++ ){
+            for( uint k = 0; k < dI; k++ ){
+                W[k][j] = Box_Muller_normal_sample(); // FIXME, START HERE: ALLOCATION FAILED?
+            }
+            b[j] = Box_Muller_normal_sample();
+        }
+
+        for( uint k = 0; k < dI; k++ ){
+            c[k] = Box_Muller_normal_sample();
+        }
     }
 
 
@@ -321,6 +345,21 @@ void main(){
         }
         trainData ~= ratingRow;
     }
-    
+    writeln( "Created training data with " ~ trainData.length.to!string ~ " rows and " ~ 
+             trainData[0].length.to!string ~ " columns!"  );
+    // writeln( trainData[0] );
+
+
+    /// Create RBM ///
+    RBM  net     = RBM( cast(uint) trainData[0].length, 100, 0.001 );
+    uint N_epoch = 10;
+
+    net.random_weight_init();
+
+    for( uint i = 0; i < N_epoch; i++ ){
+        for( ulong j = 0; j < N_users; j++ ){
+            // net
+        }
+    }
     
 }
