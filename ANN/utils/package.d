@@ -35,6 +35,21 @@ T[][] alloc_2D_array(T)( size_t rows, size_t cols ){
 }
 
 
+T[][] alloc_2D_dyn_array(T)( size_t rows, size_t cols ){
+    // Allocate a zero-filled 2D `T` dynamic array with `rows*cols` elements and return it
+    T[][] rtnArr;
+    T[]   oneRow;
+    for( size_t i = 0; i < rows; i ++ ){
+        oneRow = [];
+        for( size_t j = 0; j < cols; j++ ){
+            oneRow ~= cast(T) 0;
+        }
+        rtnArr ~= oneRow;
+    }
+    return rtnArr;
+}
+
+
 T[] alloc_array(T)( size_t count ){ 
     // allocate_zero a `T` array with `count` elements and return a pointer to it
     // Original Author: Michael Parker, https://dlang.org/blog/2017/09/25/go-your-own-way-part-two-the-heap/
@@ -42,6 +57,15 @@ T[] alloc_array(T)( size_t count ){
     // Make sure to account for the size of the
     // array element type!
     return cast(T[])allocate_zero(T.sizeof * count); 
+}
+
+
+T[] alloc_dyn_array(T)( size_t count ){ 
+    T[] rtnArr;
+    for( size_t i = 0; i < count; i ++ ){
+        rtnArr ~= cast(T) 0;
+    }
+    return rtnArr;
 }
 
 

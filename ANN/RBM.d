@@ -38,14 +38,15 @@ minimize this error.
 ////////// INIT ////////////////////////////////////////////////////////////////////////////////////
 
 /// Standard Imports ///
-import std.stdio; // ------------- `writeln`
-import core.stdc.stdlib; // ------ `malloc`
-import std.math.exponential; // -- `exp`
-import std.random; // ------------ RNG
-import std.conv; // -------------- `to!string`
-import std.algorithm.searching; // `countUntil`, linear search
-import std.math.exponential; // Natural `log`
-import std.math; // -------------- `cos`, `sqrt`
+import std.stdio; // -------------- `writeln`
+import core.stdc.stdlib; // ------- `malloc`
+import std.math.exponential; // --- `exp`
+import std.random; // ------------- RNG
+import std.conv; // --------------- `to!string`
+import std.algorithm.searching; //- `countUntil`, linear search
+import std.algorithm.comparison; // `clamp`
+import std.math.exponential; // --- Natural `log`
+import std.math; // --------------- `cos`, `sqrt`
 
 
 /// Local Imports ///
@@ -60,12 +61,12 @@ Mt19937 rnd;
 
 float sigmoid( float x ){  return 1.0f / (1.0f + exp(-x));  }
 
-float Box_Muller_normal_sample(){
+float Box_Muller_normal_sample( float factor = 1.0 ){
     // Transform 2 uniform samples into a zero-mean normal sample
     // Source: https://www.baeldung.com/cs/uniform-to-normal-distribution
     float u1 = uniform( 0.0f, 1.0f, rnd );
     float u2 = uniform( 0.0f, 1.0f, rnd );
-    return sqrt( -2.0 * log( u1 ) ) * cos( 2.0 * PI * u2 );
+    return sqrt( -2.0 * log( u1 ) ) * cos( 2.0 * PI * u2 ) * factor;
 }
 
 ////////// RESTRICTED BOLTZMANN MACHINE ////////////////////////////////////////////////////////////
@@ -92,29 +93,31 @@ struct RBM{
         lr = learnRate;
 
         // Init weights
-        W = alloc_2D_array!float( dI, dH );
+        W = alloc_2D_dyn_array!float( dI, dH );
         // Init hidden units
-        b = alloc_array!float( dH );
-        h = alloc_array!float( dH );
+        b = alloc_dyn_array!float( dH );
+        h = alloc_dyn_array!float( dH );
         // Init input units
-        c = alloc_array!float( dI );
-        v = alloc_array!float( dI );
-        x = alloc_array!float( dI );
+        c = alloc_dyn_array!float( dI );
+        v = alloc_dyn_array!float( dI );
+        x = alloc_dyn_array!float( dI );
     }
 
 
     void random_weight_init(){
         // Set all weights and biases to normally-distributed random numbers
         
+        float var = 0.5;
+
         for( uint j = 0; j < dH; j++ ){
             for( uint k = 0; k < dI; k++ ){
-                W[k][j] = Box_Muller_normal_sample(); // FIXME, START HERE: ALLOCATION FAILED?
+                W[k][j] = clamp( Box_Muller_normal_sample( var ), -1.0f, 1.0f ); 
             }
-            b[j] = Box_Muller_normal_sample();
+            b[j] = clamp( Box_Muller_normal_sample( var ), -1.0f, 1.0f );
         }
 
         for( uint k = 0; k < dI; k++ ){
-            c[k] = Box_Muller_normal_sample();
+            c[k] = clamp( Box_Muller_normal_sample( var ), -1.0f, 1.0f );
         }
     }
 
@@ -151,6 +154,10 @@ struct RBM{
         for( uint k = 0; k < dI; k++ ){
             inpNRG -= c[k] * v[k];
         }
+
+        writeln( "\t" ~ netNRG.to!string );
+        writeln( "\t" ~ inpNRG.to!string );
+        writeln( "\t" ~ hidNRG.to!string );
 
         return netNRG + inpNRG + hidNRG;
     }
@@ -355,11 +362,14 @@ void main(){
     uint N_epoch = 10;
 
     net.random_weight_init();
+    writeln( net.W[0] );
 
     for( uint i = 0; i < N_epoch; i++ ){
         for( ulong j = 0; j < N_users; j++ ){
-            // net
+            net.set_input( cast(float[]) trainData[j] );
+            net.Contrastive_Divergence_iter();
         }
+        writeln( net.energy() );
     }
     
 }
