@@ -128,9 +128,8 @@ T[][] file_to_matx_ws(T)( string fName ){
 }
 
 T[][] file_to_dyn_matx_ws(T)( string fName ){
-    // Convert a file to a matrix of `T`, with each line of a the file being a row of the matrix, 
+    // Convert a file to a dynamic 2D array of `T`, with rows of *possibly non-uniform length*, 
     // cols separated by whitespace
-    // NOTE: This function assumes a uniform number of columns across all non-empty lines of the file
 
     // 1. Read the file
     string[] fLines = read_lines( fName ); // Lines of raw text
@@ -139,10 +138,10 @@ T[][] file_to_dyn_matx_ws(T)( string fName ){
     string[] oneRow;
     T[] /**/ typRow;
 
-    // 4. Alloc arr
+    // 3. Alloc arr
     T[][] rtnArr;
     
-    // 5. Populate arr
+    // 4. Populate arr
     foreach( string fRow; fLines ){ 
         if( fRow.length > 2 ){
             oneRow = fRow.split!isWhite;
@@ -172,6 +171,11 @@ struct Set(T){
         // Either add an element to the set or count a repeat add
         if( elem in members ){  members[ elem ] += 1;  }
         else{  members[ elem ] = 1;  }
+    }
+
+    void add_many( T[] elems ){
+        // Add an entire list of elements
+        foreach( T elem; elems ){  add( elem );  }
     }
 
     T[] get_members(){  return members.keys;  } // Get all unique elements of the set

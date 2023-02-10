@@ -126,6 +126,7 @@ struct RBM{
         // Populate the input vector
         for( uint k = 0; k < dI; k++ ){
             x[k] = input[k];
+            // writeln( x );
         }
     }
 
@@ -312,20 +313,43 @@ and
 *There are 10 epochs*
 */
 
-void main(){
-    /// Init Random ///
-    rnd = Random( unpredictableSeed );
+// FIXME: THERE IS A PROBLEM READING THE TEST DATA
+
+float[][] movie_data_to_user_vectors( string fName, string headingFname = "" ){
+    // This matrix will have the *users as the rows* and *the movies as the columns*.
+
+    /// Vector Heading Init ///
+    bool headingsProvided = (headingFname.length > 0);
+    File headingFile;
+    if( !headingsProvided )  headingFile = File( "columnHeadings.txt", "w" );
 
     /// Load Data ///
-    long[][] movieData = file_to_dyn_matx_ws!long( "../Data/ml-100k/u1.base" );
-    Set!long userID  = Set!long();
-    Set!long moviID = Set!long();
-    foreach( long[] row; movieData ){
-        userID.add( row[0] );
-        moviID.add( row[1] );
-    } 
-    long[] userList = userID.get_members();
-    long[] moviList = moviID.get_members();
+    long[][] movieData = file_to_dyn_matx_ws!long( fName );
+    Set!long userID    = Set!long();
+    Set!long moviID    = Set!long();
+    long[]   userList;
+    long[]   moviList;
+    long[][] movieHeadings;
+
+    if( headingsProvided ){
+        foreach( long[] row; movieData ){
+            userID.add( row[0] );
+        } 
+        movieHeadings = file_to_dyn_matx_ws!long( headingFname );
+        moviList      = movieHeadings[0];
+    }else{
+        foreach( long[] row; movieData ){
+            userID.add( row[0] );
+            moviID.add( row[1] );
+        } 
+        moviList = moviID.get_members();
+        foreach( long mID; moviList ){
+            headingFile.write( mID.to!string ~ " ");
+        }
+        headingFile.close();
+    }
+    userList = userID.get_members();
+
     ulong  N_users = userList.length;
     ulong  N_movis = moviList.length;
     writeln( "There are " ~ N_users.to!string ~ " unique users." );
@@ -334,28 +358,37 @@ void main(){
        There are 1650 unique movies. */
 
     /// Create Training Vectors ///
-    long[][] trainData;
-    long[]   ratingRow;
+    float[][] trainData;
+    float[]   ratingRow;
     ulong    founDex  = 0;
     long     currMovi = 0;
     long     rating   = 0;
     foreach( long user; userList ){
         ratingRow = [];
-        for( ulong i = 0; i < N_movis; i++ )  ratingRow ~= -1;
+        for( ulong i = 0; i < N_movis; i++ )  ratingRow ~= -1.0f;
         foreach( long[] row; movieData ){
             if( row[0] == user ){
                 currMovi = row[1];
                 founDex  = moviList.countUntil!( m => m == currMovi );
                 rating   = row[2];
-                ratingRow[ founDex ] = (rating < 3 ? 0 : 1);
+                ratingRow[ founDex ] = (rating < 3 ? 0.0f : 1.0f);
             }
         }
         trainData ~= ratingRow;
     }
     writeln( "Created training data with " ~ trainData.length.to!string ~ " rows and " ~ 
              trainData[0].length.to!string ~ " columns!"  );
-    // writeln( trainData[0] );
 
+    return trainData;
+}
+
+void main(){
+    /// Init Random ///
+    rnd = Random( unpredictableSeed );
+
+    float[][] trainData = movie_data_to_user_vectors( "../Data/ml-100k/u1.base" );
+    // writeln( trainData[0] );
+    float[][] testData  = movie_data_to_user_vectors( "../Data/ml-100k/u1.test", "columnHeadings.txt" );
 
     /// Create RBM ///
     RBM  net     = RBM( cast(uint) trainData[0].length, 100, 0.001 );
@@ -365,8 +398,8 @@ void main(){
     writeln( net.W[0] );
 
     for( uint i = 0; i < N_epoch; i++ ){
-        for( ulong j = 0; j < N_users; j++ ){
-            net.set_input( cast(float[]) trainData[j] );
+        for( ulong j = 0; j < trainData.length; j++ ){
+            net.set_input( trainData[j] );
             net.Contrastive_Divergence_iter();
         }
         writeln( net.energy() );
