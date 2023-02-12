@@ -61,12 +61,12 @@ Mt19937 rnd;
 
 float sigmoid( float x ){  return 1.0f / (1.0f + exp(-x));  }
 
-float Box_Muller_normal_sample( float factor = 1.0 ){
+float Box_Muller_normal_sample( float mu = 0.0f, float sigma = 1.0f ){
     // Transform 2 uniform samples into a zero-mean normal sample
     // Source: https://www.baeldung.com/cs/uniform-to-normal-distribution
     float u1 = uniform( 0.0f, 1.0f, rnd );
     float u2 = uniform( 0.0f, 1.0f, rnd );
-    return sqrt( -2.0 * log( u1 ) ) * cos( 2.0 * PI * u2 ) * factor;
+    return mu + sqrt( -2.0 * log( u1 ) ) * cos( 2.0 * PI * u2 ) * sigma;
 }
 
 ////////// RESTRICTED BOLTZMANN MACHINE ////////////////////////////////////////////////////////////
@@ -107,17 +107,19 @@ struct RBM{
     void random_weight_init(){
         // Set all weights and biases to normally-distributed random numbers
         
-        float var = 0.5;
+
+        float mean = 0.5;
+        float var  = 0.5;
 
         for( uint j = 0; j < dH; j++ ){
             for( uint k = 0; k < dI; k++ ){
-                W[k][j] = clamp( Box_Muller_normal_sample( var ), -1.0f, 1.0f ); 
+                W[k][j] = clamp( Box_Muller_normal_sample( mean, var ), 0.0f, 1.0f ); 
             }
-            b[j] = clamp( Box_Muller_normal_sample( var ), -1.0f, 1.0f );
+            b[j] = clamp( Box_Muller_normal_sample( mean, var ), 0.0f, 1.0f );
         }
 
         for( uint k = 0; k < dI; k++ ){
-            c[k] = clamp( Box_Muller_normal_sample( var ), -1.0f, 1.0f );
+            c[k] = clamp( Box_Muller_normal_sample( mean, var ), 0.0f, 1.0f );
         }
     }
 
@@ -360,7 +362,7 @@ float[][] movie_data_to_user_vectors( string fName, string headingFname = "" ){
     /// Create Training Vectors ///
     float[][] trainData;
     float[]   ratingRow;
-    ulong    founDex  = 0;
+    long     founDex  = 0;
     long     currMovi = 0;
     long     rating   = 0;
     foreach( long user; userList ){
@@ -371,7 +373,7 @@ float[][] movie_data_to_user_vectors( string fName, string headingFname = "" ){
                 currMovi = row[1];
                 founDex  = moviList.countUntil!( m => m == currMovi );
                 rating   = row[2];
-                ratingRow[ founDex ] = (rating < 3 ? 0.0f : 1.0f);
+                if( founDex > -1 )  ratingRow[ founDex ] = (rating < 3 ? 0.0f : 1.0f);
             }
         }
         trainData ~= ratingRow;
@@ -391,7 +393,7 @@ void main(){
     float[][] testData  = movie_data_to_user_vectors( "../Data/ml-100k/u1.test", "columnHeadings.txt" );
 
     /// Create RBM ///
-    RBM  net     = RBM( cast(uint) trainData[0].length, 100, 0.001 );
+    RBM  net     = RBM( cast(uint) trainData[0].length, 100, 0.0005 );
     uint N_epoch = 10;
 
     net.random_weight_init();
