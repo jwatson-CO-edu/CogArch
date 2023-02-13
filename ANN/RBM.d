@@ -75,6 +75,8 @@ float Box_Muller_normal_sample( float mu = 0.0f, float sigma = 1.0f ){
     return mu + sqrt( -2.0 * log( u1 ) ) * cos( 2.0 * PI * u2 ) * sigma;
 }
 
+
+
 ////////// RESTRICTED BOLTZMANN MACHINE ////////////////////////////////////////////////////////////
 
 struct RBM{
