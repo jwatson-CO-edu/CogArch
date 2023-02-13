@@ -6,6 +6,10 @@ James Watson, 2023-02
 Simplest Restricted Boltzmann Machine (RBM) example
 From:
 * https://medium.com/machine-learning-researcher/boltzmann-machine-c2ce76d94da5
+* https://www.youtube.com/watch?v=wMb7cads0go
+* https://www.youtube.com/watch?v=S0kFFiHzR8M
+* https://www.youtube.com/watch?v=n26NdEtma8U
+* https://www.youtube.com/watch?v=iPuqoQih9xk
 * Hinton, Geoffrey E. "A practical guide to training restricted Boltzmann machines." 
   Neural Networks: Tricks of the Trade: Second Edition (2012): 599-619.
 
@@ -242,6 +246,15 @@ struct RBM{
     }
 
 
+    void generate_from_input( float[] input ){
+        // Load the input into the visible units, then attempt to reconstruct it
+        set_input( input );
+        load_visible();
+        Gibbs_sample_hidden();
+        Gibbs_sample_visible();
+    }
+
+
     void Contrastive_Divergence_iter(){
         // Run a single iteration of (Persistent) Contrastive Divergence
         float p_hjv = 0.0;
@@ -259,13 +272,15 @@ struct RBM{
             p_hjv = p_hj_given_v(j);
             p_hjx = p_hj_given_x(j);
             for( uint k = 0; k < dI; k++ ){
-                W[k][j] += lr * (p_hjx*x[k] - p_hjv*v[k]);
+                if( x[k] >= 0.0 )
+                    W[k][j] += lr * (p_hjx*x[k] - p_hjv*v[k]);
             }
             b[j] += lr * (p_hjx - p_hjv);
         }
 
         for( uint k = 0; k < dI; k++ ){
-            c[k] += lr * (x[k] - v[k]);
+            if( x[k] >= 0.0 )
+                c[k] += lr * (x[k] - v[k]);
         }
     }
 }
@@ -315,7 +330,6 @@ and
 *There are 10 epochs*
 */
 
-// FIXME: THERE IS A PROBLEM READING THE TEST DATA
 
 float[][] movie_data_to_user_vectors( string fName, string headingFname = "" ){
     // This matrix will have the *users as the rows* and *the movies as the columns*.
@@ -384,6 +398,24 @@ float[][] movie_data_to_user_vectors( string fName, string headingFname = "" ){
     return trainData;
 }
 
+float fraction_same_nonnegative( float[] An, float[] B ){
+    // `An` is a vector that might have negative values, calc the similarity between the two where `An` is non-negative
+    size_t N = An.length;
+    size_t L = 0;
+    size_t S = 0;
+    if( An.length != B.length ){  return -1.0f;  }
+    else{
+        for( size_t i = 0; i < N; i++ ){
+            if( An[i] >= 0.0f ){
+                L++;
+                if( An[i] == B[i] )  S++;
+            }
+        }
+        return (cast(float) S) / (cast(float) L);
+    }
+}
+
+
 void main(){
     /// Init Random ///
     rnd = Random( unpredictableSeed );
@@ -393,7 +425,7 @@ void main(){
     float[][] testData  = movie_data_to_user_vectors( "../Data/ml-100k/u1.test", "columnHeadings.txt" );
 
     /// Create RBM ///
-    RBM  net     = RBM( cast(uint) trainData[0].length, 100, 0.0005 );
+    RBM  net     = RBM( cast(uint) trainData[0].length, 100, 0.025 );
     uint N_epoch = 10;
 
     net.random_weight_init();
@@ -402,9 +434,22 @@ void main(){
     for( uint i = 0; i < N_epoch; i++ ){
         for( ulong j = 0; j < trainData.length; j++ ){
             net.set_input( trainData[j] );
+            // net.load_visible();
             net.Contrastive_Divergence_iter();
         }
         writeln( net.energy() );
     }
+
+    float fracCorrect = 0.0f;
+
+    for( ulong j = 0; j < testData.length; j++ ){
+        net.generate_from_input( testData[j] );
+        fracCorrect += fraction_same_nonnegative( net.x, net.v );
+        writeln( fracCorrect );
+    }
+
+    fracCorrect /= cast(float) testData.length;
+    writeln();
+    writeln( fracCorrect );
     
 }
