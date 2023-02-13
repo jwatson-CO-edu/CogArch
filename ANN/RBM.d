@@ -63,7 +63,9 @@ Mt19937 rnd;
 
 ////////// MATH FUNCTIONS //////////////////////////////////////////////////////////////////////////
 
+
 float sigmoid( float x ){  return 1.0f / (1.0f + exp(-x));  }
+
 
 float Box_Muller_normal_sample( float mu = 0.0f, float sigma = 1.0f ){
     // Transform 2 uniform samples into a zero-mean normal sample
@@ -431,6 +433,7 @@ void main(){
     net.random_weight_init();
     writeln( net.W[0] );
 
+    /// Train ///
     for( uint i = 0; i < N_epoch; i++ ){
         for( ulong j = 0; j < trainData.length; j++ ){
             net.set_input( trainData[j] );
@@ -440,16 +443,16 @@ void main(){
         writeln( net.energy() );
     }
 
+    /// Test ///
     float fracCorrect = 0.0f;
 
     for( ulong j = 0; j < testData.length; j++ ){
         net.generate_from_input( testData[j] );
-        fracCorrect += fraction_same_nonnegative( net.x, net.v );
+        fracCorrect += fraction_same_nonnegative( net.x, net.v ); // Only count accuracy for rated movies
         writeln( fracCorrect );
     }
 
     fracCorrect /= cast(float) testData.length;
     writeln();
-    writeln( fracCorrect );
-    
+    writeln( fracCorrect ); // 0.81174, YAY
 }
