@@ -4,13 +4,13 @@ import core.exception;
 import std.conv; // --------------- `to!string`
 
 /// Local Imports ///
-import ANN.utils;
+import utils;
 
 float[] matx_mult_dyn( float[][] matx, float[] vect ){
     // Multiply the `matx` by the `vect`
 
     // -1. Dims check
-    if( matx[0].length != vect.length )  throw new ArrayIndexError( 
+    if( matx[0].length != vect.length )  throw new Error( 
         "Dimension mismatch!: " ~ matx[0].length.to!string ~ " -vs- " ~ vect.length.to!string
     );
 
