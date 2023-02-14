@@ -71,13 +71,20 @@ struct PerceptronLayer{
 
     void random_weight_init(){
         // Set all weights and biases to normally-distributed random numbers
-
         for( uint i = 0; i < dI; i++ ){
             for( uint j = 0; j < dO; j++ ){
                 W[i][j] = uniform( 0.0f, 1.0f, rnd );
             }
         }
+    }
 
+    void forward(){
+        // Run forward inference
+        y = matx_mult_dyn( W, x );
+    }
+
+    void margin_update( float[] x_t, float[] y_t, float mu = 0.0f ){
+        // Update weights based on a single training example if it within `mu` of the splitting planes
     }
 
 }
