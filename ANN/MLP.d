@@ -4,6 +4,7 @@ module MLP;
 MLP.d
 James Watson, 2023-02
 Simplest demo of a scratch-built multi-layer perceptron (MLP)
+rdmd MLP.d -I ANN/
 */
 
 /* ///// DEV PLAN /////
@@ -16,7 +17,9 @@ Simplest demo of a scratch-built multi-layer perceptron (MLP)
 
 ////////// INIT ////////////////////////////////////////////////////////////////////////////////////
 
+import std.stdio; //- `writeln`
 import std.random; // RNG
+import std.conv; //-- `to!string`
 
 import utils; // - Memory allocation
 import mathkit; // (Slow!) Linalg
@@ -92,7 +95,7 @@ struct BinaryPerceptronLayer{
         lr   = learnRate;
 
         // Init weights
-        W = alloc_2D_dyn_array!float( dIp1, dO );
+        W = alloc_2D_dyn_array!float( dO, dIp1 );
 
         // Init I/O
         x = alloc_dyn_array!float( dIp1 );
@@ -104,8 +107,8 @@ struct BinaryPerceptronLayer{
 
     void random_weight_init(){
         // Set all weights and biases to normally-distributed random numbers
-        for( uint i = 0; i < dIp1; i++ ){
-            for( uint j = 0; j < dO; j++ ){
+        for( uint i = 0; i < dO; i++ ){
+            for( uint j = 0; j < dIp1; j++ ){
                 W[i][j] = uniform( 0.0f, 1.0f, rnd );
             }
         }
@@ -151,9 +154,9 @@ struct BinaryPerceptronLayer{
             if( (y[j] != y_t[j]) || ( (mu > 0.0f) && (y_p[j] < mu) ) ){
                 factor = (y_t[j] == 1.0) ? 1.0 : -1.0f;
                 for( uint i = 0; i < (dIp1-1); i++ ){
-                    W[i][j] += x_t[i] * lr * factor;
+                    W[j][i] += x_t[i] * lr * factor;
                 }
-                W[$-1][j] += lr * factor;
+                W[j][$-1] += lr * factor;
             }
         }
     }
@@ -170,6 +173,16 @@ struct BinaryPerceptronLayer{
             margin_update( x_i, y_i, mu );
         }
     }
+
+    float test_accuracy( float[][] samples ){
+        size_t N_smpl = samples.length;
+        size_t N_crct = 0;
+        for( size_t i = 0; i < N_smpl; i++ ){
+            predict();
+            if(samples[i][$-dO..$] == y)  N_crct++;
+        }
+        return (cast(float) N_crct) / (cast(float) N_smpl);
+    }
 }
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
@@ -177,16 +190,24 @@ struct BinaryPerceptronLayer{
 void main(){
 
     // Init perceptron and Train/Test Datasets, 
-    BinaryPerceptronLayer bpl /*-*/ = BinaryPerceptronLayer( 3, 1, 0.0001 );
+    BinaryPerceptronLayer bpl /*-*/ = BinaryPerceptronLayer( 3, 1, 0.001 );
     float[] /*---------*/ planeEQ   = [1.0f, 2.0f, 3.0f, 0.0f];
     float[][] /*-------*/ trainData = gen_hyperplane_dataset( 1000, -5.0f,  5.0f, planeEQ );
     float[][] /*-------*/ testData  = gen_hyperplane_dataset(  100, -5.0f,  5.0f, planeEQ );
     bpl.random_weight_init();
 
-    // Train //
-    // FIXME: TRAIN
+    uint N_epoch = 16;
 
-    // Test //
-    // FIXME: TEST
+    for( uint i = 0; i < N_epoch; i++ ){
+
+        write( "Epoch " ~ (i+1).to!string ~ ", Test Acc: " );
+
+        // Train //
+        bpl.train_by_sample( trainData, 0.00f );
+
+        // Test //
+        writeln( bpl.test_accuracy( testData ) );
+    }
+    
 
 }
