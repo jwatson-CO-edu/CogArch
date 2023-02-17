@@ -8,7 +8,7 @@ rdmd MLP.d -I ANN/
 */
 
 /* ///// DEV PLAN /////
-[ ] Binary Perceptron @ plane
+[Y] Binary Perceptron @ plane - 2023-02-17: Test Acc, 0.977
 [ ] Binary MLP w/ Backprop @ MNIST
 [ ] Attempt w/ LAPACK/BLAS
     * https://code.dlang.org/packages/mir
@@ -49,8 +49,8 @@ float test_hyperplane_point( float[] planeEQ, float[] pnt ){
     for( long i = 0; i < N_dim; i++ ){
         res += pnt[i] * planeEQ[i];
     }
-    res += planeEQ[$-1];
-    if( pnt[$-1] >= res )
+    // res += planeEQ[$-1];
+    if( res >= planeEQ[$-1] )
         return 1.0f;
     else
         return 0.0f;
@@ -149,16 +149,19 @@ struct BinaryPerceptronLayer{
         
         load_input( x_t );
         if( mu > 0.0f )  y_p = forward();
+        predict();
         
         for( uint j = 0; j < dO; j++ ){
             if( (y[j] != y_t[j]) || ( (mu > 0.0f) && (y_p[j] < mu) ) ){
-                factor = (y_t[j] == 1.0) ? 1.0 : -1.0f;
+                factor = (y_t[j] == 1.0) ?  1.0 : -1.0f;
                 for( uint i = 0; i < (dIp1-1); i++ ){
+                    // write( (x_t[i] * lr * factor).to!string ~ ", " );
                     W[j][i] += x_t[i] * lr * factor;
                 }
                 W[j][$-1] += lr * factor;
             }
         }
+        // writeln();
     }
 
 
@@ -178,6 +181,7 @@ struct BinaryPerceptronLayer{
         size_t N_smpl = samples.length;
         size_t N_crct = 0;
         for( size_t i = 0; i < N_smpl; i++ ){
+            load_input( samples[i][0..(dIp1-1)] );
             predict();
             if(samples[i][$-dO..$] == y)  N_crct++;
         }
@@ -190,24 +194,26 @@ struct BinaryPerceptronLayer{
 void main(){
 
     // Init perceptron and Train/Test Datasets, 
-    BinaryPerceptronLayer bpl /*-*/ = BinaryPerceptronLayer( 3, 1, 0.001 );
+    BinaryPerceptronLayer bpl /*-*/ = BinaryPerceptronLayer( 3, 1, 0.00001 );
     float[] /*---------*/ planeEQ   = [1.0f, 2.0f, 3.0f, 0.0f];
-    float[][] /*-------*/ trainData = gen_hyperplane_dataset( 1000, -5.0f,  5.0f, planeEQ );
-    float[][] /*-------*/ testData  = gen_hyperplane_dataset(  100, -5.0f,  5.0f, planeEQ );
+    // float[] /*---------*/ planeEQ   = [1.0f, 2.0f, 0.0f];
+    float[][] /*-------*/ trainData = gen_hyperplane_dataset( 10000, -5.0f,  5.0f, planeEQ );
+    float[][] /*-------*/ testData  = gen_hyperplane_dataset(  1000, -5.0f,  5.0f, planeEQ );
     bpl.random_weight_init();
 
-    uint N_epoch = 16;
+    uint N_epoch = 64;
 
     for( uint i = 0; i < N_epoch; i++ ){
 
         write( "Epoch " ~ (i+1).to!string ~ ", Test Acc: " );
 
         // Train //
-        bpl.train_by_sample( trainData, 0.00f );
+        bpl.train_by_sample( trainData, 3.0f );
 
         // Test //
         writeln( bpl.test_accuracy( testData ) );
+        writeln( bpl.W );
     }
     
-
+    // writeln( testData );
 }
