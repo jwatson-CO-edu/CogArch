@@ -114,10 +114,19 @@ struct BinaryPerceptronLayer{
         }
     }
 
-
     float[] forward(){
         // Return a raw float prediction
         return matx_mult_dyn( W, x );
+    }
+
+    float[] forward_sigmoid(){
+        // Return a raw float prediction with sigmoid activation
+        float[] product = matx_mult_dyn( W, x );
+        float[] activation;
+        foreach( float prod; product ){
+            activation ~= sigmoid( prod );
+        }
+        return activation;
     }
 
 
@@ -131,6 +140,9 @@ struct BinaryPerceptronLayer{
                 y[j] = 0.0f;
         }
     }
+
+
+    // FIXME, START HERE: `predict_sigmoid`
 
 
     void load_input( float[] x_t ){
@@ -186,6 +198,16 @@ struct BinaryPerceptronLayer{
             if(samples[i][$-dO..$] == y)  N_crct++;
         }
         return (cast(float) N_crct) / (cast(float) N_smpl);
+    }
+
+    float[] output_loss( float[] yTarget ){
+        // Compute derivative of squared loss
+        // NOTE: This function assumes that the client code has run `predict()`
+        float[] loss;
+        for( uint j = 0; j < dO; j++ ){
+            loss ~= y[j] - yTarget[j];
+        }
+        return loss;
     }
 }
 
