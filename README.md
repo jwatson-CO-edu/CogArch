@@ -10,6 +10,7 @@ No warrantee offered or implied.
 1. `[>]` Perceptrons
     * `[Y]` Perceptron Margin Update    
     * `[>]` Multi-Layer Perceptron + Backprop + MNIST Dataset
+    * `[ ]` Multi-Layer Perceptron + BLAS?
 1. `[ ]` Bayesian Neural Network (BNN)
 1. `[ ]` Message-Passing Neural Network
 1. `[ ]` Self-Organizing Map (SOM)
