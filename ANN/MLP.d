@@ -28,6 +28,11 @@ import mathkit; // (Slow!) Linalg
 /// Randomness ///
 Mt19937 rnd;
 
+////////// MATH FUNCTIONS //////////////////////////////////////////////////////////////////////////
+
+
+float sigmoid( float x ){  return 1.0f / (1.0f + exp(-x));  }
+float ddz_sigmoid( float sigZ ){  return sigZ * ( 1.0 - sigZ );  }
 
 ////////// RANDOM SAMPLING /////////////////////////////////////////////////////////////////////////
 
@@ -114,22 +119,15 @@ struct BinaryPerceptronLayer{
         }
     }
 
+
+    ///// Margin Update //////////////////////////
+
     float[] forward(){
         // Return a raw float prediction
         return matx_mult_dyn( W, x );
     }
 
-    float[] forward_sigmoid(){
-        // Return a raw float prediction with sigmoid activation
-        float[] product = matx_mult_dyn( W, x );
-        float[] activation;
-        foreach( float prod; product ){
-            activation ~= sigmoid( prod );
-        }
-        return activation;
-    }
-
-
+    
     void predict(){
         // Run forward inference and store the binary vector in the output
         y = forward();
@@ -141,10 +139,7 @@ struct BinaryPerceptronLayer{
         }
     }
 
-
-    // FIXME, START HERE: `predict_sigmoid`
-
-
+    
     void load_input( float[] x_t ){
         // Load values into the input vector
         // NOTE: This struct does not require the client code to add the unity input bias
@@ -200,6 +195,24 @@ struct BinaryPerceptronLayer{
         return (cast(float) N_crct) / (cast(float) N_smpl);
     }
 
+
+    ///// Backpropagation ////////////////////////
+    
+    // * https://www.youtube.com/watch?v=Ilg3gGewQ5U
+    //   9:10
+    
+    //    - The nudge that we give a weight should be proportional to how far the result was from the target
+    //        > Bump up   weights feeding an activation that should be higher
+    //        > Bump down weights feeding an activation that should be lower
+    
+    //     - 3Blue1Brown Architecture
+    //         > Layer 0: Flatten 2D image to 1D vector of 784 elements
+    //         > Layer 1: Input 784 --to-> Output  16
+    //         > Layer 2: Input  16 --to-> Output  16
+    //         > Layer 3: Input  16 --to-> Output  10, Output class for each digit
+
+    
+
     float[] output_loss( float[] yTarget ){
         // Compute derivative of squared loss
         // NOTE: This function assumes that the client code has run `predict()`
@@ -208,6 +221,29 @@ struct BinaryPerceptronLayer{
             loss ~= y[j] - yTarget[j];
         }
         return loss;
+    }
+
+
+    float[] forward_sigmoid(){
+        // Return a raw float prediction with sigmoid activation
+        float[] product = matx_mult_dyn( W, x );
+        float[] activation;
+        foreach( float prod; product ){
+            activation ~= sigmoid( prod );
+        }
+        return activation;
+    }
+
+
+    void predict_sigmoid(){
+        // Run forward inference and store the binary vector in the output
+        y = forward_sigmoid();
+        for( uint j = 0; j < dO; j++ ){
+            if( y[j] >= 0.5f )  
+                y[j] = 1.0f;
+            else  
+                y[j] = 0.0f;
+        }
     }
 }
 
