@@ -198,12 +198,33 @@ struct BinaryPerceptronLayer{
 
     ///// Backpropagation ////////////////////////
     
-    // * https://www.youtube.com/watch?v=Ilg3gGewQ5U
-    //   9:10
+    // * Overview: https://www.youtube.com/watch?v=Ilg3gGewQ5U
+    // * Math: ___ https://www.youtube.com/watch?v=tIeHLnjs5U8
     
-    //    - The nudge that we give a weight should be proportional to how far the result was from the target
-    //        > Bump up   weights feeding an activation that should be higher
-    //        > Bump down weights feeding an activation that should be lower
+    //     - The nudge that we give a weight should be proportional to how far the result was from the target
+    //         > Bump up   weights feeding an activation that should be higher
+    //         > Bump down weights feeding an activation that should be lower
+
+    //     - Cost = Squared Error = (desired - predicted)^2
+    /*
+
+    /// Chain Rule Per Layer Per Training Example ///
+    https://www.youtube.com/watch?v=tIeHLnjs5U8
+    07:45
+    
+    dCost      dOutput     dActivation                         dCost
+    -------- = -------  *  -----------                      *  -----------
+    dWeights   dWeights    dOutput                             dActivation
+
+    dCost                              
+    -------- = (Input)  *  sigmoid(Out)*(1.0-sigmoid(Out))  *  2*(desired-predicted)
+    dWeights   
+
+    dCost                              
+    -------- = (1.0)    *  sigmoid(Out)*(1.0-sigmoid(Out))  *  2*(desired-predicted)
+    dBias 
+
+    */
     
     //     - 3Blue1Brown Architecture
     //         > Layer 0: Flatten 2D image to 1D vector of 784 elements
