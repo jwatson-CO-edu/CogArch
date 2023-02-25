@@ -89,6 +89,7 @@ struct BinaryPerceptronLayer{
     float[]   x; // -- Input  values
     float[]   y; // -- Output values
     float[][] W; // -- Weight matrix
+    float[]   grad; // Per-output gradients
     float     lr; // - Learning rate
 
     this( uint inputDim, uint outputDim, float learnRate ){
@@ -209,8 +210,9 @@ struct BinaryPerceptronLayer{
     /*
 
     /// Chain Rule Per Layer Per Training Example ///
+    The chain rule describes how sensitive the activation is to the loss
     https://www.youtube.com/watch?v=tIeHLnjs5U8
-    07:45
+    
     
     dCost      dOutput     dActivation                         dCost
     -------- = -------  *  -----------                      *  -----------
