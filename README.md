@@ -33,6 +33,9 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 1. `[90]` CPPN-NEAT Architecture Search
 
 ## Backend
+* `[700]` Parallel Programming
+    - https://dlang.org/phobos/std_parallelism.html
+    - https://dlang.org/phobos/std_process.html
 * `[800]` [Multi-Layer Perceptron + OpenCL?](https://www.es.ele.tue.nl/~mwijtvliet/5KK73/?page=mmopencl)  
 
 ## Physics
