@@ -25,8 +25,13 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[ ]` Complete `DEV PLAN` as previously formulated
     * `[?]` Port highest-performing agent to [D](https://dlang.org/)?
 1. `[33]` Active Inference Tutorial
-1. `[40]` Run a POMDP solver on Partially Observable Lander
-1. `[70]` Braitenberg Environment
+    * `[34]` Think about how active inference is pertinent to the Partially Observable Lunar Lander.  Are there different behavior modes that are required?
+1. `[40]` Run a POMDP solver on Partially Observable Lunar Lander
+    * POMCPOW or Voronoi Equivalent
+    * Can you add a learned transition model to it?
+1. `[70]` Braitenberg Grid World
+    * Agents situated at <X,Y,D> where <X,Y> is a cell address and <D> is a cardinal direction
+    * Components have no extent, but possibly oriented in a cardinal direction
     * `[ ]` Add EFB
     * `[ ]` Add Continuous Q-Learning
 1. `[80]` Dynamic, Resizable ANN
