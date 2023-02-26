@@ -29,13 +29,16 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 1. `[40]` Run a POMDP solver on Partially Observable Lunar Lander
     * POMCPOW or Voronoi Equivalent
     * Can you add a learned transition model to it?
-1. `[70]` Braitenberg Grid World
-    * Agents situated at <X,Y,D> where <X,Y> is a cell address and <D> is a cardinal direction
+1. `[70]` Braitenberg 2D Grid World
+    * Agents situated at `<X,Y,D>` where `<X,Y>` is a cell address and `<D>` is a cardinal direction
     * Components have no extent, but possibly oriented in a cardinal direction
     * `[ ]` Add EFB
     * `[ ]` Add Continuous Q-Learning
 1. `[80]` Dynamic, Resizable ANN
 1. `[90]` CPPN-NEAT Architecture Search
+1. `[100]` Braitenberg 3D Grid World
+1. `[300]` Continous 2D Braitenberg World
+1. `[500]` Continous 3D Braitenberg World
 
 ## Backend
 * `[700]` Parallel Programming
