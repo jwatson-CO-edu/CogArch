@@ -219,11 +219,11 @@ struct BinaryPerceptronLayer{
     dWeights   dWeights    dOutput                             dActivation
 
     dCost                              
-    -------- = (Input)  *  sigmoid(Out)*(1.0-sigmoid(Out))  *  2*(desired-predicted)
+    -------- = (Input)  *  sigmoid(Out)*(1.0-sigmoid(Out))  *  2*(predicted-desired)
     dWeights   
 
     dCost                              
-    -------- = (1.0)    *  sigmoid(Out)*(1.0-sigmoid(Out))  *  2*(desired-predicted)
+    -------- = (1.0)    *  sigmoid(Out)*(1.0-sigmoid(Out))  *  2*(predicted-desired)
     dBias 
 
     */
@@ -266,6 +266,19 @@ struct BinaryPerceptronLayer{
                 y[j] = 1.0f;
             else  
                 y[j] = 0.0f;
+        }
+    }
+
+
+    void calc_grad( float[] y_Actual ){
+        // Calculate the error gradient for the last prediction, given the `y_Actual` labels
+        // NOTE: This function assumes that the correct input has already been loaded
+        float[] y_Predict = predict_sigmoid();
+        float   dLoss_dAct;
+        float   dAct_dOut;
+        for( uint i = 0; i < dO; i++ ){
+            dLoss_dAct = 2.0f*( y_Predict[i] - y_Actual[i] ); // 2*(predicted-desired)
+            dAct_dOut  = // FIXME, START HERE // sigmoid(Out)*(1.0-sigmoid(Out))
         }
     }
 }

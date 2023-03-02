@@ -15,6 +15,12 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 1. `[50]` Graph Convolutional Network (GATv2)
 1. `[60]` Graph Generation with GCPN: Graph Convolutional Policy Network ( You et al. 2018)  
     * https://jian-tang.com/files/AAAI19/aaai-grltutorial-part3-generation.pdf
+1. `[600]` Alternatives to Backpropagation
+    * `[ ]` Read: Manneschi, Luca, and Eleni Vasilaki. "An alternative to backpropagation through time." Nature Machine Intelligence 2, no. 3 (2020): 155-156.
+    * `[ ]` Read: Bellec, Guillaume, Franz Scherr, Elias Hajek, Darjan Salaj, Robert Legenstein, and Wolfgang Maass. "Biologically inspired alternatives to backpropagation through time for learning in recurrent neural nets." arXiv preprint arXiv:1901.09049 (2019).
+    * `[ ]` E: Which alternative to implement and why?
+    * `[ ]` Implement!
+
 
 
 ## The CORVID Project: Cognitive Architecture  
@@ -35,6 +41,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[ ]` Add EFB
     * `[ ]` Add Continuous Q-Learning
 1. `[80]` Dynamic, Resizable ANN
+    * Does [VectorFlow](https://netflixtechblog.medium.com/introducing-vectorflow-fe10d7f126b8) have a dynamic option.  If not, can you extend the ANN layer class to allow this?
 1. `[90]` CPPN-NEAT Architecture Search
 1. `[100]` Braitenberg 3D Grid World
 1. `[300]` Continous 2D Braitenberg World
