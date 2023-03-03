@@ -89,7 +89,7 @@ struct BinaryPerceptronLayer{
     float[]   x; // -- Input  values
     float[]   y; // -- Output values
     float[][] W; // -- Weight matrix
-    float[]   grad; // Per-output gradients
+    float[][] grad; // Per-output gradients
     float     lr; // - Learning rate
 
     this( uint inputDim, uint outputDim, float learnRate ){
@@ -101,7 +101,8 @@ struct BinaryPerceptronLayer{
         lr   = learnRate;
 
         // Init weights
-        W = alloc_2D_dyn_array!float( dO, dIp1 );
+        W    = alloc_2D_dyn_array!float( dO, dIp1 );
+        grad = alloc_2D_dyn_array!float( dO, dIp1 );
 
         // Init I/O
         x = alloc_dyn_array!float( dIp1 );
@@ -276,16 +277,73 @@ struct BinaryPerceptronLayer{
         float[] y_Predict = predict_sigmoid();
         float   dLoss_dAct;
         float   dAct_dOut;
+        float   dOut_dWght;
         for( uint i = 0; i < dO; i++ ){
             dLoss_dAct = 2.0f*( y_Predict[i] - y_Actual[i] ); // 2*(predicted-desired)
-            dAct_dOut  = // FIXME, START HERE // sigmoid(Out)*(1.0-sigmoid(Out))
+            dAct_dOut  = y_Predict[i]*(1.0-y_Predict[i]); // --- sigmoid(Out)*(1.0-sigmoid(Out))
+            for( uint j = 0; j < dIp1; j++ ){
+                dOut_dWght = x[j];
+                grad[j][i] = dOut_dWght * dAct_dOut * dLoss_dAct;
+            }
         }
     }
+
+    void descend_grad(){
+        // Apply one step of gradient descent according to the learning rate
+        for( uint i = 0; i < dO; i++ ){
+            for( uint j = 0; j < dIp1; j++ ){
+                W[j][i] -= lr * grad[j][i];
+            }
+        }
+    }
+}
+
+struct MLP{
+    // Simplest Multi-Layer Perceptron Implementation, Very inefficient
+    // WARNING: NO DIMS CHECKED!
+
+    float /*-------------*/ lr; // --- Learning rate
+    BinaryPerceptronLayer[] layers; // Dense layers
+    // float[] /*-----------*/ X_temp; // Input  to   the current layer
+    float[] /*-----------*/ Y_temp; // Output from the current layer
+
+    this( float learnRate ){
+        // Init learn rate and memory
+        lr     = learnRate;
+        layers = [];
+    }
+
+    float[] flatten( float[][] matx ){
+        // Unpack the matrix into a vector by rows
+        float[] rtnArr;
+        foreach( float[] row; matx ){
+            foreach( float elem; row ){
+                rtnArr ~= elem;
+            }
+        }
+        return rtnArr;
+    }
+
+    float[] forward( float[][] matx ){
+        // Use the network to run inference on the input image, layer by layer
+        Y_temp = flatten( matx );
+        foreach( BinaryPerceptronLayer layer; layers[0..$-1] ){
+            layer.load_input( Y_temp );
+            Y_temp = forward_sigmoid();
+        }
+        layers[$-1].load_input( Y_temp );
+        layers[$-1].predict_sigmoid();
+        return layers[$-1].y;
+    }
+
+    // FIXME, START HERE: FULL BACKPROP
 }
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
 
 void main(){
+
+    ///// Test 1: Dense Layer ////////////////////
 
     // Init perceptron and Train/Test Datasets, 
     BinaryPerceptronLayer bpl /*-*/ = BinaryPerceptronLayer( 3, 1, 0.00001 );
@@ -309,5 +367,6 @@ void main(){
         writeln( bpl.W );
     }
     
-    // writeln( testData );
+    ///// Test 2: Multiple Layers ////////////////
+
 }
