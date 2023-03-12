@@ -96,17 +96,19 @@ struct BinaryPerceptronLayer{
         // Allocate arrays and init all values to zero
 
         // Set params
-        dIp1 = inputDim + 1;
-        dO   = outputDim;
-        lr   = learnRate;
+        dIp1 = inputDim + 1; // Input  dimensions plus 1 for bias
+        dO   = outputDim; // -- Output dimensions
+        lr   = learnRate; // -- Learning rate
 
         // Init weights
-        W    = alloc_2D_dyn_array!float( dO, dIp1 );
-        grad = alloc_2D_dyn_array!float( dO, dIp1 );
+        W    = alloc_2D_dyn_array!float( dO, dIp1 ); // Layer weights
+        grad = alloc_2D_dyn_array!float( dO, dIp1 ); // Weight gradients
 
         // Init I/O
-        x = alloc_dyn_array!float( dIp1 );
-        y = alloc_dyn_array!float( dO   );
+        x /*-*/ = alloc_dyn_array!float( dIp1 ); // Input vector
+        lossInp = alloc_dyn_array!float( dIp1 ); // Loss to the previous layer
+        y /*-*/ = alloc_dyn_array!float( dO   ); // Output vector
+        lossOut = alloc_dyn_array!float( dO   ); // Loss from the following layer
         // Bias times unity input
         x[$-1] = 1.0f;
     }
@@ -259,32 +261,56 @@ struct BinaryPerceptronLayer{
     }
 
 
-    void predict_sigmoid(){
+    void predict_sigmoid( bool roundBinary = true ){
         // Run forward inference and store the binary vector in the output
         y = forward_sigmoid();
-        for( uint j = 0; j < dO; j++ ){
-            if( y[j] >= 0.5f )  
-                y[j] = 1.0f;
-            else  
-                y[j] = 0.0f;
+        if( roundBinary ){
+            for( uint j = 0; j < dO; j++ ){
+                if( y[j] >= 0.5f )  
+                    y[j] = 1.0f;
+                else  
+                    y[j] = 0.0f;
+            }
         }
     }
 
 
-    void calc_grad( float[] y_Actual ){
+    void store_output_loss( float[] y_Actual ){
+        // float[] y_Predict = predict_sigmoid();
+        for( uint i = 0; i < dO; i++ ){
+            lossOut[i] = 2.0f*( y[i] - y_Actual[i] ); // 2*(predicted-desired)
+        }
+    }
+
+    void calc_grad(){
         // Calculate the error gradient for the last prediction, given the `y_Actual` labels
         // NOTE: This function assumes that the correct input has already been loaded
-        float[] y_Predict = predict_sigmoid();
+        // NOTE: This function assumes that forward inference has already been run
+        // float[] y_Predict = predict_sigmoid();
         float   dLoss_dAct;
         float   dAct_dOut;
         float   dOut_dWght;
+        // predict_sigmoid( false ); // This already should have been called
         for( uint i = 0; i < dO; i++ ){
-            dLoss_dAct = 2.0f*( y_Predict[i] - y_Actual[i] ); // 2*(predicted-desired)
-            dAct_dOut  = y_Predict[i]*(1.0-y_Predict[i]); // --- sigmoid(Out)*(1.0-sigmoid(Out))
+            // dLoss_dAct = 2.0f*( y_Predict[i] - y_Actual[i] ); // 2*(predicted-desired)
+            dLoss_dAct = lossOut[i]; // 2*(predicted-desired)
+            dAct_dOut  = y[i]*(1.0-y[i]); // --- sigmoid(Out)*(1.0-sigmoid(Out))
             for( uint j = 0; j < dIp1; j++ ){
                 dOut_dWght = x[j];
                 grad[j][i] = dOut_dWght * dAct_dOut * dLoss_dAct;
             }
+        }
+    }
+
+    void store_previous_loss(){
+        // Calculate loss to be backpropagated to the previous layer
+        float accum;
+        for( uint j = 0; j < dIp1; j++ ){
+            accum = 0.0f;
+            for( uint i = 0; i < dO; i++ ){
+                accum += grad[j][i];
+            }
+            lossInp[j] = accum;
         }
     }
 
