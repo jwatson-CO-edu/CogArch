@@ -84,13 +84,15 @@ float[][] gen_hyperplane_dataset( size_t M_samples, float lo, float hi, float[] 
 
 struct BinaryPerceptronLayer{
     // Simplest Perception layer with a binary output vector
-    uint /**/ dIp1; // Input  dimensions + 1 (bias)
-    uint /**/ dO; //-- Output dimensions
-    float[]   x; // -- Input  values
-    float[]   y; // -- Output values
-    float[][] W; // -- Weight matrix
-    float[][] grad; // Per-output gradients
-    float     lr; // - Learning rate
+    uint /**/ dIp1; // -- Input  dimensions + 1 (bias)
+    uint /**/ dO; // ---- Output dimensions
+    float[]   x; // ----- Input  values
+    float[]   lossInp; // Loss to the previous layer
+    float[]   y; // ----- Output values
+    float[]   lossOut; // Loss from the following layer
+    float[][] W; // ----- Weight matrix
+    float[][] grad; // -- Per-output gradients
+    float     lr; // ---- Learning rate
 
     this( uint inputDim, uint outputDim, float learnRate ){
         // Allocate arrays and init all values to zero
@@ -355,14 +357,30 @@ struct MLP{
         Y_temp = flatten( matx );
         foreach( BinaryPerceptronLayer layer; layers[0..$-1] ){
             layer.load_input( Y_temp );
-            Y_temp = forward_sigmoid();
+            Y_temp = layer.forward_sigmoid();
         }
         layers[$-1].load_input( Y_temp );
         layers[$-1].predict_sigmoid();
         return layers[$-1].y;
     }
 
-    // FIXME, START HERE: FULL BACKPROP
+    void backpropagation( float[] y_Actual ){
+        // Full backpropagation
+        size_t N = layers.length;
+        layers[$-1].store_output_loss( y_Actual );
+        // foreach_reverse( BinaryPerceptronLayer layer; layers[0..$-1] ){
+        for( size_t i = N; i > 0; i-- ){
+            layers[i-1].calc_grad();
+            layers[i-1].descend_grad();
+            layers[i-1].store_previous_loss();
+            if( N > 1 ){
+                layers[i-2].lossOut = layers[i-1].lossInp; // FIXME, START HERE: NEED A DEEP COPY 
+                //                                            THIS IS A POINTER ASSIGNMENT
+            }
+        }
+    }
+
+    
 }
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
