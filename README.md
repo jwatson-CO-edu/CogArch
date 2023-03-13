@@ -11,6 +11,12 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[Y]` Perceptron Margin Update    
     * `[>]` Multi-Layer Perceptron + Backprop + MNIST Dataset
 1. `[10]` Bayesian Neural Network (BNN)
+   * https://arxiv.org/pdf/2007.06823.pdf
+   * https://neptune.ai/blog/bayesian-neural-networks-with-jax
+   * https://wjmaddox.github.io/assets/BNN_tutorial_CILVR.pdf
+   * https://towardsdatascience.com/making-your-neural-network-say-i-dont-know-bayesian-nns-using-pyro-and-pytorch-b1c24e6ab8cd
+   * https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
+   * https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks
 1. `[20]` Self-Organizing Map (SOM)
 1. `[50]` Graph Convolutional Network (GATv2)
 1. `[60]` Graph Generation with GCPN: Graph Convolutional Policy Network ( You et al. 2018)  
