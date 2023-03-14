@@ -1,4 +1,5 @@
 // rdmd af_parseMNIST.d
+// http://yann.lecun.com/exdb/mnist/
 
 import std.stdio; // -------------- `writeln`
 import std.file; // -------------- `read`
