@@ -9,18 +9,21 @@ rdmd MLP.d -I ANN/
 
 /* ///// DEV PLAN /////
 [Y] Binary Perceptron @ plane - 2023-02-17: Test Acc, 0.977
-[ ] Binary MLP w/ Backprop @ MNIST
-[ ] Attempt w/ LAPACK/BLAS
+[>] Binary MLP w/ Backprop @ MNIST
+[N] Attempt w/ LAPACK/BLAS
     * https://code.dlang.org/packages/mir
     * https://code.dlang.org/packages/mir-blas
 */
 
 ////////// INIT ////////////////////////////////////////////////////////////////////////////////////
 
-import std.stdio; //- `writeln`
-import std.random; // RNG
-import std.conv; //-- `to!string`
+/// Standard Imports ///
+import std.stdio; // ---------- `writeln`
+import std.random; // --------- RNG
+import std.conv; // ----------- `to!string`
+import std.math.exponential; // `exp`
 
+/// Local Imports ///
 import utils; // - Memory allocation
 import mathkit; // (Slow!) Linalg
 
@@ -374,8 +377,9 @@ struct MLP{
             layers[i-1].descend_grad();
             layers[i-1].store_previous_loss();
             if( N > 1 ){
-                layers[i-2].lossOut = layers[i-1].lossInp; // FIXME, START HERE: NEED A DEEP COPY 
-                //                                            THIS IS A POINTER ASSIGNMENT
+                for( size_t j = 0; j < layers[i-2].lossOut.length; j++ ){
+                    layers[i-2].lossOut[j] = layers[i-1].lossInp[j];
+                }
             }
         }
     }
@@ -388,29 +392,40 @@ struct MLP{
 void main(){
 
     ///// Test 1: Dense Layer ////////////////////
+    bool test1 = false;
 
-    // Init perceptron and Train/Test Datasets, 
-    BinaryPerceptronLayer bpl /*-*/ = BinaryPerceptronLayer( 3, 1, 0.00001 );
-    float[] /*---------*/ planeEQ   = [1.0f, 2.0f, 3.0f, 0.0f];
-    // float[] /*---------*/ planeEQ   = [1.0f, 2.0f, 0.0f];
-    float[][] /*-------*/ trainData = gen_hyperplane_dataset( 10000, -5.0f,  5.0f, planeEQ );
-    float[][] /*-------*/ testData  = gen_hyperplane_dataset(  1000, -5.0f,  5.0f, planeEQ );
-    bpl.random_weight_init();
+    if( test1 ){
+        // Init perceptron and Train/Test Datasets, 
+        BinaryPerceptronLayer bpl /*-*/ = BinaryPerceptronLayer( 3, 1, 0.00001 );
+        float[] /*---------*/ planeEQ   = [1.0f, 2.0f, 3.0f, 0.0f];
+        // float[] /*---------*/ planeEQ   = [1.0f, 2.0f, 0.0f];
+        float[][] /*-------*/ trainData = gen_hyperplane_dataset( 10000, -5.0f,  5.0f, planeEQ );
+        float[][] /*-------*/ testData  = gen_hyperplane_dataset(  1000, -5.0f,  5.0f, planeEQ );
+        bpl.random_weight_init();
 
-    uint N_epoch = 64;
+        uint N_epoch = 64;
 
-    for( uint i = 0; i < N_epoch; i++ ){
+        for( uint i = 0; i < N_epoch; i++ ){
 
-        write( "Epoch " ~ (i+1).to!string ~ ", Test Acc: " );
+            write( "Epoch " ~ (i+1).to!string ~ ", Test Acc: " );
 
-        // Train //
-        bpl.train_by_sample( trainData, 3.0f );
+            // Train //
+            bpl.train_by_sample( trainData, 3.0f );
 
-        // Test //
-        writeln( bpl.test_accuracy( testData ) );
-        writeln( bpl.W );
+            // Test //
+            writeln( bpl.test_accuracy( testData ) );
+            writeln( bpl.W );
+        }
     }
     
     ///// Test 2: Multiple Layers ////////////////
-
+    // - 3Blue1Brown Architecture
+    //     > Layer 0: Flatten 2D image to 1D vector of 784 elements
+    //     > Layer 1: Input 784 --to-> Output  16
+    //     > Layer 2: Input  16 --to-> Output  16
+    //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
+    MLP net = MLP( 0.00001 );
+    net.layers ~= BinaryPerceptronLayer( 784, 16, net.lr );  writeln( "Layer 1 created!" );
+    net.layers ~= BinaryPerceptronLayer(  16, 16, net.lr );  writeln( "Layer 2 created!" );
+    net.layers ~= BinaryPerceptronLayer(  16, 10, net.lr );  writeln( "Layer 3 created!" );
 }
