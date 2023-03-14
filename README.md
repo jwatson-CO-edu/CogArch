@@ -41,17 +41,9 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 1. `[40]` Run a POMDP solver on Partially Observable Lunar Lander
     * POMCPOW or Voronoi Equivalent
     * Can you add a learned transition model to it?
-1. `[70]` Braitenberg 2D Grid World
-    * Agents situated at `<X,Y,D>` where `<X,Y>` is a cell address and `<D>` is a cardinal direction
-    * Components have no extent, but possibly oriented in a cardinal direction
-    * `[ ]` Add EFB
-    * `[ ]` Add Continuous Q-Learning
-1. `[80]` Dynamic, Resizable ANN
+1. `[70]` Dynamic, Resizable ANN
     * Does [VectorFlow](https://netflixtechblog.medium.com/introducing-vectorflow-fe10d7f126b8) have a dynamic option.  If not, can you extend the ANN layer class to allow this?
-1. `[90]` CPPN-NEAT Architecture Search
-1. `[100]` Braitenberg 3D Grid World
-1. `[300]` Continous 2D Braitenberg World
-1. `[500]` Continous 3D Braitenberg World
+1. `[80]` CPPN-NEAT Architecture Search
 
 ## Backend
 * `[700]` Parallel Programming
@@ -61,5 +53,17 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 ## Physics
 1. `[900]` [Geometric Algebra for Computer Science](https://www.amazon.com/Geometric-Algebra-Computer-Science-Revised/dp/0123749425) @ Gemmill Library
+
+## Frameworks & Environments
+#### YOU SHOULD AVOID BUILDING AN ENVIRONMENT IF A SIMILAR ONE IS FREELY AVAILABLE!
+1. `[5000]` Braitenberg 2D Grid World
+    * Agents situated at `<X,Y,D>` where `<X,Y>` is a cell address and `<D>` is a cardinal direction
+    * Components have no extent, but possibly oriented in a cardinal direction
+    * `[ ]` Add EFB
+    * `[ ]` Add Continuous Q-Learning
+1. `[6000]` Braitenberg 3D Grid World
+1. `[7000]` Continous 2D Braitenberg World
+1. `[8000]` Continous 3D Braitenberg World
+
 
 
