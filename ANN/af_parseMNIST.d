@@ -24,15 +24,17 @@ struct MNISTBuffer{
     }
 
     int fetch_next_int(){
-        // Fetch 4 bytes from a buffer and cast as an `int`
+        // Fetch 4 bytes from `buffer` and cast as an `int`
         int rtnVal = peek!(int, Endian.bigEndian)(buffer[marker..$]);
-        // int rtnVal = buffer.peek(int,Endian.bigEndian)(&marker);
         marker += 4;
         return rtnVal;
     }
 
-    ubyte fetch_next_byte(){
-        // FIXME: GET A SINGLE PIXEL VALUE
+    ubyte fetch_next_ubyte(){
+        // Fetch 1 byte from `buffer` and cast as a `ubyte`
+        ubyte rtnVal = peek!(ubyte, Endian.bigEndian)(buffer[marker..$]);
+        marker += 1;
+        return rtnVal;
     }
 
     int[] fetch_header(){
@@ -53,10 +55,34 @@ struct MNISTBuffer{
     }
 
     float[][] fetch_next_image(){
-        // FIXME, START HERE: CONVERT IMAGE TO FLOATS AND RETURN AS A NESTED ARRAY
-        // FIXME: PREVENT READING PAST THE END OF THE FILE
+        // Fetch one image worth of data as a float matrix and return it
+        float[][] image;
+        float[]   oneRow;
+        ubyte     pxlVal;
+        for( uint i = 0; i < rows; i++ ){
+            oneRow = [];
+            for( uint j = 0; j < cols; j++ ){
+                pxlVal = fetch_next_ubyte();
+                oneRow ~= cast(float) pxlVal / 255.0f;
+            }   
+            image ~= oneRow;
+        }
+        return image;
     }
-    
+
+    void print_mnist_digit( float[][] image ){
+        // Display the given MNIST digit to the terminal with very cheap greyscale
+        float pxlVal;
+        for( uint i = 0; i < rows; i++ ){
+            for( uint j = 0; j < cols; j++ ){
+                pxlVal = image[i][j];
+                if( pxlVal > 0.75f )  write( "#" );
+                else if( pxlVal > 0.50f )  write( "*" );
+                else  write( "." );
+            }   
+            writeln();
+        }
+    }
 }
 
 
