@@ -8,50 +8,53 @@ import std.bitmanip;
 
 struct MNISTBuffer{
     // Simplest container for MNIST data
-    ubyte[] buffer;
-    size_t  marker;
+    ubyte[] imgBuffer;
+    size_t  imgBuffDex;
+    ubyte[] lblBuffer;
+    size_t  lblBuffDex;
     uint    rows;
     uint    cols;
     
-    this( string fName ){
+    this( string imgFName, string lblFName ){
         // Init struct for returning images
-        buffer = cast(ubyte[]) read( fName );
-        marker = 0;
-        int[] header = fetch_header();
+        imgBuffer  = cast(ubyte[]) read( imgFName );
+        imgBuffDex = 0;
+        lblBuffer  = cast(ubyte[]) read( lblFName );
+        lblBuffDex = 0;
+        int[] header = fetch_header( imgBuffer, &imgBuffDex );
         rows = cast(uint) header[2];
         cols = cast(uint) header[3];
         seek_to_data();
     }
 
-    int fetch_next_int(){
+    int fetch_next_int( ubyte[] buffer, size_t* buffDex ){
         // Fetch 4 bytes from `buffer` and cast as an `int`
-        int rtnVal = peek!(int, Endian.bigEndian)(buffer[marker..$]);
-        marker += 4;
+        int rtnVal = buffer.peek!(int, Endian.bigEndian)(buffDex);
         return rtnVal;
     }
 
-    ubyte fetch_next_ubyte(){
+    ubyte fetch_next_ubyte( ubyte[] buffer, size_t* buffDex ){
         // Fetch 1 byte from `buffer` and cast as a `ubyte`
-        ubyte rtnVal = peek!(ubyte, Endian.bigEndian)(buffer[marker..$]);
-        marker += 1;
+        ubyte rtnVal = buffer.peek!(ubyte, Endian.bigEndian)(buffDex);
         return rtnVal;
     }
 
-    int[] fetch_header(){
+    int[] fetch_header( ubyte[] buffer, size_t* buffDex ){
         // Fetch the header info from the file and return as a vector
         int[] header;
-        size_t lastMrkr = marker;
-        marker = 0;
+        size_t lastMrkr = *buffDex;
+        *buffDex = 0;
         for( ubyte i = 0; i < 4; i++ ){
-            header ~= fetch_next_int();
+            header ~= fetch_next_int( buffer, buffDex );
         }
-        marker = lastMrkr;
+        *buffDex = lastMrkr;
         return header;
     }
 
     void seek_to_data(){
-        // Set the marker to the first index after the data
-        marker = 4*4;
+        // Set the imgBuffDex to the first index after the data
+        imgBuffDex = 4*4;
+        lblBuffDex = 4*2;
     }
 
     float[][] fetch_next_image(){
@@ -62,12 +65,17 @@ struct MNISTBuffer{
         for( uint i = 0; i < rows; i++ ){
             oneRow = [];
             for( uint j = 0; j < cols; j++ ){
-                pxlVal = fetch_next_ubyte();
+                pxlVal = fetch_next_ubyte( imgBuffer, &imgBuffDex );
                 oneRow ~= cast(float) pxlVal / 255.0f;
             }   
             image ~= oneRow;
         }
         return image;
+    }
+
+    ubyte fetch_next_label(){
+        // Fetch one label, should be called with the same cadence as `fetch_next_image`
+        return fetch_next_ubyte( lblBuffer, &lblBuffDex );
     }
 
     void print_mnist_digit( float[][] image ){
@@ -79,6 +87,7 @@ struct MNISTBuffer{
                 if( pxlVal > 0.75f )  write( "#" );
                 else if( pxlVal > 0.50f )  write( "*" );
                 else  write( "." );
+                write( " " );
             }   
             writeln();
         }
@@ -88,15 +97,12 @@ struct MNISTBuffer{
 
 
 void main(){
-    MNISTBuffer mb = MNISTBuffer( "../Data/MNIST/train-images.idx3-ubyte" );
+    MNISTBuffer mb = MNISTBuffer( 
+        "../Data/MNIST/train-images.idx3-ubyte",
+        "../Data/MNIST/train-labels.idx1-ubyte"
+    );
     // ubyte[] buffer = cast(ubyte[]) read( "../Data/MNIST/train-images.idx3-ubyte" );
-    writeln( mb.buffer.length );
-    writeln( mb.fetch_header() );
-    writeln( mb.marker );
-    mb.seek_to_data();
-    writeln( mb.marker );
-    writeln( mb.rows );
-    writeln( mb.cols );
-
-    
+    float[][] img = mb.fetch_next_image();
+    mb.print_mnist_digit( img );
+    writeln( mb.fetch_next_label() );
 }
