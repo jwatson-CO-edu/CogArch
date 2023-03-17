@@ -22,6 +22,9 @@ import std.stdio; // ---------- `writeln`
 import std.random; // --------- RNG
 import std.conv; // ----------- `to!string`
 import std.math.exponential; // `exp`
+import std.bitmanip; // ------- `peek`
+import std.file; // ----------- `read`
+
 
 /// Local Imports ///
 import utils; // - Memory allocation
@@ -120,7 +123,7 @@ struct BinaryPerceptronLayer{
 
 
     void random_weight_init(){
-        // Set all weights and biases to normally-distributed random numbers
+        // Set all weights and biases to uniformly-distributed random numbers
         for( uint i = 0; i < dO; i++ ){
             for( uint j = 0; j < dIp1; j++ ){
                 W[i][j] = uniform( 0.0f, 1.0f, rnd );
@@ -292,6 +295,9 @@ struct BinaryPerceptronLayer{
         // NOTE: This function assumes that the correct input has already been loaded
         // NOTE: This function assumes that forward inference has already been run
         // float[] y_Predict = predict_sigmoid();
+
+        writeln( "calc_grad: Input dim: " ~ (dIp1-1).to!string ~ ", Output dim: " ~ dO.to!string );
+
         float   dLoss_dAct;
         float   dAct_dOut;
         float   dOut_dWght;
@@ -369,10 +375,14 @@ struct MLP{
 
     void backpropagation( float[] y_Actual ){
         // Full backpropagation
+
+        writeln( "backpropagation" );
+
         size_t N = layers.length;
         layers[$-1].store_output_loss( y_Actual );
         // foreach_reverse( BinaryPerceptronLayer layer; layers[0..$-1] ){
         for( size_t i = N; i > 0; i-- ){
+            writeln( "Layer " ~ i.to!string );
             layers[i-1].calc_grad();
             layers[i-1].descend_grad();
             layers[i-1].store_previous_loss();
@@ -381,6 +391,13 @@ struct MLP{
                     layers[i-2].lossOut[j] = layers[i-1].lossInp[j];
                 }
             }
+        }
+    }
+
+    void random_weight_init(){
+        // Set all weights and biases to uniformly-distributed random numbers
+        foreach( BinaryPerceptronLayer layer; layers ){
+            layer.random_weight_init();
         }
     }
 
@@ -474,6 +491,18 @@ struct MNISTBuffer{
     }
 
 
+    float[] fetch_next_y(){
+        // Fetch one label as a vector, should be called with the same cadence as `fetch_next_image`
+        float[] rtnVec;
+        ubyte   label = fetch_next_label();
+        for( ubyte i = 0; i < 10; i++ ){
+            if( i == label )  rtnVec ~= 1.0f;
+            else /*-------*/  rtnVec ~= 0.0f;
+        }
+        return rtnVec;
+    }
+
+
     void print_mnist_digit( float[][] image ){
         // Display the given MNIST digit to the terminal with very cheap greyscale
         float pxlVal;
@@ -531,4 +560,16 @@ void main(){
     net.layers ~= BinaryPerceptronLayer( 784, 16, net.lr );  writeln( "Layer 1 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 16, net.lr );  writeln( "Layer 2 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 10, net.lr );  writeln( "Layer 3 created!" );
+    net.random_weight_init(); /*--------------------------*/ writeln( "Weights init!" );
+
+    MNISTBuffer trainDataBuffer = MNISTBuffer( 
+        "../Data/MNIST/train-images.idx3-ubyte",
+        "../Data/MNIST/train-labels.idx1-ubyte"
+    );  
+    writeln( "Loaded training data!" );
+
+    writeln( net.forward( trainDataBuffer.fetch_next_image() ) );
+    float[] actual = trainDataBuffer.fetch_next_y();
+    writeln( actual );
+    net.backpropagation( actual );
 }

@@ -3,8 +3,8 @@
 
 import std.stdio; // -------------- `writeln`
 import std.file; // -------------- `read`
-import std.conv;
-import std.bitmanip;
+import std.conv;  // -------------- `to!`
+import std.bitmanip; // -------------- `peek`
 
 struct MNISTBuffer{
     // Simplest container for MNIST data
