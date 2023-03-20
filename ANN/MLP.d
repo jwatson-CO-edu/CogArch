@@ -34,6 +34,12 @@ import mathkit; // (Slow!) Linalg
 /// Randomness ///
 Mt19937 rnd;
 
+
+/// Constants & Flags ///
+const bool _DEBUG = true;
+
+
+
 ////////// MATH FUNCTIONS //////////////////////////////////////////////////////////////////////////
 
 
@@ -77,7 +83,7 @@ float[][] gen_hyperplane_dataset( size_t M_samples, float lo, float hi, float[] 
     for( size_t i = 0; i < M_samples; i++ ){
         sample = sample_uniform_hypercube( Nm1, lo, hi );
         for( uint j = 0; j < Nm1; j++ ){
-            dataset[i][j] = sample[j]; // FIXME: CAN I ASSIGN SLICES?
+            dataset[i][j] = sample[j]; 
         }
         dataset[i][$-1] = test_hyperplane_point( planeEQ, sample );
     }
@@ -296,7 +302,8 @@ struct BinaryPerceptronLayer{
         // NOTE: This function assumes that forward inference has already been run
         // float[] y_Predict = predict_sigmoid();
 
-        writeln( "calc_grad: Input dim: " ~ (dIp1-1).to!string ~ ", Output dim: " ~ dO.to!string );
+        if( _DEBUG )
+            writeln( "calc_grad: Input dim: " ~ (dIp1-1).to!string ~ ", Output dim: " ~ dO.to!string );
 
         float   dLoss_dAct;
         float   dAct_dOut;
@@ -308,7 +315,7 @@ struct BinaryPerceptronLayer{
             dAct_dOut  = y[i]*(1.0-y[i]); // --- sigmoid(Out)*(1.0-sigmoid(Out))
             for( uint j = 0; j < dIp1; j++ ){
                 dOut_dWght = x[j];
-                grad[j][i] = dOut_dWght * dAct_dOut * dLoss_dAct;
+                grad[i][j] = dOut_dWght * dAct_dOut * dLoss_dAct;
             }
         }
     }
@@ -319,7 +326,7 @@ struct BinaryPerceptronLayer{
         for( uint j = 0; j < dIp1; j++ ){
             accum = 0.0f;
             for( uint i = 0; i < dO; i++ ){
-                accum += grad[j][i];
+                accum += grad[i][j];
             }
             lossInp[j] = accum;
         }
@@ -329,7 +336,7 @@ struct BinaryPerceptronLayer{
         // Apply one step of gradient descent according to the learning rate
         for( uint i = 0; i < dO; i++ ){
             for( uint j = 0; j < dIp1; j++ ){
-                W[j][i] -= lr * grad[j][i];
+                W[i][j] -= lr * grad[i][j];
             }
         }
     }
@@ -376,17 +383,23 @@ struct MLP{
     void backpropagation( float[] y_Actual ){
         // Full backpropagation
 
-        writeln( "backpropagation" );
+        if( _DEBUG )
+            writeln( "backpropagation" );
 
         size_t N = layers.length;
         layers[$-1].store_output_loss( y_Actual );
         // foreach_reverse( BinaryPerceptronLayer layer; layers[0..$-1] ){
         for( size_t i = N; i > 0; i-- ){
-            writeln( "Layer " ~ i.to!string );
+            if( _DEBUG )
+                writeln( "Layer " ~ i.to!string );
             layers[i-1].calc_grad();
             layers[i-1].descend_grad();
-            layers[i-1].store_previous_loss();
-            if( N > 1 ){
+            if( i > 1 ){
+                layers[i-1].store_previous_loss();
+                if( _DEBUG )
+                    writeln( "\tAbout to copy vec " ~ layers[i-1].lossInp.length.to!string ~
+                            " to vec " ~  layers[i-2].lossOut.length.to!string );
+
                 for( size_t j = 0; j < layers[i-2].lossOut.length; j++ ){
                     layers[i-2].lossOut[j] = layers[i-1].lossInp[j];
                 }
@@ -410,12 +423,13 @@ struct MNISTBuffer{
     // Simplest container for MNIST data
 
     // Members //
-    ubyte[] imgBuffer;
-    size_t  imgBuffDex;
-    ubyte[] lblBuffer;
-    size_t  lblBuffDex;
-    uint    rows;
-    uint    cols;
+    ubyte[] imgBuffer; //- Byte buffer of handwritten digit images
+    size_t  imgBuffDex; // Points to the next byte to read in the image buffer
+    ubyte[] lblBuffer; //- Byte buffer of image labels
+    size_t  lblBuffDex; // Points to the next byte to read in the label buffer
+    uint    rows; // ----- Height of each image in pixels
+    uint    cols; // ----- Width of each image in pixels
+    uint    N; // -------- Number of examples in this dataset
     
 
     this( string imgFName, string lblFName ){
@@ -427,10 +441,13 @@ struct MNISTBuffer{
         lblBuffDex = 0;
         // 2. Get image header and set image size params
         int[] header = fetch_header( imgBuffer, &imgBuffDex );
+        N    = cast(uint) header[1];
         rows = cast(uint) header[2];
         cols = cast(uint) header[3];
         // 3. Set buffer indices to the beginning of labeled data
         seek_to_data();
+        if( _DEBUG )
+            writeln( "There are " ~ N.to!string ~ " samples in this dataset!" );
     }
 
 
