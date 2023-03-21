@@ -36,7 +36,7 @@ Mt19937 rnd;
 
 
 /// Constants & Flags ///
-const bool _DEBUG = true;
+const bool _DEBUG = false;
 
 
 
@@ -253,15 +253,15 @@ struct BinaryPerceptronLayer{
 
     
 
-    float[] output_loss( float[] yTarget ){
-        // Compute derivative of squared loss
-        // NOTE: This function assumes that the client code has run `predict()`
-        float[] loss;
-        for( uint j = 0; j < dO; j++ ){
-            loss ~= y[j] - yTarget[j];
-        }
-        return loss;
-    }
+    // float[] output_loss( float[] yTarget ){
+    //     // Compute derivative of squared loss
+    //     // NOTE: This function assumes that the client code has run `predict()`
+    //     float[] loss;
+    //     for( uint j = 0; j < dO; j++ ){
+    //         loss ~= y[j] - yTarget[j];
+    //     }
+    //     return loss;
+    // }
 
 
     float[] forward_sigmoid(){
@@ -290,7 +290,7 @@ struct BinaryPerceptronLayer{
 
 
     void store_output_loss( float[] y_Actual ){
-        // float[] y_Predict = predict_sigmoid();
+        // Compute dLoss/dActivation for the OUTPUT layer ONLY
         for( uint i = 0; i < dO; i++ ){
             lossOut[i] = 2.0f*( y[i] - y_Actual[i] ); // 2*(predicted-desired)
         }
@@ -339,6 +339,15 @@ struct BinaryPerceptronLayer{
                 W[i][j] -= lr * grad[i][j];
             }
         }
+    }
+
+    float get_loss(){
+        // Get the Manhattan distance between predicted and actual
+        float rtnLoss = 0.0f;
+        for( uint i = 0; i < dO; i++ ){
+            rtnLoss += lossOut[i]; // 2*(predicted-desired)
+        }
+        return rtnLoss / 2.0f;
     }
 }
 
@@ -412,6 +421,50 @@ struct MLP{
         foreach( BinaryPerceptronLayer layer; layers ){
             layer.random_weight_init();
         }
+    }
+
+    float get_loss(){
+        // Get the Manhattan distance between predicted and actual
+        return layers[$-1].get_loss();
+    }
+
+    float train_one_MNIST_epoch( MNISTBuffer* dataSet ){
+        // Run simple backrop (non-batch) on every training example of an `MNISTBuffer`
+
+        // -1. Init vars and reset data buffers
+        float[][] img; // --------------- Current image
+        float[]   lbl; // --------------- Current label
+        float     avgLoss = 0.0f; // ---- Average loss for this epoch
+        uint /**/ N /*-*/ = dataSet.N; // Number of training examples       
+        uint /**/ div = N/100; // ------- Status print freq 
+        dataSet.seek_to_data();
+
+        // 0. For every example in the dataset
+        for( uint i = 0; i < N; i++ ){
+
+            // 1. Fetch next image and its label
+            img = dataSet.fetch_next_image();
+            lbl = dataSet.fetch_next_y();
+
+            // 2. Make prediction and store
+            forward( img );
+
+            // 3. One full backprop step
+            backpropagation( lbl );
+
+            // 4. Accum loss
+            avgLoss += get_loss();
+
+            // 5. Status
+            if( i%div == 0 ){
+                write(".");
+                stdout.flush();
+            }  
+        }
+        writeln();
+
+        // N. Return the average loss across all training example predictions
+        return avgLoss / cast(float) N;
     }
 
     
@@ -585,8 +638,12 @@ void main(){
     );  
     writeln( "Loaded training data!" );
 
-    writeln( net.forward( trainDataBuffer.fetch_next_image() ) );
-    float[] actual = trainDataBuffer.fetch_next_y();
-    writeln( actual );
-    net.backpropagation( actual );
+    // writeln( net.forward( trainDataBuffer.fetch_next_image() ) );
+    // float[] actual = trainDataBuffer.fetch_next_y();
+    // writeln( actual );
+    // net.backpropagation( actual );
+
+    float epochLoss = net.train_one_MNIST_epoch( &trainDataBuffer );
+    writeln( "Average loss for one epoch: " ~ epochLoss.to!string );
+
 }
