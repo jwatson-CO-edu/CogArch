@@ -268,8 +268,12 @@ struct BinaryPerceptronLayer{
         // Return a raw float prediction with sigmoid activation
         float[] product = matx_mult_dyn( W, x );
         float[] activation;
+        float   act_i;
+        y = [];
         foreach( float prod; product ){
-            activation ~= sigmoid( prod );
+            act_i /**/ =  sigmoid( prod );
+            activation ~= act_i;
+            y /*----*/ ~= act_i;
         }
         return activation;
     }
@@ -277,7 +281,8 @@ struct BinaryPerceptronLayer{
 
     void predict_sigmoid( bool roundBinary = true ){
         // Run forward inference and store the binary vector in the output
-        y = forward_sigmoid();
+        // y = forward_sigmoid();
+        forward_sigmoid();
         if( roundBinary ){
             for( uint j = 0; j < dO; j++ ){
                 if( y[j] >= 0.5f )  
@@ -626,7 +631,7 @@ void main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net = MLP( 0.00001 );
+    MLP net = MLP( 0.01 ); // 0.001 // 0.0001 // 0.00001
     net.layers ~= BinaryPerceptronLayer( 784, 16, net.lr );  writeln( "Layer 1 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 16, net.lr );  writeln( "Layer 2 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 10, net.lr );  writeln( "Layer 3 created!" );
@@ -643,7 +648,16 @@ void main(){
     // writeln( actual );
     // net.backpropagation( actual );
 
-    float epochLoss = net.train_one_MNIST_epoch( &trainDataBuffer );
-    writeln( "Average loss for one epoch: " ~ epochLoss.to!string );
+    float epochLoss = 0.0f;
+    uint  N_epoch   = 16;
+
+    writeln();
+    
+    for( uint i = 0; i < N_epoch; i++ ){
+        writeln( "##### Epoch " ~ (i+1).to!string ~ " #####" );
+        epochLoss = net.train_one_MNIST_epoch( &trainDataBuffer );
+        writeln( "Average loss for one epoch: " ~ epochLoss.to!string ~ "\n" );
+    }
+    
 
 }
