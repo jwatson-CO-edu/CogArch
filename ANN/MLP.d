@@ -279,18 +279,22 @@ struct BinaryPerceptronLayer{
     }
 
 
-    void predict_sigmoid( bool roundBinary = true ){
+    float[] predict_sigmoid( bool roundBinary = true ){
         // Run forward inference and store the binary vector in the output
-        // y = forward_sigmoid();
+        float[] yOut;
+        float   thresh = 0.85f;
         forward_sigmoid();
         if( roundBinary ){
             for( uint j = 0; j < dO; j++ ){
-                if( y[j] >= 0.5f )  
-                    y[j] = 1.0f;
+                if( y[j] >= thresh )  
+                    // y[j] = 1.0f;
+                    yOut ~= 1.0f;
                 else  
-                    y[j] = 0.0f;
+                    // y[j] = 0.0f;
+                    yOut ~= 0.0f;
             }
         }
+        return yOut;
     }
 
 
@@ -385,13 +389,14 @@ struct MLP{
     float[] forward( float[][] matx ){
         // Use the network to run inference on the input image, layer by layer
         Y_temp = flatten( matx );
+        // foreach( BinaryPerceptronLayer layer; layers[0..$-1] ){
         foreach( BinaryPerceptronLayer layer; layers[0..$-1] ){
             layer.load_input( Y_temp );
             Y_temp = layer.forward_sigmoid();
         }
-        layers[$-1].load_input( Y_temp );
-        layers[$-1].predict_sigmoid();
-        return layers[$-1].y;
+        // layers[$-1].load_input( Y_temp );
+        // layers[$-1].predict_sigmoid();
+        return layers[$-1].predict_sigmoid();
     }
 
     void backpropagation( float[] y_Actual ){
@@ -472,7 +477,53 @@ struct MLP{
         return avgLoss / cast(float) N;
     }
 
-    
+    float compare_answers( float[] pre, float[] act ){
+        // Return true only if `pre` and `act` are identical
+        if(pre == act)
+            return 1.0f;
+        else
+            return 0.0f;
+    }
+
+    float validate_on_MNIST( MNISTBuffer* dataSet ){
+        // Run inference on the validation set and return accuracy
+
+        // -1. Init vars and reset data buffers
+        float[][] img; // --------------- Current image
+        float[]   lbl; // --------------- Current label
+        float[]   ans; // --------------- Current inference result
+        float     acc = 0.0f; // -------- Accuracy for this dataset
+        uint /**/ N /*-*/ = dataSet.N; // Number of training examples       
+        uint /**/ div = N/100; // ------- Status print freq 
+        dataSet.seek_to_data();
+
+        writeln( "##### VALIDATE #####" );
+
+        // 0. For every example in the dataset
+        for( uint i = 0; i < N; i++ ){
+
+            // 1. Fetch next image and its label
+            img = dataSet.fetch_next_image();
+            lbl = dataSet.fetch_next_y();
+
+            // 2. Make prediction and store
+            ans = forward( img );
+
+            // 3. Accum correctness
+            acc += compare_answers( ans, lbl );
+
+            // 5. Status
+            if( i%div == 0 ){
+                write(".");
+                stdout.flush();
+            } 
+        }
+
+        writeln( "Validation Accuracy: " ~ acc.to!string ~ "\n" );
+
+        // N. Return accuracy
+        return acc;
+    }
 }
 
 ////////// MNIST DATA PARSING //////////////////////////////////////////////////////////////////////
@@ -631,7 +682,7 @@ void main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net = MLP( 0.01 ); // 0.001 // 0.0001 // 0.00001
+    MLP net = MLP( 0.00005 ); // 0.01 // 0.001 // 0.0001 // 0.00001
     net.layers ~= BinaryPerceptronLayer( 784, 16, net.lr );  writeln( "Layer 1 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 16, net.lr );  writeln( "Layer 2 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 10, net.lr );  writeln( "Layer 3 created!" );
@@ -640,6 +691,12 @@ void main(){
     MNISTBuffer trainDataBuffer = MNISTBuffer( 
         "../Data/MNIST/train-images.idx3-ubyte",
         "../Data/MNIST/train-labels.idx1-ubyte"
+    );  
+    writeln( "Loaded training data!" );
+
+    MNISTBuffer validDataBuffer = MNISTBuffer( 
+        "../Data/MNIST/t10k-images.idx3-ubyte",
+        "../Data/MNIST/t10k-labels.idx1-ubyte"
     );  
     writeln( "Loaded training data!" );
 
@@ -659,5 +716,5 @@ void main(){
         writeln( "Average loss for one epoch: " ~ epochLoss.to!string ~ "\n" );
     }
     
-
+    net.validate_on_MNIST( &validDataBuffer );
 }
