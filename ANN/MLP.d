@@ -282,17 +282,22 @@ struct BinaryPerceptronLayer{
     float[] predict_sigmoid( bool roundBinary = true ){
         // Run forward inference and store the binary vector in the output
         float[] yOut;
-        float   thresh = 0.85f;
+        float   maxVal = -1.0f;
+        uint    maxDex = 0;
         forward_sigmoid();
         if( roundBinary ){
             for( uint j = 0; j < dO; j++ ){
-                if( y[j] >= thresh )  
-                    // y[j] = 1.0f;
-                    yOut ~= 1.0f;
-                else  
-                    // y[j] = 0.0f;
-                    yOut ~= 0.0f;
+                if( y[j] > maxVal ){
+                    maxDex = j;
+                    maxVal = y[j];
+                }  
             }
+        }
+        for( uint j = 0; j < dO; j++ ){
+            if( j == maxDex )
+                yOut ~= 1.0f;
+            else
+                yOut ~= 0.0f;
         }
         return yOut;
     }
@@ -519,7 +524,9 @@ struct MLP{
             } 
         }
 
-        writeln( "Validation Accuracy: " ~ acc.to!string ~ "\n" );
+        acc /= cast(float) N;
+
+        writeln( "\nValidation Accuracy: " ~ acc.to!string ~ "\n" );
 
         // N. Return accuracy
         return acc;
@@ -682,7 +689,7 @@ void main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net = MLP( 0.00005 ); // 0.01 // 0.001 // 0.0001 // 0.00001
+    MLP net = MLP( 0.0001 ); // 0.01 // 0.001 // 0.0001 // 0.00005 // 0.00001
     net.layers ~= BinaryPerceptronLayer( 784, 16, net.lr );  writeln( "Layer 1 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 16, net.lr );  writeln( "Layer 2 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 10, net.lr );  writeln( "Layer 3 created!" );
@@ -706,7 +713,7 @@ void main(){
     // net.backpropagation( actual );
 
     float epochLoss = 0.0f;
-    uint  N_epoch   = 16;
+    uint  N_epoch   = 32; // 16
 
     writeln();
     

@@ -18,7 +18,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
    * https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
    * https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks
 1. `[20]` Self-Organizing Map (SOM)
-1. `[50]` Graph Convolutional Network (GATv2)
+1. `[50]` Graph Convolutional Network (GATv2, VectorFlow)
 1. `[60]` Graph Generation with GCPN: Graph Convolutional Policy Network ( You et al. 2018)  
     * https://jian-tang.com/files/AAAI19/aaai-grltutorial-part3-generation.pdf
 1. `[600]` Alternatives to Backpropagation
