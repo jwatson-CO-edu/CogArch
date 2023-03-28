@@ -1,5 +1,5 @@
 # CogArch
-Experiments in AI, ML, and Cognitive Architecture. Mostly in [D](https://dlang.org/).  
+Experiments in AI, ML, and Cognitive Architecture. Mostly in [D](https://dlang.org/) and C++.  
 For educational purposes. This is to satisfy my own curiousity and deepen my understanding.  
 The content herein is not guaranteed to be correct, functional, or readable. No warrantee offered or implied.  
 
@@ -10,7 +10,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 1. `[>]` Perceptrons
     * `[Y]` Perceptron Margin Update    
     * `[>]` Multi-Layer Perceptron + Backprop + MNIST Dataset
-1. `[10]` Bayesian Neural Network (BNN)
+1. `[10]` Bayesian Neural Network (BNN, C++)
    * https://arxiv.org/pdf/2007.06823.pdf
    * https://neptune.ai/blog/bayesian-neural-networks-with-jax
    * https://wjmaddox.github.io/assets/BNN_tutorial_CILVR.pdf
@@ -65,5 +65,6 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 1. `[7000]` Continous 2D Braitenberg World
 1. `[8000]` Continous 3D Braitenberg World
 
-
+## Notes
+* `[2023-03-28]` Switching to C++ after MLP to mentally prepare for job search.
 

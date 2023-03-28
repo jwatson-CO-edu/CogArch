@@ -22,6 +22,7 @@ import std.stdio; // ---------- `writeln`
 import std.random; // --------- RNG
 import std.conv; // ----------- `to!string`
 import std.math.exponential; // `exp`
+import std.math.algebraic; // - `abs`
 import std.bitmanip; // ------- `peek`
 import std.file; // ----------- `read`
 
@@ -359,7 +360,7 @@ struct BinaryPerceptronLayer{
         // Get the Manhattan distance between predicted and actual
         float rtnLoss = 0.0f;
         for( uint i = 0; i < dO; i++ ){
-            rtnLoss += lossOut[i]; // 2*(predicted-desired)
+            rtnLoss += abs( lossOut[i] ); // 2*(predicted-desired)
         }
         return rtnLoss / 2.0f;
     }
@@ -689,7 +690,8 @@ void main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net = MLP( 0.0001 ); // 0.01 // 0.001 // 0.0001 // 0.00005 // 0.00001
+    MLP net = MLP( 0.00005 ); 
+    // 0.01 // 0.001 // 0.0005 // 0.0002 // 0.0001 // 0.00005 // 0.00002 // 0.00001
     net.layers ~= BinaryPerceptronLayer( 784, 16, net.lr );  writeln( "Layer 1 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 16, net.lr );  writeln( "Layer 2 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 10, net.lr );  writeln( "Layer 3 created!" );
@@ -713,7 +715,7 @@ void main(){
     // net.backpropagation( actual );
 
     float epochLoss = 0.0f;
-    uint  N_epoch   = 32; // 16
+    uint  N_epoch   = 64; // 16
 
     writeln();
     
