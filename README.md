@@ -10,13 +10,23 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 1. `[>]` Perceptrons
     * `[Y]` Perceptron Margin Update    
     * `[>]` Multi-Layer Perceptron + Backprop + MNIST Dataset
-1. `[10]` Bayesian Neural Network (BNN, C++)
-   * https://arxiv.org/pdf/2007.06823.pdf
-   * https://neptune.ai/blog/bayesian-neural-networks-with-jax
-   * https://wjmaddox.github.io/assets/BNN_tutorial_CILVR.pdf
-   * https://towardsdatascience.com/making-your-neural-network-say-i-dont-know-bayesian-nns-using-pyro-and-pytorch-b1c24e6ab8cd
-   * https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
-   * https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks
+        - 2023-03-29, Issue: Validation accuracy stays at a very low, static value for any hyperparameter settings.  Troubleshooting steps below
+        - `[>]` TS Training
+            * `[Y]` Verify images change, 2023-03-29: Images change
+            * `[Y]` Verify labels change, 2023-03-29: Labels match images
+            * `[>]` Verify weights update at ALL layers
+        - `[ ]` TS Validation
+            * `[ ]` Verify images change
+            * `[ ]` Verify labels change
+            * `[ ]` Verify weights update at ALL layes
+
+1. `[>]` Bayesian Neural Network (BNN, C++)
+   * `[>]` https://arxiv.org/pdf/2007.06823.pdf
+   * `[ ]` https://neptune.ai/blog/bayesian-neural-networks-with-jax
+   * `[ ]` https://wjmaddox.github.io/assets/BNN_tutorial_CILVR.pdf
+   * `[ ]` https://towardsdatascience.com/making-your-neural-network-say-i-dont-know-bayesian-nns-using-pyro-and-pytorch-b1c24e6ab8cd
+   * `[ ]` https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
+   * `[ ]` https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks
 1. `[20]` Self-Organizing Map (SOM)
 1. `[50]` Graph Convolutional Network (GATv2, VectorFlow)
 1. `[60]` Graph Generation with GCPN: Graph Convolutional Policy Network ( You et al. 2018)  
@@ -66,5 +76,8 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 1. `[8000]` Continous 3D Braitenberg World
 
 ## Notes
-* `[2023-03-28]` Switching to C++ after MLP to mentally prepare for job search.
+* `[2023-03-28]` Switching to C++ after MLP to mentally prepare for job search. 80% of surveyed positions mention C++; None mention D.
 
+# Resources
+* [Top 14 C++ Machine Learning Libraries](https://anywhere.epam.com/business/c-plus-plus-ml-libraries)
+    - FANN?

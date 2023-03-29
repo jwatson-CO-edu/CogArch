@@ -95,6 +95,8 @@ float[][] gen_hyperplane_dataset( size_t M_samples, float lo, float hi, float[] 
 ////////// MULTI-LAYERED PERCEPTRON ////////////////////////////////////////////////////////////////
 
 
+////////// BinaryPerceptronLayer /////////////////
+
 struct BinaryPerceptronLayer{
     // Simplest Perception layer with a binary output vector
     uint /**/ dIp1; // -- Input  dimensions + 1 (bias)
@@ -335,6 +337,11 @@ struct BinaryPerceptronLayer{
         }
     }
 
+    float grad_norm(){
+        // Return the Frobenius norm of the gradient
+        return frobenius_norm( grad );
+    }
+
     void store_previous_loss(){
         // Calculate loss to be backpropagated to the previous layer
         float accum;
@@ -365,6 +372,11 @@ struct BinaryPerceptronLayer{
         return rtnLoss / 2.0f;
     }
 }
+
+
+
+////////// MLP ///////////////////////////////////
+bool PERF_TS = true; // Performance troubleshooting flag
 
 struct MLP{
     // Simplest Multi-Layer Perceptron Implementation, Very inefficient
@@ -432,6 +444,15 @@ struct MLP{
         }
     }
 
+    float[] grad_norms(){
+        // Return the Frobenius norm of the gradient of each layer, in order
+        float[] norms;
+        foreach( BinaryPerceptronLayer layer; layers ){
+            norms ~= layer.grad_norm();
+        }
+        return norms;
+    }
+
     void random_weight_init(){
         // Set all weights and biases to uniformly-distributed random numbers
         foreach( BinaryPerceptronLayer layer; layers ){
@@ -451,8 +472,14 @@ struct MLP{
         float[][] img; // --------------- Current image
         float[]   lbl; // --------------- Current label
         float     avgLoss = 0.0f; // ---- Average loss for this epoch
-        uint /**/ N /*-*/ = dataSet.N; // Number of training examples       
+        uint /**/ N; // ----------------- Number of training examples       
         uint /**/ div = N/100; // ------- Status print freq 
+
+        if( PERF_TS )
+            N = 10;
+        else
+            N = dataSet.N;
+
         dataSet.seek_to_data();
 
         // 0. For every example in the dataset
@@ -461,6 +488,13 @@ struct MLP{
             // 1. Fetch next image and its label
             img = dataSet.fetch_next_image();
             lbl = dataSet.fetch_next_y();
+
+            if( PERF_TS ){
+                writeln( "##### Training Example + Label #####" );
+                dataSet.print_mnist_digit( img );
+                writeln( lbl );
+                writeln();
+            }
 
             // 2. Make prediction and store
             forward( img );
@@ -472,7 +506,7 @@ struct MLP{
             avgLoss += get_loss();
 
             // 5. Status
-            if( i%div == 0 ){
+            if( (!PERF_TS) && (i%div == 0) ){
                 write(".");
                 stdout.flush();
             }  
@@ -715,7 +749,12 @@ void main(){
     // net.backpropagation( actual );
 
     float epochLoss = 0.0f;
-    uint  N_epoch   = 64; // 16
+    uint  N_epoch;   
+    
+    if( PERF_TS )
+        N_epoch = 1;
+    else
+        N_epoch = 64; // 32 // 16
 
     writeln();
     
