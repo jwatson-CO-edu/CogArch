@@ -37,7 +37,7 @@ Mt19937 rnd;
 
 
 /// Constants & Flags ///
-const bool _DEBUG = false;
+const bool _DEBUG = true;
 
 
 
@@ -308,9 +308,14 @@ struct BinaryPerceptronLayer{
 
     void store_output_loss( float[] y_Actual ){
         // Compute dLoss/dActivation for the OUTPUT layer ONLY
+
+        writeln( "Calc loss at last layer: " ~ y.to!string ~ " - " ~ y_Actual.to!string ~ " =" );
+
         for( uint i = 0; i < dO; i++ ){
             lossOut[i] = 2.0f*( y[i] - y_Actual[i] ); // 2*(predicted-desired)
         }
+
+        writeln( "Loss at last layer: " ~ lossOut.to!string );
     }
 
     void calc_grad(){
@@ -424,6 +429,7 @@ struct MLP{
             writeln( "backpropagation" );
 
         size_t N = layers.length;
+        size_t M;
         layers[$-1].store_output_loss( y_Actual );
         // foreach_reverse( BinaryPerceptronLayer layer; layers[0..$-1] ){
         for( size_t i = N; i > 0; i-- ){
@@ -431,14 +437,21 @@ struct MLP{
                 writeln( "Layer " ~ i.to!string );
             layers[i-1].calc_grad();
             layers[i-1].descend_grad();
+            layers[i-1].store_previous_loss();
             if( i > 1 ){
-                layers[i-1].store_previous_loss();
-                if( _DEBUG )
+                if( _DEBUG ){
                     writeln( "\tAbout to copy vec " ~ layers[i-1].lossInp.length.to!string ~
                             " to vec " ~  layers[i-2].lossOut.length.to!string );
+                    writeln( "Loss to copy: " ~ layers[i-1].lossInp.to!string );
+                }
+                // for( size_t j = 0; j < layers[i-2].lossOut.length; j++ ){
+                //     layers[i-2].lossOut[j] = layers[i-1].lossInp[j];
+                // }
+                M = layers[i-2].lossOut.length;
+                layers[i-2].lossOut[0..M] = layers[i-1].lossInp[0..M]; // We can copy arrays by slice
 
-                for( size_t j = 0; j < layers[i-2].lossOut.length; j++ ){
-                    layers[i-2].lossOut[j] = layers[i-1].lossInp[j];
+                if( _DEBUG ){
+                    writeln( "Copied loss: " ~ layers[i-2].lossOut.to!string );
                 }
             }
         }
@@ -493,7 +506,6 @@ struct MLP{
                 writeln( "##### Training Example + Label #####" );
                 dataSet.print_mnist_digit( img );
                 writeln( lbl );
-                writeln();
             }
 
             // 2. Make prediction and store
@@ -504,6 +516,11 @@ struct MLP{
 
             // 4. Accum loss
             avgLoss += get_loss();
+
+            if( PERF_TS ){
+                writeln( grad_norms() );
+                writeln();
+            }
 
             // 5. Status
             if( (!PERF_TS) && (i%div == 0) ){
