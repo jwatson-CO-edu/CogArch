@@ -324,8 +324,11 @@ struct BinaryPerceptronLayer{
         // NOTE: This function assumes that forward inference has already been run
         // float[] y_Predict = predict_sigmoid();
 
-        if( _DEBUG )
+        if( _DEBUG ){
             writeln( "calc_grad: Input dim: " ~ (dIp1-1).to!string ~ ", Output dim: " ~ dO.to!string );
+            writeln( "Input: " ~ x.to!string ~ ", Output: " ~ y.to!string );
+        }
+            
 
         float   dLoss_dAct;
         float   dAct_dOut;
@@ -413,9 +416,11 @@ struct MLP{
         // Use the network to run inference on the input image, layer by layer
         Y_temp = flatten( matx );
         // foreach( BinaryPerceptronLayer layer; layers[0..$-1] ){
-        foreach( BinaryPerceptronLayer layer; layers[0..$-1] ){
+        // foreach( BinaryPerceptronLayer layer; layers[0..$-1] ){
+        foreach( BinaryPerceptronLayer layer; layers ){
             layer.load_input( Y_temp );
             Y_temp = layer.forward_sigmoid();
+            // writeln( "Layer Forward: " ~ layer.y.to!string );
         }
         // layers[$-1].load_input( Y_temp );
         // layers[$-1].predict_sigmoid();
@@ -428,30 +433,37 @@ struct MLP{
         if( _DEBUG )
             writeln( "backpropagation" );
 
-        size_t N = layers.length;
-        size_t M;
+        long N = layers.length;
+        long M;
         layers[$-1].store_output_loss( y_Actual );
         // foreach_reverse( BinaryPerceptronLayer layer; layers[0..$-1] ){
-        for( size_t i = N; i > 0; i-- ){
+        for( long i = N-1; i > -1; i-- ){
             if( _DEBUG )
-                writeln( "Layer " ~ i.to!string );
-            layers[i-1].calc_grad();
-            layers[i-1].descend_grad();
-            layers[i-1].store_previous_loss();
-            if( i > 1 ){
+                writeln( "\n ########## Layer " ~ (i+1).to!string ~ " ##########" );
+            layers[i].calc_grad();
+
+            // if( _DEBUG )
+            //     writeln( "Gradient: " ~ layers[i-1].grad.to!string );
+
+            layers[i].descend_grad();
+            layers[i].store_previous_loss();
+
+            if( i > 0 ){
                 if( _DEBUG ){
-                    writeln( "\tAbout to copy vec " ~ layers[i-1].lossInp.length.to!string ~
-                            " to vec " ~  layers[i-2].lossOut.length.to!string );
-                    writeln( "Loss to copy: " ~ layers[i-1].lossInp.to!string );
+                    writeln( "Loss at input: " ~ layers[i].lossInp.to!string );
+                    writeln( "\tAbout to copy vec " ~ layers[i].lossInp.length.to!string ~
+                            " to vec " ~  layers[i-1].lossOut.length.to!string );
+                    writeln( "Loss to copy: " ~ layers[i].lossInp.to!string );
                 }
                 // for( size_t j = 0; j < layers[i-2].lossOut.length; j++ ){
                 //     layers[i-2].lossOut[j] = layers[i-1].lossInp[j];
                 // }
-                M = layers[i-2].lossOut.length;
-                layers[i-2].lossOut[0..M] = layers[i-1].lossInp[0..M]; // We can copy arrays by slice
+                M = layers[i-1].lossOut.length;
+                layers[i-1].lossOut[0..M] = layers[i].lossInp[0..M]; // We can copy arrays by slice
 
                 if( _DEBUG ){
-                    writeln( "Copied loss: " ~ layers[i-2].lossOut.to!string );
+                    writeln( "Copied loss: " ~ layers[i-1].lossOut.to!string );
+                    writeln();
                 }
             }
         }
