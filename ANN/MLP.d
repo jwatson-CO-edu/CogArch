@@ -37,8 +37,9 @@ Mt19937 rnd;
 
 
 /// Constants & Flags ///
-const bool _DEBUG = true;
-
+const bool _DEBUG  = false;
+const bool PERF_TS = false; // Performance troubleshooting flag
+const bool _FWD_TS = false; // Forward inference troubleshooting flag
 
 
 ////////// MATH FUNCTIONS //////////////////////////////////////////////////////////////////////////
@@ -164,9 +165,12 @@ struct BinaryPerceptronLayer{
     void load_input( float[] x_t ){
         // Load values into the input vector
         // NOTE: This struct does not require the client code to add the unity input bias
-        for( uint i = 0; i < (dIp1-1); i++ ){
-            x[i] = x_t[i];
-        }
+        // for( uint i = 0; i < (dIp1-1); i++ ){
+        //     x[i] = x_t[i];
+        // }
+        x[0..(dIp1-1)] = x_t[];
+        if( _FWD_TS )
+            writeln( "Loaded Input: " ~ x.to!string );
     }
 
 
@@ -254,47 +258,39 @@ struct BinaryPerceptronLayer{
     //         > Layer 2: Input  16 --to-> Output  16
     //         > Layer 3: Input  16 --to-> Output  10, Output class for each digit
 
-    
-
-    // float[] output_loss( float[] yTarget ){
-    //     // Compute derivative of squared loss
-    //     // NOTE: This function assumes that the client code has run `predict()`
-    //     float[] loss;
-    //     for( uint j = 0; j < dO; j++ ){
-    //         loss ~= y[j] - yTarget[j];
-    //     }
-    //     return loss;
-    // }
-
 
     float[] forward_sigmoid(){
         // Return a raw float prediction with sigmoid activation
         float[] product = matx_mult_dyn( W, x );
         float[] activation;
         float   act_i;
-        y = [];
+        size_t  i = 0;
+        if( _DEBUG )  writeln( "forward_sigmoid matx mult: " ~ product.to!string );
+        // y = [];
+        // y = null;
         foreach( float prod; product ){
             act_i /**/ =  sigmoid( prod );
             activation ~= act_i;
-            y /*----*/ ~= act_i;
+            y[i] /*-*/ =  act_i; // THIS WAS IT
+            i++;
         }
+        // writeln( "forward_sigmoid stored output: " ~ y.to!string );
+        if( _DEBUG )  writeln( "forward_sigmoid stored output: " ~ activation.to!string );
         return activation;
     }
 
 
-    float[] predict_sigmoid( bool roundBinary = true ){
+    float[] predict_sigmoid(){
         // Run forward inference and store the binary vector in the output
         float[] yOut;
         float   maxVal = -1.0f;
         uint    maxDex = 0;
-        forward_sigmoid();
-        if( roundBinary ){
-            for( uint j = 0; j < dO; j++ ){
-                if( y[j] > maxVal ){
-                    maxDex = j;
-                    maxVal = y[j];
-                }  
-            }
+        // forward_sigmoid();
+        for( uint j = 0; j < dO; j++ ){
+            if( y[j] > maxVal ){
+                maxDex = j;
+                maxVal = y[j];
+            }  
         }
         for( uint j = 0; j < dO; j++ ){
             if( j == maxDex )
@@ -309,13 +305,13 @@ struct BinaryPerceptronLayer{
     void store_output_loss( float[] y_Actual ){
         // Compute dLoss/dActivation for the OUTPUT layer ONLY
 
-        writeln( "Calc loss at last layer: " ~ y.to!string ~ " - " ~ y_Actual.to!string ~ " =" );
+        if( _DEBUG )  writeln( "Calc loss at last layer: " ~ y.to!string ~ " - " ~ y_Actual.to!string ~ " =" );
 
         for( uint i = 0; i < dO; i++ ){
             lossOut[i] = 2.0f*( y[i] - y_Actual[i] ); // 2*(predicted-desired)
         }
 
-        writeln( "Loss at last layer: " ~ lossOut.to!string );
+        if( _DEBUG )  writeln( "Loss at last layer: " ~ lossOut.to!string );
     }
 
     void calc_grad(){
@@ -384,7 +380,7 @@ struct BinaryPerceptronLayer{
 
 
 ////////// MLP ///////////////////////////////////
-bool PERF_TS = true; // Performance troubleshooting flag
+
 
 struct MLP{
     // Simplest Multi-Layer Perceptron Implementation, Very inefficient
@@ -393,7 +389,6 @@ struct MLP{
     float /*-------------*/ lr; // --- Learning rate
     BinaryPerceptronLayer[] layers; // Dense layers
     // float[] /*-----------*/ X_temp; // Input  to   the current layer
-    float[] /*-----------*/ Y_temp; // Output from the current layer
 
     this( float learnRate ){
         // Init learn rate and memory
@@ -414,13 +409,19 @@ struct MLP{
 
     float[] forward( float[][] matx ){
         // Use the network to run inference on the input image, layer by layer
-        Y_temp = flatten( matx );
-        // foreach( BinaryPerceptronLayer layer; layers[0..$-1] ){
-        // foreach( BinaryPerceptronLayer layer; layers[0..$-1] ){
+        float[] Y_temp = flatten( matx ); // Output from the current layer
+        // Y_temp = flatten( matx );
+        
+        if( _FWD_TS )  
+            writeln( Y_temp );
+
         foreach( BinaryPerceptronLayer layer; layers ){
             layer.load_input( Y_temp );
-            Y_temp = layer.forward_sigmoid();
-            // writeln( "Layer Forward: " ~ layer.y.to!string );
+            Y_temp = [];
+            Y_temp = layer.forward_sigmoid()[];
+            if( _FWD_TS )  
+                writeln( "Out:" ~ Y_temp.to!string );
+                // writeln( layer.y );
         }
         // layers[$-1].load_input( Y_temp );
         // layers[$-1].predict_sigmoid();
@@ -438,15 +439,14 @@ struct MLP{
         layers[$-1].store_output_loss( y_Actual );
         // foreach_reverse( BinaryPerceptronLayer layer; layers[0..$-1] ){
         for( long i = N-1; i > -1; i-- ){
-            if( _DEBUG )
-                writeln( "\n ########## Layer " ~ (i+1).to!string ~ " ##########" );
             layers[i].calc_grad();
-
-            // if( _DEBUG )
-            //     writeln( "Gradient: " ~ layers[i-1].grad.to!string );
-
             layers[i].descend_grad();
             layers[i].store_previous_loss();
+
+            if( _DEBUG ){
+                writeln( "\n ########## Layer " ~ (i+1).to!string ~ " ##########" );
+                writeln( "Gradient Norm: " ~ layers[i].grad_norm().to!string );
+            }
 
             if( i > 0 ){
                 if( _DEBUG ){
@@ -498,13 +498,16 @@ struct MLP{
         float[]   lbl; // --------------- Current label
         float     avgLoss = 0.0f; // ---- Average loss for this epoch
         uint /**/ N; // ----------------- Number of training examples       
-        uint /**/ div = N/100; // ------- Status print freq 
+        uint /**/ div; // ------- Status print freq 
 
-        if( PERF_TS )
-            N = 10;
-        else
+        if( PERF_TS || _FWD_TS ){
+            N =  3;
+        }else{
             N = dataSet.N;
+        }
 
+        div = N/100; // ------- Status print freq 
+        
         dataSet.seek_to_data();
 
         // 0. For every example in the dataset
@@ -514,17 +517,21 @@ struct MLP{
             img = dataSet.fetch_next_image();
             lbl = dataSet.fetch_next_y();
 
-            if( PERF_TS ){
+            if( PERF_TS || _FWD_TS ){
                 writeln( "##### Training Example + Label #####" );
                 dataSet.print_mnist_digit( img );
                 writeln( lbl );
             }
 
             // 2. Make prediction and store
-            forward( img );
+            forward( img );          
 
             // 3. One full backprop step
             backpropagation( lbl );
+
+            if( _FWD_TS ){
+                continue;
+            }  
 
             // 4. Accum loss
             avgLoss += get_loss();
@@ -580,6 +587,8 @@ struct MLP{
 
             // 3. Accum correctness
             acc += compare_answers( ans, lbl );
+
+            writeln( ans.to!string ~ " , " ~ lbl.to!string  );
 
             // 5. Status
             if( i%div == 0 ){
@@ -753,7 +762,7 @@ void main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net = MLP( 0.00005 ); 
+    MLP net = MLP( 0.0001 ); 
     // 0.01 // 0.001 // 0.0005 // 0.0002 // 0.0001 // 0.00005 // 0.00002 // 0.00001
     net.layers ~= BinaryPerceptronLayer( 784, 16, net.lr );  writeln( "Layer 1 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 16, net.lr );  writeln( "Layer 2 created!" );
@@ -780,10 +789,10 @@ void main(){
     float epochLoss = 0.0f;
     uint  N_epoch;   
     
-    if( PERF_TS )
-        N_epoch = 1;
+    if( _FWD_TS || PERF_TS )
+        N_epoch = 3;
     else
-        N_epoch = 64; // 32 // 16
+        N_epoch = 1; // 32 // 16
 
     writeln();
     
@@ -793,5 +802,6 @@ void main(){
         writeln( "Average loss for one epoch: " ~ epochLoss.to!string ~ "\n" );
     }
     
-    net.validate_on_MNIST( &validDataBuffer );
+    if( !_FWD_TS )
+        net.validate_on_MNIST( &validDataBuffer );
 }
