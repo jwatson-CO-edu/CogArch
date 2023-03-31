@@ -762,7 +762,7 @@ void main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net = MLP( 0.0001 ); 
+    MLP net = MLP( 0.00001 ); 
     // 0.01 // 0.001 // 0.0005 // 0.0002 // 0.0001 // 0.00005 // 0.00002 // 0.00001
     net.layers ~= BinaryPerceptronLayer( 784, 16, net.lr );  writeln( "Layer 1 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 16, net.lr );  writeln( "Layer 2 created!" );
@@ -792,7 +792,7 @@ void main(){
     if( _FWD_TS || PERF_TS )
         N_epoch = 3;
     else
-        N_epoch = 1; // 32 // 16
+        N_epoch = 64; // 32 // 16
 
     writeln();
     
