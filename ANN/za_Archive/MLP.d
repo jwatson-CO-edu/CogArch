@@ -40,6 +40,7 @@ Mt19937 rnd;
 const bool _DEBUG  = false;
 const bool PERF_TS = false; // Performance troubleshooting flag
 const bool _FWD_TS = false; // Forward inference troubleshooting flag
+const bool _VLD_TS = true; // Validation troubleshooting flag
 
 
 ////////// MATH FUNCTIONS //////////////////////////////////////////////////////////////////////////
@@ -514,8 +515,8 @@ struct MLP{
         for( uint i = 0; i < N; i++ ){
 
             // 1. Fetch next image and its label
-            img = dataSet.fetch_next_image();
-            lbl = dataSet.fetch_next_y();
+            img = dataSet.fetch_next_image()[];
+            lbl = dataSet.fetch_next_y()[];
 
             if( PERF_TS || _FWD_TS ){
                 writeln( "##### Training Example + Label #####" );
@@ -555,7 +556,12 @@ struct MLP{
 
     float compare_answers( float[] pre, float[] act ){
         // Return true only if `pre` and `act` are identical
-        if(pre == act)
+
+        if( _VLD_TS ){
+            writeln( "Compare: " ~ pre.to!string ~ " to " ~ act.to!string );
+        }
+
+        if(pre[] == act[])
             return 1.0f;
         else
             return 0.0f;
@@ -572,6 +578,9 @@ struct MLP{
         uint /**/ N /*-*/ = dataSet.N; // Number of training examples       
         uint /**/ div = N/100; // ------- Status print freq 
         dataSet.seek_to_data();
+        for( ubyte i = 0; i < 10; i++ ){
+            ans ~= 0.0f;
+        }
 
         writeln( "##### VALIDATE #####" );
 
@@ -583,12 +592,12 @@ struct MLP{
             lbl = dataSet.fetch_next_y();
 
             // 2. Make prediction and store
-            ans = forward( img );
+            ans[] = forward( img )[];
 
             // 3. Accum correctness
             acc += compare_answers( ans, lbl );
 
-            writeln( ans.to!string ~ " , " ~ lbl.to!string  );
+            // writeln( ans.to!string ~ " , " ~ lbl.to!string  );
 
             // 5. Status
             if( i%div == 0 ){
@@ -762,7 +771,7 @@ void main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net = MLP( 0.00001 ); 
+    MLP net = MLP( 0.001 ); 
     // 0.01 // 0.001 // 0.0005 // 0.0002 // 0.0001 // 0.00005 // 0.00002 // 0.00001
     net.layers ~= BinaryPerceptronLayer( 784, 16, net.lr );  writeln( "Layer 1 created!" );
     net.layers ~= BinaryPerceptronLayer(  16, 16, net.lr );  writeln( "Layer 2 created!" );
@@ -779,7 +788,7 @@ void main(){
         "../Data/MNIST/t10k-images.idx3-ubyte",
         "../Data/MNIST/t10k-labels.idx1-ubyte"
     );  
-    writeln( "Loaded training data!" );
+    writeln( "Loaded testing data!" );
 
     // writeln( net.forward( trainDataBuffer.fetch_next_image() ) );
     // float[] actual = trainDataBuffer.fetch_next_y();
@@ -789,7 +798,7 @@ void main(){
     float epochLoss = 0.0f;
     uint  N_epoch;   
     
-    if( _FWD_TS || PERF_TS )
+    if( _FWD_TS || PERF_TS || _VLD_TS )
         N_epoch = 3;
     else
         N_epoch = 64; // 32 // 16

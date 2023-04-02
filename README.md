@@ -1,5 +1,5 @@
 # CogArch
-Experiments in AI, ML, and Cognitive Architecture. Mostly in [D](https://dlang.org/) and C++.  
+Experiments in AI, ML, and Cognitive Architecture. Mostly in C++.  
 For educational purposes. This is to satisfy my own curiousity and deepen my understanding.  
 The content herein is not guaranteed to be correct, functional, or readable. No warrantee offered or implied.  
 
