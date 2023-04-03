@@ -6,19 +6,12 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 # `DEV PLAN`
 
 ## Artificial Neural Networks
-1. `[Y]` Restricted Boltzmann Machine
-1. `[>]` Perceptrons
-    * `[Y]` Perceptron Margin Update    
-    * `[>]` Multi-Layer Perceptron + Backprop + MNIST Dataset
-        - 2023-03-29, Issue: Validation accuracy stays at a very low, static value for any hyperparameter settings.  Troubleshooting steps below
-        - `[>]` TS Training
-            * `[Y]` Verify images change, 2023-03-29: Images change
-            * `[Y]` Verify labels change, 2023-03-29: Labels match images
-            * `[>]` Verify weights update at ALL layers
-        - `[ ]` TS Validation
-            * `[ ]` Verify images change
-            * `[ ]` Verify labels change
-            * `[ ]` Verify weights update at ALL layes
+1. `[>]` Restricted Boltzmann Machine, 2023-04: Re-write in C++ / Eigen3
+    * I have lost trust in my Dlang implementation
+    * Eigen does matx allocation and matx mult for me
+1. `[ ]` Perceptrons, 2023-04: Re-write in C++ / Eigen3
+    * `[ ]` Perceptron Margin Update    
+    * `[ ]` Multi-Layer Perceptron + Backprop + MNIST Dataset
 
 1. `[>]` Bayesian Neural Network (BNN, C++)
    * `[>]` https://arxiv.org/pdf/2007.06823.pdf

@@ -11,8 +11,7 @@ From:
 * Hinton, Geoffrey E. "A practical guide to training restricted Boltzmann machines." 
   Neural Networks: Tricks of the Trade: Second Edition (2012): 599-619.
 
-Compile & Run:
-rdmd RBM.d
+Compile Command: g++ RBM.cpp -I /usr/include/eigen3
 
 
 ///// Background /////
@@ -44,6 +43,7 @@ minimize this error.
 #include <stdlib.h> //- `srand`, `rand` 
 #include <time.h> // -- `time` 
 #include <algorithm> // `clamp`
+using std::clamp;
 
 /// Eigen3 ///
 #include <Eigen/Dense>
@@ -100,4 +100,30 @@ struct RBM{
         x = MatrixXd{ dI,  1 };
     }
 
+    void random_weight_init(){
+        // Set all weights and biases to normally-distributed random numbers
+        float mean = 0.5;
+        float var  = 0.5;
+        for( uint j = 0; j < dH; j++ ){
+            for( uint k = 0; k < dI; k++ ){
+                W(k,j) = clamp( Box_Muller_normal_sample( mean, var ), 0.0f, 1.0f ); 
+            }
+            b(j,0) = clamp( Box_Muller_normal_sample( mean, var ), 0.0f, 1.0f );
+        }
+        for( uint k = 0; k < dI; k++ ){
+            c(k,0) = clamp( Box_Muller_normal_sample( mean, var ), 0.0f, 1.0f );
+        }
+    }
+
+    // FIXME, START HERE: `set_input`
+
 };
+
+
+
+////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
+int main(){
+    RBM net = RBM( 5, 5, 0.5 );
+    net.random_weight_init();
+    return 0;
+}
