@@ -48,10 +48,12 @@ using std::clamp;
 using std::cout, std::endl;
 #include <vector>
 using std::vector;
+#include <set>
+using std::set;
 #include <string>
 using std::string;
 #include <fstream>
-using std::ifstream;
+using std::ifstream, std::ofstream;
 #include <sys/stat.h>
 #include <filesystem>
 #include <ctype.h> // `isspace`
@@ -347,24 +349,101 @@ vector<vector<T>> file_to_dyn_matx_ws( string fName ){
     return rtnMatx;
 }
 
+template<typename T>
+vector<T> set_members_as_vector( const set<T>& inSet ){
+    // Copy set members into a vector and return the vector
+    vector<T> rtnVec;
+    for( T item : inSet ){
+        rtnVec.push_back( item );
+    }
+    return rtnVec;
+}
+
+template<typename T>
+long get_index_of_key_in_vec( const vector<T>& vec, const T& key ){
+    // Return the index of the search key, or -1 if DNE
+    // Author: Erick Lumunge, https://iq.opengenus.org/find-element-in-vector-cpp-stl/
+    vector<T>::iterator it = find( vec.begin(), vec.end(), key );
+    if( it != vec.end() )
+        return (it - vec.begin());
+    else
+        return -1;
+}
 
 vector<vector<float>> movie_data_to_user_vectors( string fName, string headingFname = "" ){
     // This matrix will have the *users as the rows* and *the movies as the columns*.
     
     /// Vector Heading Init ///
-    bool headingsProvided = (headingFname.length() > 0);
-    ifstream headingFile;
+    bool     headingsProvided = (headingFname.length() > 0);
+    ifstream headingsIn;
+    ofstream headingsOut;
     if( !headingsProvided ){
-        headingFile = ifstream{ "columnHeadings.txt" };
+        headingsOut.open( "columnHeadings.txt" ); 
     }else{
-        headingFile = ifstream{ headingFname };
+        headingsIn = ifstream{ headingFname };
     }
 
     // Read movie data as plaintext integers
     vector<vector<long>> movieData = file_to_dyn_matx_ws<long>( fName );
+    set<long> /*------*/ userID;
+    set<long> /*------*/ moviID;
+    vector<long> /*---*/ userList;
+    vector<long> /*---*/ moviList;
+    vector<vector<long>> movieHeadings;
 
-    // FIXME, START HERE: https://cplusplus.com/reference/set/set/
-    
+    if( headingsProvided ){
+        for( vector<long> row : movieData ){  userID.insert( row[0] );  }
+        movieHeadings = file_to_dyn_matx_ws<long>( headingFname );
+        moviList /**/ = movieHeadings[0];
+    }else{
+        if( headingsOut ){
+            for( vector<long> row : movieData ){
+                userID.insert( row[0] );
+                moviID.insert( row[1] );
+            }
+            moviList = set_members_as_vector<long>( moviID );
+            for( long mID : moviList ){  headingsOut << mID << " ";  }
+            headingsOut.close();
+        }else  cout << "Could not open the default headings file!" << endl;
+    }
+    userList = set_members_as_vector<long>( userID );
+
+    ulong N_users = userList.size();
+    ulong N_movis = moviList.size();
+    cout << "There are " << N_users << " unique users."  << endl;
+    cout << "There are " << N_movis << " unique movies." << endl;
+
+    /// Create Training Vectors ///
+    vector<vector<float>> trainData;
+    vector<float> /*---*/ ratingRow;
+    long /*------------*/ founDex  = 0;
+    long /*------------*/ currMovi = 0;
+    long /*------------*/ rating   = 0;
+    for( long user : userList ){
+        ratingRow.clear();
+        for( ulong i = 0; i < N_movis; i++ ){  ratingRow.push_back( -1.0f );  }
+        for( vector<long> row : movieData ){
+            if( row[0] == user ){
+                currMovi = row[1];
+                founDex  = get_index_of_key_in_vec<long>( moviList, currMovi );
+                rating   = row[2];
+                if( founDex > -1 )  ratingRow[ founDex ] = (rating < 3 ? 0.0f : 1.0f);
+            }
+        }
+        trainData.push_back( ratingRow );
+    }
+    cout << "Created training data with " << trainData.size() << " rows and " << 
+             trainData[0].size() << " columns!" << endl;
+    return trainData;
+}
+
+float fraction_same_nonnegative( const vector<float>& An, const vector<float>& B ){
+    // `An` is a vector that might have negative values, calc the similarity between the two where `An` is non-negative
+    size_t N = An.size();
+    size_t L = 0;
+    size_t S = 0;
+
+    // FIXME, START HERE: Count similar
 }
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
