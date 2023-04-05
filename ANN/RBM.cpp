@@ -52,6 +52,11 @@ using std::vector;
 using std::string;
 #include <fstream>
 using std::ifstream;
+#include <sys/stat.h>
+#include <filesystem>
+#include <ctype.h> // `isspace`
+#include <sstream>
+using std::istringstream;
 
 /// Eigen3 ///
 #include <Eigen/Dense>
@@ -79,7 +84,7 @@ float Box_Muller_normal_sample( float mu = 0.0f, float sigma = 1.0f ){
 }
 
 ////////// RESTRICTED BOLTZMANN MACHINE ////////////////////////////////////////////////////////////
-struct RBM{
+struct RBM{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Simplest Restricted Boltzmann Machine 
 
     uint /**/ dI; // Input  dimensions
@@ -94,7 +99,6 @@ struct RBM{
 
     RBM( uint inputDim, uint hiddenDim, float learnRate ){
         // Allocate arrays and init all values to zero
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         // Set params
         dI = inputDim;
@@ -269,12 +273,80 @@ struct RBM{
 
 ////////// DATA PROCESSING /////////////////////////////////////////////////////////////////////////
 
+bool file_exists( const string& fName ){ 
+    // Return true if the file exists , otherwise return false
+    struct stat buf; 
+    if( stat( fName.c_str() , &buf ) != -1 ){ return true; } else { return false; }
+}
+
+vector<string> read_lines( string path ){ 
+    // Return all the lines of text file as a string vector
+    vector<string> rtnVec;
+    if( file_exists( path ) ){
+        ifstream fin( path ); // Open the list file for reading
+        string   line; // String to store each line
+        while ( std::getline( fin , line ) ){ // While we are able to fetch a line
+            rtnVec.push_back( line ); // Add the file to the list to read
+        }
+        fin.close();
+    } else { cout << "readlines: Could not open the file " << path << endl; }
+    return rtnVec;
+}
+
+vector<string> split_string_ws( string input ){
+    // Return a vector of strings found in `input` separated by whitespace
+    vector<string> rtnWords;
+    string /*---*/ currWord;
+    char /*-----*/ currChar;
+    size_t /*---*/ strLen = input.size();
+
+    input.push_back( ' ' ); // Separator hack
+    
+    for( size_t i = 0 ; i < strLen ; i++ ){
+        currChar = input[i];
+        if( isspace( currChar ) ){
+            if( currWord.length() > 0 )  rtnWords.push_back( currWord );
+            currWord = "";
+        }else{
+            currWord.push_back( currChar );
+        }
+    }
+    return rtnWords; 
+}
+
+template<typename T>
+T convert_to (const string &str){
+    // Convert a string to any basic type!
+    // Author: Mark Holmberg, https://gist.github.com/mark-d-holmberg/862733#file-sstreamconvert-h
+    istringstream ss(str);
+    T /*-------*/ num;
+    ss >> num;
+    return num;
+}
+
 template<typename T>
 vector<vector<T>> file_to_dyn_matx_ws( string fName ){
+    // Read file into a 2D vector, with each row on its own line and columns separated by whitespace
+    // WARNING: This function will return ragged rows if `fName` has them
 
-    // FIXME, START HERE: THE C++ EQUIVALENT TO `read_lines`
-
+    vector<T> /*---*/ row;
+    vector<vector<T>> rtnMatx;
+    vector<string>    tokens;
+    vector<string>    lines = read_lines( fName );
+    
+    // For each line, separate into tokens
+    for( string line : lines ){
+        tokens = split_string_ws( line );
+        row.clear();
+        // For each token, convert and append to the row
+        for( string token : tokens ){
+            row.push_back( convert_to<T>( token ) );
+        }
+        rtnMatx.push_back( row );
+    }
+    return rtnMatx;
 }
+
 
 vector<vector<float>> movie_data_to_user_vectors( string fName, string headingFname = "" ){
     // This matrix will have the *users as the rows* and *the movies as the columns*.
@@ -288,6 +360,10 @@ vector<vector<float>> movie_data_to_user_vectors( string fName, string headingFn
         headingFile = ifstream{ headingFname };
     }
 
+    // Read movie data as plaintext integers
+    vector<vector<long>> movieData = file_to_dyn_matx_ws<long>( fName );
+
+    // FIXME, START HERE: https://cplusplus.com/reference/set/set/
     
 }
 
