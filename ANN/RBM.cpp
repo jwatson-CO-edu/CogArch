@@ -44,6 +44,14 @@ minimize this error.
 #include <time.h> // -- `time` 
 #include <algorithm> // `clamp`
 using std::clamp;
+#include <iostream>
+using std::cout, std::endl;
+#include <vector>
+using std::vector;
+#include <string>
+using std::string;
+#include <fstream>
+using std::ifstream;
 
 /// Eigen3 ///
 #include <Eigen/Dense>
@@ -57,6 +65,8 @@ float randf(){
     // Return a pseudo-random number between 0.0 and 1.0
     return  1.0f * rand() / RAND_MAX;
 }
+
+void seed_rand(){  srand( time( NULL ) );  } // Provide a clock-based unpredictable seed to RNG
 
 float sigmoid( float x ){  return 1.0f / (1.0f + exp(-x));  }
 
@@ -115,15 +125,223 @@ struct RBM{
         }
     }
 
-    // FIXME, START HERE: `set_input`
+    void set_input( const vector<float>& inputVec ){
+        // Populate the input vector
+        for( uint k = 0; k < dI; k++ ){
+            x(k,0) = inputVec[k];
+        }
+    }
 
+    void load_visible(){
+        // Populate the visible units with the input vector
+        for( uint k = 0; k < dI; k++ ){
+            v(k,0) = x(k,0);
+        }
+    }
+
+    float energy(){
+        // Calc the (binary) energy function given the current network state
+        float netNRG = 0.0;
+        float inpNRG = 0.0;
+        float hidNRG = 0.0;
+
+        for( uint j = 0; j < dH; j++ ){
+            for( uint k = 0; k < dI; k++ ){
+                netNRG -= W(k,j) * h(j,0) * v(k,0);
+            }
+            hidNRG -= b(j,0) * h(j,0);
+        }
+
+        for( uint k = 0; k < dI; k++ ){
+            inpNRG -= c(k,0) * v(k,0);
+        }
+
+        return netNRG + inpNRG + hidNRG;
+    }
+
+    float p_hj_given_v( uint j ){
+        // Probability of the `j`th hidden neuron being active given the visible neuron activation
+        float p_j = b(j,0);
+        for( uint k = 0; k < dI; k++ ){
+            p_j += v(k,0) * W(k,j);
+        }
+        return sigmoid( p_j );
+    }
+
+    float p_hj_given_x( uint j ){
+        // Probability of the `j`th hidden neuron being active given the input vector
+        float p_j = b(j,0);
+        for( uint k = 0; k < dI; k++ ){
+            p_j += x(k,0) * W(k,j);
+        }
+        return sigmoid( p_j );
+    }
+
+    float p_vk_given_h( uint k ){
+        // Probability of the `j`th hidden neuron being active given the input vector
+        float p_k = c(k,0);
+        for( uint j = 0; j < dH; j++ ){    
+            p_k += W(k,j) * h(j,0);
+        }
+        return sigmoid( p_k );
+    }
+
+    float p_h_given_v(){
+        // Conditional probabolity of the current hidden values given the current input
+        float rtnProd = 1.0;
+        for( uint j = 0; j < dH; j++ ){
+            rtnProd *= p_hj_given_v(j);
+        }
+        return rtnProd;
+    }
+
+    float p_v_given_h(){
+        // Conditional probabolity of the current input given the current hidden values
+        float rtnProd = 1.0;
+        for( uint k = 0; k < dI; k++ ){
+            rtnProd *= p_vk_given_h(k);
+        }
+        return rtnProd;
+    }
+
+    void Gibbs_sample_visible(){
+        // Run Gibbs sampling on all visibile units
+        for( uint k = 0; k < dI; k++ ){
+            if( randf() <= p_vk_given_h(k) )
+                v(k,0) = 1.0;
+            else
+                v(k,0) = 0.0;
+        }
+    }
+
+    void Gibbs_sample_hidden(){
+        // Update the hidden neurons
+
+        /* Section 3.1: Assuming that the hidden units are binary and that you are using Contrastive Divergence, 
+        the hidden units should have stochastic binary states when they are being driven by a data-vector. 
+        The probability of turning on ahiddenunit,j, is computed by applying the logistic function */
+        for( uint j = 0; j < dH; j++ ){    
+            if( randf() <= p_hj_given_v(j) )
+                h(j,0) = 1.0;
+            else
+                h(j,0) = 0.0;
+        }
+    }
+
+    void generate_from_input( const vector<float>& inputVec ){
+        // Load the input into the visible units, then attempt to reconstruct it
+        set_input( inputVec );
+        load_visible();
+        Gibbs_sample_hidden();
+        Gibbs_sample_visible();
+    }
+
+    void Contrastive_Divergence_iter(){
+        // Run a single iteration of (Persistent) Contrastive Divergence
+        float p_hjv = 0.0;
+        float p_hjx = 0.0;
+
+
+        // 1. Generate a negative sample using n steps of Gibbs sampling
+        /* One iteration of alternating Gibbs sampling consists of updating all of the hidden units 
+        in parallel followed by updating all of the visible units in parallel. */
+        Gibbs_sample_hidden();
+        Gibbs_sample_visible();
+
+        // 2. Update parameters
+        for( uint j = 0; j < dH; j++ ){
+            p_hjv = p_hj_given_v(j);
+            p_hjx = p_hj_given_x(j);
+            for( uint k = 0; k < dI; k++ ){
+                if( x(k,0) >= 0.0 )
+                    W(k,j) += lr * (p_hjx*x(k,0) - p_hjv*v(k,0));
+            }
+            b(j,0) += lr * (p_hjx - p_hjv);
+        }
+
+        for( uint k = 0; k < dI; k++ ){
+            if( x(k,0) >= 0.0 )
+                c(k,0) += lr * (x(k,0) - v(k,0));
+        }
+    }
 };
 
 
+////////// DATA PROCESSING /////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+vector<vector<T>> file_to_dyn_matx_ws( string fName ){
+
+    // FIXME, START HERE: THE C++ EQUIVALENT TO `read_lines`
+
+}
+
+vector<vector<float>> movie_data_to_user_vectors( string fName, string headingFname = "" ){
+    // This matrix will have the *users as the rows* and *the movies as the columns*.
+    
+    /// Vector Heading Init ///
+    bool headingsProvided = (headingFname.length() > 0);
+    ifstream headingFile;
+    if( !headingsProvided ){
+        headingFile = ifstream{ "columnHeadings.txt" };
+    }else{
+        headingFile = ifstream{ headingFname };
+    }
+
+    
+}
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
+
+/* ///// Problem /////
+
+Let us assume that some people were asked to rate a set of movies on a scale of 1–5 and each movie 
+could be explained in terms of a set of latent factors such as drama, fantasy, action and many more.
+Given the inputs, the RMB then tries to discover latent factors in the data that can explain the 
+movie choices and each hidden neuron represents one of the latent factors.
+
+After the training phase, the goal is to predict a binary rating for the movies that had not been seen yet. 
+Given the *training data of a specific user*, 
+the network is able to identify the latent factors based on the user’s preference and sample from 
+Bernoulli distribution can be used to find out which of the visible neurons now become active.
+
+1. Train the network on the data of all users
+2. During inference-time, take the training data of a specific user
+3. Use this data to obtain the activations of hidden neurons
+4. Use the hidden neuron values to get the activations of input neurons
+5. The new values of input neurons show the rating the user would give yet unseen movies
+
+In order to build the RBM, we need a matrix with the users’ ratings. 
+This matrix will have the 
+*users as the rows* 
+and 
+*the movies as the columns*.
+
+We use -1 to represent movies that a user never rated. We then convert the ratings that were 
+*rated 1 and 2 to 0*
+and movies that were rated 
+*3, 4 and, 5 to 1*. 
+We do this for both the test set and the training set.
+
+
+///// Architecture /////
+We initialize the weight and bias. 
+We do this randomly *using a normal distribution*.
+Now we set the 
+*number of visible nodes to the length of the input vector* 
+and 
+*the number of hidden nodes to 100*.
+
+*There are 10 epochs*
+*/
+
 int main(){
+    seed_rand();
+
     RBM net = RBM( 5, 5, 0.5 );
     net.random_weight_init();
+    // cout << net.W << endl << endl; // 2023-04-04: Appropriately random!
+    // cout << net.b << endl << endl;
+    // cout << net.c << endl << endl;
     return 0;
 }
