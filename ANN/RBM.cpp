@@ -553,7 +553,7 @@ int main(){
     }
 
     fracCorrect /= (float) testData.size();
-    cout << endl << fracCorrect << endl; // 0.81174, YAY
+    cout << endl << fracCorrect << endl; // 0.819597, YAY
 
     return 0;
 }
