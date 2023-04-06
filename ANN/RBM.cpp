@@ -11,7 +11,8 @@ From:
 * Hinton, Geoffrey E. "A practical guide to training restricted Boltzmann machines." 
   Neural Networks: Tricks of the Trade: Second Edition (2012): 599-619.
 
-Compile Command: g++ RBM.cpp -I /usr/include/eigen3
+Compile Command: 
+g++ RBM.cpp -std=gnu++17 -I /usr/include/eigen3
 
 
 ///// Background /////
@@ -45,7 +46,7 @@ minimize this error.
 #include <algorithm> // `clamp`
 using std::clamp;
 #include <iostream>
-using std::cout, std::endl;
+using std::cout, std::endl, std::flush;
 #include <vector>
 using std::vector;
 #include <set>
@@ -133,9 +134,21 @@ struct RBM{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     void set_input( const vector<float>& inputVec ){
         // Populate the input vector
-        for( uint k = 0; k < dI; k++ ){
-            x(k,0) = inputVec[k];
-        }
+        for( uint k = 0; k < dI; k++ ){  x(k,0) = inputVec[k];  }
+    }
+
+    vector<float> x_as_vec(){
+        // Return `x` as a dynamic array
+        vector<float> rtnX;
+        for( uint k = 0; k < dI; k++ ){  rtnX.push_back( x(k,0) );  }
+        return rtnX;
+    }
+
+    vector<float> v_as_vec(){
+        // Return `v` as a dynamic array
+        vector<float> rtnV;
+        for( uint k = 0; k < dI; k++ ){  rtnV.push_back( v(k,0) );  }
+        return rtnV;
     }
 
     void load_visible(){
@@ -363,7 +376,8 @@ template<typename T>
 long get_index_of_key_in_vec( const vector<T>& vec, const T& key ){
     // Return the index of the search key, or -1 if DNE
     // Author: Erick Lumunge, https://iq.opengenus.org/find-element-in-vector-cpp-stl/
-    vector<T>::iterator it = find( vec.begin(), vec.end(), key );
+    typename vector<T>::const_iterator it;
+    it = find( vec.begin(), vec.end(), key );
     if( it != vec.end() )
         return (it - vec.begin());
     else
@@ -442,8 +456,15 @@ float fraction_same_nonnegative( const vector<float>& An, const vector<float>& B
     size_t N = An.size();
     size_t L = 0;
     size_t S = 0;
-
-    // FIXME, START HERE: Count similar
+    if( N != B.size() ){  return -1.0f;  }else{
+        for( size_t i = 0; i < N; i++ ){
+            if( An[i] >= 0.0f ){
+                L++;
+                if( An[i] == B[i] )  S++;
+            }
+        }
+        return ((float) S) / ((float) L);
+    }
 }
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
@@ -493,10 +514,46 @@ and
 int main(){
     seed_rand();
 
-    RBM net = RBM( 5, 5, 0.5 );
-    net.random_weight_init();
+    // RBM net = RBM( 5, 5, 0.5 );
+    // net.random_weight_init();
     // cout << net.W << endl << endl; // 2023-04-04: Appropriately random!
     // cout << net.b << endl << endl;
     // cout << net.c << endl << endl;
+
+    vector<vector<float>> trainData = movie_data_to_user_vectors( "../Data/ml-100k/u1.base" );
+    vector<vector<float>> testData  = movie_data_to_user_vectors( "../Data/ml-100k/u1.test", "columnHeadings.txt" );
+
+    /// Create RBM ///
+    RBM  net     = RBM( trainData[0].size(), 100, 0.025 );
+    uint N_epoch = 10;
+    uint div     = trainData.size() / 100;
+    net.random_weight_init();
+
+    /// Train ///
+    cout << "##### Training #####" << endl;
+    for( uint i = 0; i < N_epoch; i++ ){
+        cout << "## Epoch " << i+1 << " ##" << endl;
+        for( ulong j = 0; j < trainData.size(); j++ ){
+            net.set_input( trainData[j] );
+            net.Contrastive_Divergence_iter();
+            if( j%div == 0 ){  cout << "." << flush;  }
+        }
+        cout << endl << "Network Energy: " << net.energy() << endl;
+    }
+
+    /// Test ///
+    float fracCorrect = 0.0f;
+    div = testData.size() / 100;
+
+    cout << "##### Validation #####" << endl;
+    for( ulong j = 0; j < testData.size(); j++ ){
+        net.generate_from_input( testData[j] );
+        fracCorrect += fraction_same_nonnegative( net.x_as_vec(), net.v_as_vec() ); // Only count accuracy for rated movies
+        if( j%div == 0 ){  cout << "." << flush;  }
+    }
+
+    fracCorrect /= (float) testData.size();
+    cout << endl << fracCorrect << endl; // 0.81174, YAY
+
     return 0;
 }

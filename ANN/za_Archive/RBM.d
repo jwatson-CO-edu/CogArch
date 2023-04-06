@@ -396,7 +396,7 @@ float[][] movie_data_to_user_vectors( string fName, string headingFname = "" ){
         }
         trainData ~= ratingRow;
     }
-    writeln( "Created training data with " ~ trainData.length.to!string ~ " rows and " ~ 
+    writeln( "Created dataset with " ~ trainData.length.to!string ~ " rows and " ~ 
              trainData[0].length.to!string ~ " columns!"  );
 
     return trainData;
