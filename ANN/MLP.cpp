@@ -1,3 +1,14 @@
+/*
+MLP.cpp
+James Watson, 2023-04
+Simplest demo of a scratch-built multi-layer perceptron (MLP)
+g++ MLP.cpp -std=gnu++17 -I /usr/include/eigen3
+*/
+
+/* ///// DEV PLAN /////
+[ ] Binary Perceptron @ plane
+[ ] Binary MLP w/ Backprop @ MNIST
+*/
 
 ////////// INIT ////////////////////////////////////////////////////////////////////////////////////
 
@@ -68,3 +79,86 @@ vector<float> sample_uniform_hypercube( size_t dim, float lo, float hi ){
     for( size_t i = 0; i < dim; i++ ){  rtnArr.push_back( lo + span*randf() );  }
     return rtnArr;
 }
+
+float test_hyperplane_point( const vector<float>& planeEQ, const vector<float>& pnt ){
+    // Ground Truth: Return 1.0 if `pnt` is above the plane, otherwise 0.0
+    long  N_dim = (long) pnt.size()-1;
+    float res   = 0.0;
+    for( long i = 0; i < N_dim; i++ ){
+        res += pnt[i] * planeEQ[i];
+    }
+    if( res >= planeEQ.back() )
+        return 1.0f;
+    else
+        return 0.0f;
+}
+
+vector<vector<float>> gen_hyperplane_dataset( size_t M_samples, float lo, float hi, const vector<float>& planeEQ ){
+    // Generate a labeled dataset 
+    size_t /*----------*/ N_dim = planeEQ.size();
+    size_t /*----------*/ Nm1   = N_dim-1;
+    vector<vector<float>> dataset;
+    vector<float> /*---*/ sample;
+    for( size_t i = 0; i < M_samples; i++ ){
+        sample = sample_uniform_hypercube( Nm1, lo, hi );
+        sample.back() = test_hyperplane_point( planeEQ, sample );
+        dataset.push_back( sample );
+    }
+    return dataset;
+}
+
+////////// MULTI-LAYERED PERCEPTRON ////////////////////////////////////////////////////////////////
+
+
+////////// BinaryPerceptronLayer /////////////////
+
+
+struct BinaryPerceptronLayer{
+    // Simplest Perception layer with a binary output vector
+
+    uint     dIp1; // -- Input  dimensions + 1 (bias)
+    uint     dO; // ---- Output dimensions
+    MatrixXd x; // ----- Input  values
+    MatrixXd lossInp; // Loss to the previous layer
+    MatrixXd y; // ----- Output values
+    MatrixXd lossOut; // Loss from the following layer
+    MatrixXd W; // ----- Weight matrix
+    MatrixXd grad; // -- Per-output gradients
+    float    lr; // ---- Learning rate
+
+    BinaryPerceptronLayer( uint inputDim, uint outputDim, float learnRate ){
+        // Allocate arrays and init all weights randomly
+
+        // Set params
+        dIp1 = inputDim + 1; // Input  dimensions plus 1 for bias
+        dO   = outputDim; // -- Output dimensions
+        lr   = learnRate; // -- Learning rate
+
+        // Init I/O
+        x /*-*/ = MatrixXd{ dIp1, 1  };
+        lossInp = MatrixXd{ dIp1, 1  };
+        y /*-*/ = MatrixXd{ 1   , dO };
+        lossOut = MatrixXd{ 1   , dO };
+
+        // Init weights && Gradient
+        W /*-*/ = MatrixXd{ dIp1, dO };
+        grad    = MatrixXd{ dIp1, dO };
+
+        // Bias is unity input at last index
+        x( dIp1-1, 0 ) = 1.0f;
+    }
+
+    void random_weight_init(){
+        // Set all weights and biases to uniformly-distributed random numbers
+        for( uint i = 0; i < dIp1; i++ ){
+            for( uint j = 0; j < dO; j++ ){
+                W(i,j) = randf();
+            }
+        }
+    }
+
+    ///// Margin Update //////////////////////////
+
+    // FIXME, START HERE: ADD MARGIN UPDATE FUNCTIONS
+
+};
