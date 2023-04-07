@@ -132,11 +132,10 @@ vector<float> col_vector_to_cpp_vector( const MatrixXd& colVec ){
     return rtnVec;
 }
 
-vector<float> row_vector_to_cpp_vector( const MatrixXd& rowVec ){
-    // Copy Eigen row vector to flat C++ vector
-    size_t /*--*/ Ncols = rowVec.cols();
-    vector<float> rtnVec;
-    for( size_t i = 0; i < Ncols; i++ ){  rtnVec.push_back( rowVec(0,1) );  }
+MatrixXd cpp_vector_to_col_vector( const vector<float>& cppVec ){
+    ulong    N_elem = cppVec.size();
+    MatrixXd rtnVec = MatrixXd{ N_elem, 1 };
+    for( ulong i = 0; i < N_elem; i++ ){  rtnVec(i,0) = cppVec[i];  }
     return rtnVec;
 }
 
@@ -273,7 +272,203 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return ((float) N_crct) / ((float) N_smpl);
     }
 
-    // FIXME, START HERE: ADD BACKPROP
+    ///// Backpropagation ////////////////////////
+    
+    // * Overview: https://www.youtube.com/watch?v=Ilg3gGewQ5U
+    // * Math: ___ https://www.youtube.com/watch?v=tIeHLnjs5U8
+    
+    //     - The nudge that we give a weight should be proportional to how far the result was from the target
+    //         > Bump up   weights feeding an activation that should be higher
+    //         > Bump down weights feeding an activation that should be lower
+
+    //     - Cost = Squared Error = (desired - predicted)^2
+    /*
+
+    /// Chain Rule Per Layer Per Training Example ///
+    The chain rule describes how sensitive the activation is to the loss
+    https://www.youtube.com/watch?v=tIeHLnjs5U8
+    
+    
+    dCost      dOutput     dActivation                         dCost
+    -------- = -------  *  -----------                      *  -----------
+    dWeights   dWeights    dOutput                             dActivation
+
+    dCost                              
+    -------- = (Input)  *  sigmoid(Out)*(1.0-sigmoid(Out))  *  2*(predicted-desired)
+    dWeights   
+
+    dCost                              
+    -------- = (1.0)    *  sigmoid(Out)*(1.0-sigmoid(Out))  *  2*(predicted-desired)
+    dBias 
+
+    */
+    
+    //     - 3Blue1Brown Architecture
+    //         > Layer 0: Flatten 2D image to 1D vector of 784 elements
+    //         > Layer 1: Input 784 --to-> Output  16
+    //         > Layer 2: Input  16 --to-> Output  16
+    //         > Layer 3: Input  16 --to-> Output  10, Output class for each digit
+
+    MatrixXd forward_sigmoid(){
+        // Return a raw float prediction with sigmoid activation
+        y = forward();
+        MatrixXd activation = MatrixXd{ dO, 1 };
+        for( uint i = 0; i < dO; i++ ){
+            y(i,0) /*----*/ = sigmoid( y(i,0) ); 
+            activation(i,0) = y(i,0); 
+        }
+        return activation;
+    }
+
+    vector<float> get_prediction(){
+        // Return a vector with the highest weight label as the answer
+        vector<float> yOut;
+        float /*---*/ maxVal = -1.0f;
+        uint /*----*/ maxDex = 0;
+        for( uint j = 0; j < dO; j++ ){
+            if( y(j,0) > maxVal ){
+                maxDex = j;
+                maxVal = (j,0);
+            }  
+        }
+        for( uint j = 0; j < dO; j++ ){
+            if( j == maxDex )
+                yOut.push_back( 1.0f );
+            else
+                yOut.push_back( 0.0f );
+        }
+        return yOut;
+    }
+
+    void store_output_loss( const vector<float>& y_Actual ){
+        // Compute dLoss/dActivation for the OUTPUT layer ONLY
+        for( uint i = 0; i < dO; i++ ){
+            lossOut(i,0) = 2.0f*( y(i,0) - y_Actual[i] ); // 2*(predicted-desired)
+        }
+    }
+
+    void calc_grad(){
+        // Calculate the error gradient for the last prediction, given the `y_Actual` labels
+        // NOTE: This function assumes that the correct input has already been loaded
+        // NOTE: This function assumes that forward inference has already been run
+        // float[] y_Predict = predict_sigmoid();
+        float dLoss_dAct;
+        float dAct_dOut;
+        float dOut_dWght;
+        // predict_sigmoid( false ); // This already should have been called
+        for( uint i = 0; i < dO; i++ ){
+            // dLoss_dAct = 2.0f*( y_Predict[i] - y_Actual[i] ); // 2*(predicted-desired)
+            dLoss_dAct = lossOut(i,0); // 2*(predicted-desired)
+            dAct_dOut  = y(i,0)*(1.0-y(i,0)); // --- sigmoid(Out)*(1.0-sigmoid(Out))
+            for( uint j = 0; j < dIp1; j++ ){
+                dOut_dWght = x[j];
+                grad(i,j) = dOut_dWght * dAct_dOut * dLoss_dAct;
+            }
+        }
+    }
+
+    float grad_norm(){
+        // Return the Frobenius norm of the gradient
+        return grad.norm();
+    }
+
+    void store_previous_loss(){
+        // Calculate loss to be backpropagated to the previous layer
+        float accum;
+        for( uint j = 0; j < dIp1; j++ ){
+            accum = 0.0f;
+            for( uint i = 0; i < dO; i++ ){
+                accum += grad(i,j);
+            }
+            lossInp(j,0) = accum;
+        }
+    }
+
+    void descend_grad(){
+        // Apply one step of gradient descent according to the learning rate
+        for( uint i = 0; i < dO; i++ ){
+            for( uint j = 0; j < dIp1; j++ ){
+                W(i,j) -= lr * grad(i,j);
+            }
+        }
+    }
+
+    float get_loss(){
+        // Get the Manhattan distance between predicted and actual
+        float rtnLoss = 0.0f;
+        for( uint i = 0; i < dO; i++ ){
+            rtnLoss += abs( lossOut(i,0) ); // 2*(predicted-desired)
+        }
+        return rtnLoss / 2.0f;
+    }
+
+};
+
+////////// MLP ///////////////////////////////////
+
+
+struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    // Simplest Multi-Layer Perceptron Implementation, Very inefficient
+    // WARNING: NO DIMS CHECKED!
+
+    float /*--------------------*/ lr; // --- Learning rate
+    vector<BinaryPerceptronLayer*> layers; // Dense layers
+
+    MLP( float learnRate ){
+        // Init learn rate
+        lr = learnRate;
+    }
+
+    vector<float> flatten( const vector<vector<float>>& matx ){
+        // Unpack the matrix into a vector by rows
+        vector<float> rtnArr;
+        for( vector<float> row : matx ){
+            for( float elem : row ){
+                rtnArr.push_back( elem );
+            }
+        }
+        return rtnArr;
+    }
+
+    vector<float> forward( const vector<vector<float>>& matx ){
+        // Use the network to run inference on the input image, layer by layer
+        for( ulong i = 0; i < layers.size(); i++ ){
+            if( i == 0 ){
+                layers[i]->load_input( flatten( matx ) );
+            }else{
+                layers[i]->x = layers[i-1]->y;
+            }
+            layers[i]->forward_sigmoid();
+        }
+        return layers.back()->get_prediction();
+    }
+
+    void backpropagation( vector<float> y_Actual ){
+        // Full backpropagation
+
+        long N = layers.size();
+        long M;
+        layers.back()->store_output_loss( y_Actual );
+        // foreach_reverse( BinaryPerceptronLayer layer; layers[0..$-1] ){
+        for( long i = N-1; i > -1; i-- ){
+            layers[i]->calc_grad();
+            layers[i]->descend_grad();
+            layers[i]->store_previous_loss();
+
+            if( i > 0 ){
+                M = layers[i-1]->dO;
+
+                // FIXME, START HERE: COMPLETE TRANSLATION
+
+                layers[i-1].lossOut[0..M] = layers[i].lossInp[0..M]; // We can copy arrays by slice
+
+                if( _DEBUG ){
+                    writeln( "Copied loss: " ~ layers[i-1].lossOut.to!string );
+                    writeln();
+                }
+            }
+        }
+    }
 
 };
 
