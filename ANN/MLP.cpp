@@ -141,8 +141,8 @@ struct BinaryPerceptronLayer{
         lossOut = MatrixXd{ 1   , dO };
 
         // Init weights && Gradient
-        W /*-*/ = MatrixXd{ dIp1, dO };
-        grad    = MatrixXd{ dIp1, dO };
+        W    = MatrixXd{ dIp1, dO };
+        grad = MatrixXd{ dIp1, dO };
 
         // Bias is unity input at last index
         x( dIp1-1, 0 ) = 1.0f;
