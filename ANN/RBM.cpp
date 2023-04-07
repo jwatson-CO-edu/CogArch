@@ -46,7 +46,7 @@ minimize this error.
 #include <algorithm> // `clamp`
 using std::clamp;
 #include <iostream>
-using std::cout, std::endl, std::flush;
+using std::cout, std::endl, std::flush, std::ostream;
 #include <vector>
 using std::vector;
 #include <set>
@@ -64,6 +64,23 @@ using std::istringstream;
 /// Eigen3 ///
 #include <Eigen/Dense>
 using Eigen::MatrixXd;
+
+
+
+////////// HELPER FUNCTIONS ////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+ostream& operator<<( ostream& os , const vector<T>& vec ) { 
+    // ostream '<<' operator for vectors
+    // NOTE: This function assumes that the ostream '<<' operator for T has already been defined
+    os << "[ ";
+    for (size_t i = 0; i < vec.size(); i++) {
+        os << (T) vec[i];
+        if (i + 1 < vec.size()) { os << ", "; }
+    }
+    os << " ]";
+    return os; // You must return a reference to the stream!
+}
 
 
 
@@ -451,13 +468,35 @@ vector<vector<float>> movie_data_to_user_vectors( string fName, string headingFn
     return trainData;
 }
 
-float fraction_same_nonnegative( const vector<float>& An, const vector<float>& B ){
+vector<vector<float>> mask_movie_data( const vector<vector<float>>& originalData, float maskFraction ){
+    // Return a version of the dataset with the last `maskFraction` of the elements masked
+    ulong /*-----------*/ Ncols = originalData[0].size();
+    ulong /*-----------*/ Nkeep = (ulong) ((1.0f - maskFraction) * (float) Ncols);
+    cout << "Keeping " << Nkeep << " of " << Ncols << endl;
+    vector<float> /*---*/ rowRtn;
+    vector<vector<float>> rtnMatx;
+    for( vector<float> rowData : originalData ){
+        rowRtn.clear();
+        for( ulong i = 0; i < Ncols; i++ ){
+            if( i < Nkeep ){
+                rowRtn.push_back( rowData[i] );
+            }else{
+                rowRtn.push_back( -1.0f );
+            }
+        }
+        rtnMatx.push_back( rowRtn );
+    }
+    return rtnMatx;
+}
+
+float fraction_same_nonnegative( const vector<float>& An, const vector<float>& B, ulong bgnDex = 0 ){
     // `An` is a vector that might have negative values, calc the similarity between the two where `An` is non-negative
-    size_t N = An.size();
-    size_t L = 0;
-    size_t S = 0;
+    ulong N = An.size();
+    ulong L = 0;
+    ulong S = 0;
+    if( bgnDex >= N )  return -1.0f;
     if( N != B.size() ){  return -1.0f;  }else{
-        for( size_t i = 0; i < N; i++ ){
+        for( ulong i = bgnDex; i < N; i++ ){
             if( An[i] >= 0.0f ){
                 L++;
                 if( An[i] == B[i] )  S++;
@@ -522,6 +561,8 @@ int main(){
 
     vector<vector<float>> trainData = movie_data_to_user_vectors( "../Data/ml-100k/u1.base" );
     vector<vector<float>> testData  = movie_data_to_user_vectors( "../Data/ml-100k/u1.test", "columnHeadings.txt" );
+    vector<vector<float>> maskData  = mask_movie_data( testData, 0.25 );
+    // cout << maskData[0] << endl;
 
     /// Create RBM ///
     RBM  net     = RBM( trainData[0].size(), 100, 0.025 );
@@ -532,7 +573,7 @@ int main(){
     /// Train ///
     cout << "##### Training #####" << endl;
     for( uint i = 0; i < N_epoch; i++ ){
-        cout << "## Epoch " << i+1 << " ##" << endl;
+        cout << endl << "## Epoch " << i+1 << " ##" << endl;
         for( ulong j = 0; j < trainData.size(); j++ ){
             net.set_input( trainData[j] );
             net.Contrastive_Divergence_iter();
@@ -545,7 +586,9 @@ int main(){
     float fracCorrect = 0.0f;
     div = testData.size() / 100;
 
-    cout << "##### Validation #####" << endl;
+    cout << endl << "##### Validation #####" << endl;
+    
+    cout << "## Full Reconstruction ##" << endl;
     for( ulong j = 0; j < testData.size(); j++ ){
         net.generate_from_input( testData[j] );
         fracCorrect += fraction_same_nonnegative( net.x_as_vec(), net.v_as_vec() ); // Only count accuracy for rated movies
@@ -553,7 +596,21 @@ int main(){
     }
 
     fracCorrect /= (float) testData.size();
-    cout << endl << fracCorrect << endl; // 0.819597, YAY
+    cout << endl << fracCorrect << endl; // 0.826081, YAY
+
+    // Turns out the test set was already partial
+    // cout << "## Partial Reconstruction ##" << endl;
+    // fracCorrect  = 0.0f;
+    // div /*----*/ = testData.size() / 100;
+    // ulong bgnDex = (ulong) ((float) testData[0].size() * ( 0.75 ));
+    // for( ulong j = 0; j < maskData.size(); j++ ){
+    //     net.generate_from_input( maskData[j] );
+    //     fracCorrect += fraction_same_nonnegative( testData[j], net.v_as_vec(), bgnDex ); // Only count accuracy for rated movies
+    //     if( j%div == 0 ){  cout << "." << flush;  }
+    // }
+
+    // fracCorrect /= (float) maskData.size();
+    // cout << endl << fracCorrect << endl; // 0.819597, YAY
 
     return 0;
 }

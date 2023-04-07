@@ -10,11 +10,12 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * I have lost trust in my Dlang implementation
     * Eigen does matx allocation and matx mult for me
     * `[Y]` Test reconstruction accuracy for full input, 2023-04-06: 0.819597, Reconstruction accuracy is 0.8% better than the D implementation
-    * `[>]` Test reconstruction accuracy for partial input  
+    * `[Y]` Test reconstruction accuracy for partial input, 2023-04-06: Turns out the test set was already partial
 
-1. `[ ]` Perceptrons, 2023-04: Re-write in C++ / Eigen3
-    * `[ ]` Perceptron Margin Update    
+1. `[>]` Perceptrons, 2023-04: Re-write in C++ / Eigen3
+    * `[>]` Perceptron Margin Update    
     * `[ ]` Multi-Layer Perceptron + Backprop + MNIST Dataset
+
 1. `[>]` Bayesian Neural Network (BNN, C++)
    * `[>]` https://arxiv.org/pdf/2007.06823.pdf
    * `[ ]` https://neptune.ai/blog/bayesian-neural-networks-with-jax
