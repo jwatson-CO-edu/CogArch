@@ -11,8 +11,10 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * Eigen does matx allocation and matx mult for me
     * `[Y]` Test reconstruction accuracy for full input, 2023-04-06: 0.819597, Reconstruction accuracy is 0.8% better than the D implementation
     * `[Y]` Test reconstruction accuracy for partial input, 2023-04-06: Turns out the test set was already partial
+    * `[ ]` Add `typedef`s
 
 1. `[>]` Perceptrons, 2023-04: Re-write in C++ / Eigen3
+    * `[ ]` Add `typedef`s
     * `[>]` Perceptron Margin Update    
     * `[ ]` Multi-Layer Perceptron + Backprop + MNIST Dataset
 
