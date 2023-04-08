@@ -12,6 +12,8 @@ g++ MLP.cpp -std=gnu++17 -I /usr/include/eigen3
 
 ////////// INIT ////////////////////////////////////////////////////////////////////////////////////
 
+///// Imports ////////////////////////////////////
+
 /// Standard Imports ///
 #include <cmath>// ---- `exp` 
 #include <stdlib.h> //- `srand`, `rand` 
@@ -38,7 +40,10 @@ using std::istringstream;
 #include <Eigen/Dense>
 using Eigen::MatrixXd;
 
-
+///// Type Defines ///////////////////////////////
+typedef vector<float> /*---*/ vf;
+typedef vector<vector<float>> vvf;
+typedef unsigned char /*---*/ ubyte;
 
 ////////// HELPER FUNCTIONS ////////////////////////////////////////////////////////////////////////
 
@@ -89,15 +94,15 @@ float ddz_sigmoid( float sigZ ){  return sigZ * ( 1.0 - sigZ );  }
 
 ///// RANDOM SAMPLING ////////////////////////////
 
-vector<float> sample_uniform_hypercube( size_t dim, float lo, float hi ){
+vf sample_uniform_hypercube( size_t dim, float lo, float hi ){
     // Sample from an N-`dim`ensional hypercube with identical bounds for each dimension
-    vector<float> rtnArr;
-    float /*---*/ span = hi - lo;
+    vf    rtnArr;
+    float span = hi - lo;
     for( size_t i = 0; i < dim; i++ ){  rtnArr.push_back( lo + span*randf() );  }
     return rtnArr;
 }
 
-float test_hyperplane_point( const vector<float>& planeEQ, const vector<float>& pnt ){
+float test_hyperplane_point( const vf& planeEQ, const vf& pnt ){
     // Ground Truth: Return 1.0 if `pnt` is above the plane, otherwise 0.0
     long  N_dim = (long) pnt.size()-1;
     float res   = 0.0;
@@ -110,12 +115,11 @@ float test_hyperplane_point( const vector<float>& planeEQ, const vector<float>& 
         return 0.0f;
 }
 
-vector<vector<float>> gen_hyperplane_dataset( size_t M_samples, float lo, float hi, const vector<float>& planeEQ ){
+vvf gen_hyperplane_dataset( size_t M_samples, float lo, float hi, const vf& planeEQ ){
     // Generate a labeled dataset 
-    size_t /*----------*/ N_dim = planeEQ.size();
-    // size_t /*----------*/ Nm1   = N_dim-1;
-    vector<vector<float>> dataset;
-    vector<float> /*---*/ sample;
+    size_t N_dim = planeEQ.size();
+    vvf    dataset;
+    vf     sample;
     for( size_t i = 0; i < M_samples; i++ ){
         sample = sample_uniform_hypercube( N_dim, lo, hi );
         sample.back() = test_hyperplane_point( planeEQ, sample );
@@ -124,20 +128,38 @@ vector<vector<float>> gen_hyperplane_dataset( size_t M_samples, float lo, float 
     return dataset;
 }
 
-vector<float> col_vector_to_cpp_vector( const MatrixXd& colVec ){
+vf col_vector_to_cpp_vector( const MatrixXd& colVec ){
     // Copy Eigen column vector to flat C++ vector
     size_t /*--*/ Mrows = colVec.rows();
-    vector<float> rtnVec;
+    vf rtnVec;
     for( size_t i = 0; i < Mrows; i++ ){  rtnVec.push_back( colVec(i,0) );  }
     return rtnVec;
 }
 
-MatrixXd cpp_vector_to_col_vector( const vector<float>& cppVec ){
+MatrixXd cpp_vector_to_col_vector( const vf& cppVec ){
     ulong    N_elem = cppVec.size();
     MatrixXd rtnVec = MatrixXd{ N_elem, 1 };
     for( ulong i = 0; i < N_elem; i++ ){  rtnVec(i,0) = cppVec[i];  }
     return rtnVec;
 }
+
+////////// MNIST DATA PARSING //////////////////////////////////////////////////////////////////////
+
+struct MNISTBuffer{
+    // Simplest container for MNIST data
+
+    // Members //
+    vector<ubyte> imgBuffer; //- Byte buffer of handwritten digit images
+    size_t /*--*/ imgBuffDex; // Points to the next byte to read in the image buffer
+    vector<ubyte> lblBuffer; //- Byte buffer of image labels
+    size_t /*--*/ lblBuffDex; // Points to the next byte to read in the label buffer
+    uint /*----*/ rows; // ----- Height of each image in pixels
+    uint /*----*/ cols; // ----- Width of each image in pixels
+    uint /*----*/ N; // -------- Number of examples in this dataset
+
+    // FIXME, START HERE: TRANSlATE MNIST BUFFER
+
+};
 
 ////////// MULTI-LAYERED PERCEPTRON ////////////////////////////////////////////////////////////////
 
@@ -198,7 +220,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return W * x;
     }
 
-    vector<float> forward_vec(){
+    vf forward_vec(){
         // Return a raw float prediction
         return col_vector_to_cpp_vector( forward() );
     }
@@ -214,13 +236,13 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    void load_input( const vector<float>& x_t ){
+    void load_input( const vf& x_t ){
         // Load values into the input vector
         // NOTE: This struct does not require the client code to add the unity input bias
         for( uint i = 0; i < (dIp1-1); i++ ){  x(i,0) = x_t[i];  }
     }
 
-    void margin_update( const vector<float>& x_t, const vector<float>& y_t, float mu = 0.0f ){
+    void margin_update( const vf& x_t, const vf& y_t, float mu = 0.0f ){
         // Update weights based on a single training example if it within `mu` of the splitting planes
         float    factor = 1.0f;
         MatrixXd y_p    = MatrixXd{ dO, 1 };
@@ -240,23 +262,20 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    void train_by_sample( const vector<vector<float>>& samples, float mu = 0.0f ){
+    void train_by_sample( const vvf& samples, float mu = 0.0f ){
         // Train the layer one sample at a time (batch size == 1), No backprop
-        size_t /*--*/ M_smpl = samples.size();
-        size_t /*--*/ N_cols = samples[0].size();
-        vector<float> x_i;
-        vector<float> y_i;
+        size_t M_smpl = samples.size();
+        size_t N_cols = samples[0].size();
+        vf     x_i;
+        vf     y_i;
         for( size_t i = 0; i < M_smpl; i++ ){
-            // cout << "Get slices ..." << endl;
             x_i = get_slice<float>( samples[i], 0 , dI     );
             y_i = get_slice<float>( samples[i], dI, N_cols );
-            // cout << "Margin update ..." << endl;
-            // cout << x_i << "  ,  " << y_i << "  ,  " << mu << endl;
             margin_update( x_i, y_i, mu );
         }
     }
 
-    float test_accuracy( const vector<vector<float>>& samples ){
+    float test_accuracy( const vvf& samples ){
         // Test accuracy for the trained layer
         size_t N_smpl = samples.size();
         size_t N_cols = samples[0].size();
@@ -320,11 +339,11 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return activation;
     }
 
-    vector<float> get_prediction(){
+    vf get_prediction(){
         // Return a vector with the highest weight label as the answer
-        vector<float> yOut;
-        float /*---*/ maxVal = -1.0f;
-        uint /*----*/ maxDex = 0;
+        vf    yOut;
+        float maxVal = -1.0f;
+        uint  maxDex = 0;
         for( uint j = 0; j < dO; j++ ){
             if( y(j,0) > maxVal ){
                 maxDex = j;
@@ -340,7 +359,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return yOut;
     }
 
-    void store_output_loss( const vector<float>& y_Actual ){
+    void store_output_loss( const vf& y_Actual ){
         // Compute dLoss/dActivation for the OUTPUT layer ONLY
         for( uint i = 0; i < dO; i++ ){
             lossOut(i,0) = 2.0f*( y(i,0) - y_Actual[i] ); // 2*(predicted-desired)
@@ -419,10 +438,10 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         lr = learnRate;
     }
 
-    vector<float> flatten( const vector<vector<float>>& matx ){
+    vf flatten( const vvf& matx ){
         // Unpack the matrix into a vector by rows
-        vector<float> rtnArr;
-        for( vector<float> row : matx ){
+        vf rtnArr;
+        for( vf row : matx ){
             for( float elem : row ){
                 rtnArr.push_back( elem );
             }
@@ -430,20 +449,20 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return rtnArr;
     }
 
-    vector<float> forward( const vector<vector<float>>& matx ){
+    vf forward( const vvf& matx ){
         // Use the network to run inference on the input image, layer by layer
         for( ulong i = 0; i < layers.size(); i++ ){
             if( i == 0 ){
                 layers[i]->load_input( flatten( matx ) );
             }else{
-                layers[i]->x = layers[i-1]->y;
+                layers[i]->x.block(0,0,layers[i]->dI,1) = layers[i-1]->y;
             }
             layers[i]->forward_sigmoid();
         }
         return layers.back()->get_prediction();
     }
 
-    void backpropagation( vector<float> y_Actual ){
+    void backpropagation( vf y_Actual ){
         // Full backpropagation
 
         long N = layers.size();
@@ -457,18 +476,33 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
             if( i > 0 ){
                 M = layers[i-1]->dO;
-
-                // FIXME, START HERE: COMPLETE TRANSLATION
-
-                layers[i-1].lossOut[0..M] = layers[i].lossInp[0..M]; // We can copy arrays by slice
-
-                if( _DEBUG ){
-                    writeln( "Copied loss: " ~ layers[i-1].lossOut.to!string );
-                    writeln();
-                }
+                layers[i-1]->lossOut.block(0,0,M,1) = layers[i]->lossInp.block(0,0,M,1);
             }
         }
     }
+
+    vf grad_norms(){
+        // Return the Frobenius norm of the gradient of each layer, in order
+        vf norms;
+        for( BinaryPerceptronLayer* layer : layers ){
+            norms.push_back( layer->grad_norm() );
+        }
+        return norms;
+    }
+
+    void random_weight_init(){
+        // Set all weights and biases to uniformly-distributed random numbers
+        for( BinaryPerceptronLayer* layer : layers ){
+            layer->random_weight_init();
+        }
+    }
+
+    float get_loss(){
+        // Get the Manhattan distance between predicted and actual
+        return layers.back()->get_loss();
+    }
+
+    
 
 };
 
@@ -482,9 +516,9 @@ int main(){
     if( test1 ){
         // Init perceptron and Train/Test Datasets, 
         BinaryPerceptronLayer bpl /*-*/ = BinaryPerceptronLayer( 3, 1, 0.00001 );
-        vector<float> /*---*/ planeEQ   = {1.0f, 2.0f, 3.0f, 0.0f};
-        vector<vector<float>> trainData = gen_hyperplane_dataset( 10000, -5.0f,  5.0f, planeEQ );
-        vector<vector<float>> testData  = gen_hyperplane_dataset(  1000, -5.0f,  5.0f, planeEQ );
+        vf  planeEQ   = {1.0f, 2.0f, 3.0f, 0.0f};
+        vvf trainData = gen_hyperplane_dataset( 10000, -5.0f,  5.0f, planeEQ );
+        vvf testData  = gen_hyperplane_dataset(  1000, -5.0f,  5.0f, planeEQ );
         bpl.random_weight_init();
 
         uint N_epoch = 16;

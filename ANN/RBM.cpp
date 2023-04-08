@@ -39,6 +39,8 @@ minimize this error.
 
 ////////// INIT ////////////////////////////////////////////////////////////////////////////////////
 
+///// Imports ////////////////////////////////////
+
 /// Standard Imports ///
 #include <cmath>// ---- `exp` 
 #include <stdlib.h> //- `srand`, `rand` 
@@ -66,6 +68,9 @@ using std::istringstream;
 using Eigen::MatrixXd;
 
 
+///// Type Defines ///////////////////////////////
+typedef vector<float> /*---*/ vf;
+typedef vector<vector<float>> vvf;
 
 ////////// HELPER FUNCTIONS ////////////////////////////////////////////////////////////////////////
 
@@ -149,21 +154,21 @@ struct RBM{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    void set_input( const vector<float>& inputVec ){
+    void set_input( const vf& inputVec ){
         // Populate the input vector
         for( uint k = 0; k < dI; k++ ){  x(k,0) = inputVec[k];  }
     }
 
-    vector<float> x_as_vec(){
+    vf x_as_vec(){
         // Return `x` as a dynamic array
-        vector<float> rtnX;
+        vf rtnX;
         for( uint k = 0; k < dI; k++ ){  rtnX.push_back( x(k,0) );  }
         return rtnX;
     }
 
-    vector<float> v_as_vec(){
+    vf v_as_vec(){
         // Return `v` as a dynamic array
-        vector<float> rtnV;
+        vf rtnV;
         for( uint k = 0; k < dI; k++ ){  rtnV.push_back( v(k,0) );  }
         return rtnV;
     }
@@ -264,7 +269,7 @@ struct RBM{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    void generate_from_input( const vector<float>& inputVec ){
+    void generate_from_input( const vf& inputVec ){
         // Load the input into the visible units, then attempt to reconstruct it
         set_input( inputVec );
         load_visible();
@@ -401,7 +406,7 @@ long get_index_of_key_in_vec( const vector<T>& vec, const T& key ){
         return -1;
 }
 
-vector<vector<float>> movie_data_to_user_vectors( string fName, string headingFname = "" ){
+vvf movie_data_to_user_vectors( string fName, string headingFname = "" ){
     // This matrix will have the *users as the rows* and *the movies as the columns*.
     
     /// Vector Heading Init ///
@@ -445,11 +450,11 @@ vector<vector<float>> movie_data_to_user_vectors( string fName, string headingFn
     cout << "There are " << N_movis << " unique movies." << endl;
 
     /// Create Training Vectors ///
-    vector<vector<float>> trainData;
-    vector<float> /*---*/ ratingRow;
-    long /*------------*/ founDex  = 0;
-    long /*------------*/ currMovi = 0;
-    long /*------------*/ rating   = 0;
+    vvf  trainData;
+    vf   ratingRow;
+    long founDex  = 0;
+    long currMovi = 0;
+    long rating   = 0;
     for( long user : userList ){
         ratingRow.clear();
         for( ulong i = 0; i < N_movis; i++ ){  ratingRow.push_back( -1.0f );  }
@@ -468,14 +473,15 @@ vector<vector<float>> movie_data_to_user_vectors( string fName, string headingFn
     return trainData;
 }
 
-vector<vector<float>> mask_movie_data( const vector<vector<float>>& originalData, float maskFraction ){
+vvf mask_movie_data( const vvf& originalData, float maskFraction ){
     // Return a version of the dataset with the last `maskFraction` of the elements masked
-    ulong /*-----------*/ Ncols = originalData[0].size();
-    ulong /*-----------*/ Nkeep = (ulong) ((1.0f - maskFraction) * (float) Ncols);
-    cout << "Keeping " << Nkeep << " of " << Ncols << endl;
-    vector<float> /*---*/ rowRtn;
-    vector<vector<float>> rtnMatx;
-    for( vector<float> rowData : originalData ){
+    ulong Ncols = originalData[0].size();
+    ulong Nkeep = (ulong) ((1.0f - maskFraction) * (float) Ncols);
+    vf    rowRtn;
+    vvf   rtnMatx;
+    // cout << "Keeping " << Nkeep << " of " << Ncols << endl;
+    
+    for( vf rowData : originalData ){
         rowRtn.clear();
         for( ulong i = 0; i < Ncols; i++ ){
             if( i < Nkeep ){
@@ -489,7 +495,7 @@ vector<vector<float>> mask_movie_data( const vector<vector<float>>& originalData
     return rtnMatx;
 }
 
-float fraction_same_nonnegative( const vector<float>& An, const vector<float>& B, ulong bgnDex = 0 ){
+float fraction_same_nonnegative( const vf& An, const vf& B, ulong bgnDex = 0 ){
     // `An` is a vector that might have negative values, calc the similarity between the two where `An` is non-negative
     ulong N = An.size();
     ulong L = 0;
@@ -559,9 +565,9 @@ int main(){
     // cout << net.b << endl << endl;
     // cout << net.c << endl << endl;
 
-    vector<vector<float>> trainData = movie_data_to_user_vectors( "../Data/ml-100k/u1.base" );
-    vector<vector<float>> testData  = movie_data_to_user_vectors( "../Data/ml-100k/u1.test", "columnHeadings.txt" );
-    vector<vector<float>> maskData  = mask_movie_data( testData, 0.25 );
+    vvf trainData = movie_data_to_user_vectors( "../Data/ml-100k/u1.base" );
+    vvf testData  = movie_data_to_user_vectors( "../Data/ml-100k/u1.test", "columnHeadings.txt" );
+    vvf maskData  = mask_movie_data( testData, 0.25 );
     // cout << maskData[0] << endl;
 
     /// Create RBM ///
