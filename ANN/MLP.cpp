@@ -6,7 +6,7 @@ g++ MLP.cpp -std=gnu++17 -I /usr/include/eigen3
 */
 
 /* ///// DEV PLAN /////
-[ ] Binary Perceptron @ plane
+[Y] Binary Perceptron @ plane
 [ ] Binary MLP w/ Backprop @ MNIST
 */
 
@@ -145,14 +145,14 @@ MatrixXd cpp_vector_to_col_vector( const vf& cppVec ){
 
 ////////// MNIST DATA PARSING //////////////////////////////////////////////////////////////////////
 
-int fetch_next_int( ifstream& file, int* numVar ){
+void fetch_next_int( ifstream& file, int* numVar ){
     // Fetch 4 bytes from `buffer` and cast as an `int`
     if( !file.eof() && file.is_open() ){
         file.read( reinterpret_cast<char*>( numVar ), sizeof( int ) );
     }
 }
 
-ubyte fetch_next_ubyte( ifstream& file, ubyte* numVar  ){
+void fetch_next_ubyte( ifstream& file, ubyte* numVar  ){
     // Fetch 1 byte from `buffer` and cast as an `int`
     if( !file.eof() && file.is_open() ){
         file.read( reinterpret_cast<char*>( numVar ), sizeof( ubyte ) );
@@ -260,6 +260,11 @@ struct MNISTBuffer{
             }   
             cout << endl;
         }
+    }
+
+    void close(){
+        imgFile.close();
+        lblFile.close();
     }
 };
 
@@ -482,7 +487,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             dLoss_dAct = lossOut(i,0); // 2*(predicted-desired)
             dAct_dOut  = y(i,0)*(1.0-y(i,0)); // --- sigmoid(Out)*(1.0-sigmoid(Out))
             for( uint j = 0; j < dIp1; j++ ){
-                dOut_dWght = x[j];
+                dOut_dWght = x(j,0);
                 grad(i,j) = dOut_dWght * dAct_dOut * dLoss_dAct;
             }
         }
@@ -564,7 +569,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return layers.back()->get_prediction();
     }
 
-    void backpropagation( vf y_Actual ){
+    void backpropagation( const vf& y_Actual ){
         // Full backpropagation
 
         long N = layers.size();
@@ -604,10 +609,94 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return layers.back()->get_loss();
     }
 
-    // train_one_MNIST_epoch
-    // compare_answers
-    // validate_on_MNIST
+    float train_one_MNIST_epoch( MNISTBuffer* dataSet ){
+        // Run simple backrop (non-batch) on every training example of an `MNISTBuffer`
 
+        // -1. Init vars and reset data buffers
+        vvf   img; // --------------- Current image
+        vf    lbl; // --------------- Current label
+        uint  N; // ----------------- Number of training examples       
+        uint  div; // ------- Status print freq 
+        float avgLoss = 0.0f; // ---- Average loss for this epoch
+
+        N   = dataSet->N;
+        div = N/100; // ------- Status print freq 
+        
+        dataSet->seek_to_data();
+
+        // 0. For every example in the dataset
+        for( uint i = 0; i < N; i++ ){
+
+            // 1. Fetch next image and its label
+            img.clear();
+            lbl.clear();
+            img = dataSet->fetch_next_image();
+            lbl = dataSet->fetch_next_y();
+
+            // 2. Make prediction and store
+            forward( img );          
+
+            // 3. One full backprop step
+            backpropagation( lbl );
+
+            // 4. Accum loss
+            avgLoss += get_loss();
+
+            if( i%div == 0 )  cout << "." << flush;
+        }
+
+        // N. Return the average loss across all training example predictions
+        return avgLoss / (float) N;
+    }
+    
+    float compare_answers( const vf& pre, const vf& act ){
+        // Return true only if `pre` and `act` are identical
+        if( pre == act )
+            return 1.0f;
+        else
+            return 0.0f;
+    }
+
+    float validate_on_MNIST( MNISTBuffer* dataSet ){
+        // Run inference on the validation set and return accuracy
+
+        // -1. Init vars and reset data buffers
+        vvf   img; // ------------ Current image
+        vf    lbl; // ------------ Current label
+        vf    ans; // ------------ Current inference result
+        float acc = 0.0f; // ----- Accuracy for this dataset
+        uint  N   = dataSet->N; // Number of training examples       
+        uint  div = N/100; // ---- Status print freq 
+        dataSet->seek_to_data();
+        
+        cout << "##### VALIDATE #####" << endl;
+
+        // 0. For every example in the dataset
+        for( uint i = 0; i < N; i++ ){
+
+            // 1. Fetch next image and its label
+            img.clear();
+            lbl.clear();
+            img = dataSet->fetch_next_image();
+            lbl = dataSet->fetch_next_y();
+
+            // 2. Make prediction and store
+            ans.clear();
+            ans = forward( img );
+
+            // 3. Accum correctness
+            acc += compare_answers( ans, lbl );
+
+            if( i%div == 0 )  cout << "." << flush;
+        }
+
+        acc /= (float) N;
+
+        cout << endl << "\nValidation Accuracy: " << acc << endl << endl;
+
+        // N. Return accuracy
+        return acc;
+    }
 };
 
 
@@ -616,7 +705,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 int main(){
 
     ///// Test 1: Dense Layer ////////////////////
-    bool test1 = true;
+    bool test1 = false;
 
     if( test1 ){
         // Init perceptron and Train/Test Datasets, 
@@ -667,6 +756,15 @@ int main(){
 
     float epochLoss =  0.0f;
     uint  N_epoch   = 64; // 32 // 16
+
+    for( uint i = 0; i < N_epoch; i++ ){
+        cout << "##### Epoch " << (i+1) << " #####" << endl;
+        epochLoss = net.train_one_MNIST_epoch( &trainDataBuffer );
+        cout << endl << "Average loss for one epoch: " << epochLoss << endl << endl;
+    }
+
+    trainDataBuffer.close();
+    validDataBuffer.close();
 
     return 0;
 }

@@ -11,12 +11,17 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * Eigen does matx allocation and matx mult for me
     * `[Y]` Test reconstruction accuracy for full input, 2023-04-06: 0.819597, Reconstruction accuracy is 0.8% better than the D implementation
     * `[Y]` Test reconstruction accuracy for partial input, 2023-04-06: Turns out the test set was already partial
-    * `[ ]` Add `typedef`s
+    * `[Y]` Add `typedef`s
 
 1. `[>]` Perceptrons, 2023-04: Re-write in C++ / Eigen3
-    * `[ ]` Add `typedef`s
-    * `[>]` Perceptron Margin Update    
-    * `[ ]` Multi-Layer Perceptron + Backprop + MNIST Dataset
+    * `[Y]` Add `typedef`s
+    * `[Y]` Perceptron Margin Update, 2023-04-07: 0.99 accuracy
+    * `[>]` Multi-Layer Perceptron + Backprop + MNIST Dataset
+        - `[ ]` Issue: Apparent hanging and massive resource usage
+            * `[ ]` Verify that next image is fetched
+            * `[ ]` Verify that next label is fetched
+            * `[ ]` Verify forward @ all layers
+            * `[ ]` Verify backprop @ all layers
 
 1. `[>]` Bayesian Neural Network (BNN, C++)
    * `[>]` https://arxiv.org/pdf/2007.06823.pdf
