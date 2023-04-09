@@ -145,27 +145,129 @@ MatrixXd cpp_vector_to_col_vector( const vf& cppVec ){
 
 ////////// MNIST DATA PARSING //////////////////////////////////////////////////////////////////////
 
+int fetch_next_int( ifstream& file, int* numVar ){
+    // Fetch 4 bytes from `buffer` and cast as an `int`
+    if( !file.eof() && file.is_open() ){
+        file.read( reinterpret_cast<char*>( numVar ), sizeof( int ) );
+    }
+}
+
+ubyte fetch_next_ubyte( ifstream& file, ubyte* numVar  ){
+    // Fetch 1 byte from `buffer` and cast as an `int`
+    if( !file.eof() && file.is_open() ){
+        file.read( reinterpret_cast<char*>( numVar ), sizeof( ubyte ) );
+    }
+}
+
 struct MNISTBuffer{
     // Simplest container for MNIST data
 
     // Members //
-    vector<ubyte> imgBuffer; //- Byte buffer of handwritten digit images
-    size_t /*--*/ imgBuffDex; // Points to the next byte to read in the image buffer
-    vector<ubyte> lblBuffer; //- Byte buffer of image labels
-    size_t /*--*/ lblBuffDex; // Points to the next byte to read in the label buffer
-    uint /*----*/ rows; // ----- Height of each image in pixels
-    uint /*----*/ cols; // ----- Width of each image in pixels
-    uint /*----*/ N; // -------- Number of examples in this dataset
+    // vector<ubyte> imgBuffer; //- Byte buffer of handwritten digit images
+    // size_t /*--*/ imgBuffDex; // Points to the next byte to read in the image buffer
+    // vector<ubyte> lblBuffer; //- Byte buffer of image labels
+    // size_t /*--*/ lblBuffDex; // Points to the next byte to read in the label buffer
+    ifstream imgFile;
+    ifstream lblFile;
+    uint     rows; // ----- Height of each image in pixels
+    uint     cols; // ----- Width of each image in pixels
+    uint     N; // -------- Number of examples in this dataset
 
-    // FIXME, START HERE: TRANSlATE MNIST BUFFER
+    vector<int> fetch_header( ifstream& file ){
+        // Fetch the header info from the file and return as a vector
+        vector<int> header;
+        int elem;
+        file.seekg( 0, std::ios::beg );
+        for( ubyte i = 0; i < 4; i++ ){ // WARNING: THE LABEL FILE HEADER IS A DIFFERENT LENGTH!
+            fetch_next_int( file, &elem );
+            header.push_back( elem );
+        }
+        return header;
+    }
 
+    void seek_to_data( ifstream& file, uint numInts ){
+        // Set the imgBuffDex to the first index after the data
+        int elem;
+        file.seekg( 0, std::ios::beg );
+        for( uint i = 0; i < numInts; i++ ){ // WARNING: THE LABEL FILE HEADER IS A DIFFERENT LENGTH!
+            fetch_next_int( file, &elem );
+        }
+    }
+
+    void seek_to_data(){
+        // Go to the beginning of the data of both files
+        seek_to_data( imgFile, 4 );
+        seek_to_data( lblFile, 2 );
+    }
+
+    MNISTBuffer( string imgPath, string lblPath ){
+        // Load metadata and seek to the beginning of both data files
+        char byte;
+        imgFile = ifstream{ imgPath };
+        lblFile = ifstream{ lblPath };
+        vector<int> imgHeader = fetch_header( imgFile );
+        N    = (uint) imgHeader[1];
+        rows = (uint) imgHeader[2];
+        cols = (uint) imgHeader[3];
+        // 3. Set buffer indices to the beginning of labeled data
+        seek_to_data();
+    }
+
+    vvf fetch_next_image(){
+        // Fetch one image worth of data as a float matrix and return it
+        vvf   image;
+        vf    oneRow;
+        ubyte pxlVal;
+        for( uint i = 0; i < rows; i++ ){
+            oneRow.clear();
+            for( uint j = 0; j < cols; j++ ){
+                fetch_next_ubyte( imgFile, &pxlVal );
+                oneRow.push_back( (float) pxlVal / 255.0f );
+            }   
+            image.push_back( oneRow );
+        }
+        return image;
+    }
+
+    ubyte fetch_next_label(){
+        // Fetch one label, should be called with the same cadence as `fetch_next_image`
+        ubyte label;
+        fetch_next_ubyte( lblFile, &label );
+        return label;
+    }
+
+    vf fetch_next_y(){
+        // Fetch one label as a vector, should be called with the same cadence as `fetch_next_image`
+        vf    rtnVec;
+        ubyte label = fetch_next_label();
+        for( ubyte i = 0; i < 10; i++ ){
+            if( i == label )  rtnVec.push_back( 1.0f );
+            else /*-------*/  rtnVec.push_back( 0.0f );
+        }
+        return rtnVec;
+    }
+
+    void print_mnist_digit( const vvf& image ){
+        // Display the given MNIST digit to the terminal with very cheap greyscale
+        float pxlVal;
+        for( uint i = 0; i < rows; i++ ){
+            for( uint j = 0; j < cols; j++ ){
+                pxlVal = image[i][j];
+                if( pxlVal > 0.75f ) /**/  cout << "#";
+                else if( pxlVal > 0.50f )  cout << "*";
+                else  /*---------------*/  cout << ".";
+                cout << " ";
+            }   
+            cout << endl;
+        }
+    }
 };
+
+
 
 ////////// MULTI-LAYERED PERCEPTRON ////////////////////////////////////////////////////////////////
 
-
 ////////// BinaryPerceptronLayer /////////////////
-
 
 struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Simplest Perception layer with a binary output vector
@@ -423,8 +525,8 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 };
 
-////////// MLP ///////////////////////////////////
 
+////////// MLP ///////////////////////////////////
 
 struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Simplest Multi-Layer Perceptron Implementation, Very inefficient
@@ -502,9 +604,12 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return layers.back()->get_loss();
     }
 
-    
+    // train_one_MNIST_epoch
+    // compare_answers
+    // validate_on_MNIST
 
 };
+
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
 
@@ -535,6 +640,33 @@ int main(){
             cout << bpl.W << endl;
         }
     }
+
+    ///// Test 2: Multiple Layers ////////////////
+    // - 3Blue1Brown Architecture
+    //     > Layer 0: Flatten 2D image to 1D vector of 784 elements
+    //     > Layer 1: Input 784 --to-> Output  16
+    //     > Layer 2: Input  16 --to-> Output  16
+    //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
+    MLP net{ 0.001 };
+    net.layers.push_back( new BinaryPerceptronLayer( 784, 16, net.lr ) );  cout << "Layer 1 created!" << endl;
+    net.layers.push_back( new BinaryPerceptronLayer(  16, 16, net.lr ) );  cout << "Layer 2 created!" << endl;
+    net.layers.push_back( new BinaryPerceptronLayer(  16, 10, net.lr ) );  cout << "Layer 3 created!" << endl;
+    net.random_weight_init(); /*----------------------------------------*/ cout << "Weights init!"    << endl;
+
+    MNISTBuffer trainDataBuffer{
+        "../Data/MNIST/train-images.idx3-ubyte",
+        "../Data/MNIST/train-labels.idx1-ubyte"
+    }; 
+    cout << "Loaded training data!" << endl;
+
+    MNISTBuffer validDataBuffer{ 
+        "../Data/MNIST/t10k-images.idx3-ubyte",
+        "../Data/MNIST/t10k-labels.idx1-ubyte"
+    };  
+    cout << "Loaded testing data!" << endl;
+
+    float epochLoss =  0.0f;
+    uint  N_epoch   = 64; // 32 // 16
 
     return 0;
 }
