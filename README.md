@@ -71,9 +71,27 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[ ]` E: Python lib(s)?
     * `[ ]` E: C++ lib(s)?
 1. `[80]` CPPN-NEAT Architecture Search
-    * `[ ]` E: Find most accessible existing implementation
+    * `[ ]` E: Find most accessible existing implementation & test
+1. `[1000]` CORVID Unit
+    * `[ ]` Reconcile Unit daydreams with Active Inference
+    * Recognizer
+    * Learner / Agent
+    * Amplifier
+1. `[2000]` CORVID Stack / Agency, One stack
+    * with input EFB
+    * with output EFB
+1. `[3000]` CORVID Cognitive Architecture
+    * 2023-02-22 Brainstorming, Pt.1
+        - Serial 
+        - Recurrent Serial
+        - Serial Medula
+    * 2023-02-22 Brainstorming, Pt.2
+        - Stack Sandwich
+        - Parrallel Stack
+    * Embedded domain mini-planner (Q-Learner?)
+
 ## Backend
-* `[700]` Parallel Programming
+* `[~~~]` Parallel Programming
     * If using D
         - https://dlang.org/phobos/std_parallelism.html
         - https://dlang.org/phobos/std_process.html
@@ -81,10 +99,10 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - pthread
         - MPI
         - OpenCL
-* `[800]` [Multi-Layer Perceptron + OpenCL?](https://www.es.ele.tue.nl/~mwijtvliet/5KK73/?page=mmopencl)  
+* `[~~~]` [Multi-Layer Perceptron + OpenCL?](https://www.es.ele.tue.nl/~mwijtvliet/5KK73/?page=mmopencl)  
 
 ## Physics
-1. `[900]` [Geometric Algebra for Computer Science]
+1. `[~~~]` [Geometric Algebra for Computer Science]
     * 2023-04-09: No D implementation  
         - (https://www.amazon.com/Geometric-Algebra-Computer-Science-Revised/dp/0123749425) @ Gemmill Library
         - https://rosettacode.org/wiki/Geometric_algebra
@@ -96,14 +114,14 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 ## Frameworks & Environments
 #### YOU SHOULD AVOID BUILDING AN ENVIRONMENT IF A SIMILAR ONE IS FREELY AVAILABLE!
-1. `[5000]` Braitenberg 2D Grid World
+1. `[~~~~]` Braitenberg 2D Grid World
     * Agents situated at `<X,Y,D>` where `<X,Y>` is a cell address and `<D>` is a cardinal direction
     * Components have no extent, but possibly oriented in a cardinal direction
     * `[ ]` Add EFB
     * `[ ]` Add Continuous Q-Learning
-1. `[6000]` Braitenberg 3D Grid World
-1. `[7000]` Continous 2D Braitenberg World
-1. `[8000]` Continous 3D Braitenberg World
+1. `[~~~~]` Braitenberg 3D Grid World
+1. `[~~~~]` Continous 2D Braitenberg World
+1. `[~~~~]` Continous 3D Braitenberg World
 
 ## Notes
 * `[2023-03-28]` Switching to [C++](https://en.cppreference.com/w/) from [D](https://dlang.org/) to mentally prepare for job search. 80% of surveyed positions mention C++; None mention D.

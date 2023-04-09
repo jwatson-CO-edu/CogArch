@@ -737,7 +737,7 @@ int main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net{ 0.0002 }; // 0.001
+    MLP net{ 0.0005 }; // 0.0002 // 0.001
     net.layers.push_back( new BinaryPerceptronLayer( 784, 16, net.lr ) );  cout << "Layer 1 created!" << endl;
     net.layers.push_back( new BinaryPerceptronLayer(  16, 16, net.lr ) );  cout << "Layer 2 created!" << endl;
     net.layers.push_back( new BinaryPerceptronLayer(  16, 10, net.lr ) );  cout << "Layer 3 created!" << endl;
@@ -782,7 +782,7 @@ int main(){
     ///// Test 2: MNIST //////////////////////////
     bool  test2     = true;
     float epochLoss =  0.0f;
-    uint  N_epoch   = 16; // 64; // 32 // 16
+    uint  N_epoch   = 32; // 64; // 32 // 16
     float acc /*-*/ =  0.0f;
 
     if( test2 ){
