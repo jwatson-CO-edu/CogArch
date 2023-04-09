@@ -65,7 +65,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[34]` Think about how active inference is pertinent to the Partially Observable Lunar Lander.  Are there different behavior modes that are required?
 1. `[40]` Run a POMDP solver on Partially Observable Lunar Lander
     * `[ ]` E: Which language to use?
-    * `[ ]` POMCPOW or Voronoi Equivalent
+    * `[ ]` POMCPOW or VOMCPOW
     * `[ ]` Can you add a learned transition model to it?
 1. `[70]` Dynamic, Resizable ANN
     * `[ ]` E: Python lib(s)?
@@ -106,8 +106,13 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 1. `[8000]` Continous 3D Braitenberg World
 
 ## Notes
-* `[2023-03-28]` Switching to C++ after MLP to mentally prepare for job search. 80% of surveyed positions mention C++; None mention D.
-
+* `[2023-03-28]` Switching to [C++](https://en.cppreference.com/w/) from [D](https://dlang.org/) to mentally prepare for job search. 80% of surveyed positions mention C++; None mention D.
+    - I also caused myself some confusion with  assignment, slicing, and equivalence of dynamic arrays
+    - If I pick D back up:
+        * Evaluate recent language changes
+        * Evaluate state of needed libraries
+            - I need a satisfying linear algebra library
+            - Raylib
 # Resources
 * [Top 14 C++ Machine Learning Libraries](https://anywhere.epam.com/business/c-plus-plus-ml-libraries)
     - FANN?
