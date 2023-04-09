@@ -36,6 +36,9 @@ using std::ifstream, std::ofstream;
 #include <sstream>
 using std::istringstream;
 
+/// Linux Imports ///
+#include <endian.h>
+
 /// Eigen3 ///
 #include <Eigen/Dense>
 using Eigen::MatrixXd;
@@ -149,6 +152,7 @@ void fetch_next_int( ifstream& file, int* numVar ){
     // Fetch 4 bytes from `buffer` and cast as an `int`
     if( !file.eof() && file.is_open() ){
         file.read( reinterpret_cast<char*>( numVar ), sizeof( int ) );
+        *numVar = htobe32( *numVar );
     }
 }
 
@@ -736,7 +740,7 @@ int main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net{ 0.001 };
+    MLP net{ 0.0001 }; // 0.001
     net.layers.push_back( new BinaryPerceptronLayer( 784, 16, net.lr ) );  cout << "Layer 1 created!" << endl;
     net.layers.push_back( new BinaryPerceptronLayer(  16, 16, net.lr ) );  cout << "Layer 2 created!" << endl;
     net.layers.push_back( new BinaryPerceptronLayer(  16, 10, net.lr ) );  cout << "Layer 3 created!" << endl;
@@ -754,13 +758,43 @@ int main(){
     };  
     cout << "Loaded testing data!" << endl;
 
-    float epochLoss =  0.0f;
-    uint  N_epoch   = 64; // 32 // 16
+    bool testHeader = false;
 
-    for( uint i = 0; i < N_epoch; i++ ){
-        cout << "##### Epoch " << (i+1) << " #####" << endl;
-        epochLoss = net.train_one_MNIST_epoch( &trainDataBuffer );
-        cout << endl << "Average loss for one epoch: " << epochLoss << endl << endl;
+    if( testHeader ){
+        cout << trainDataBuffer.fetch_header( trainDataBuffer.imgFile ) << endl;
+        cout << validDataBuffer.fetch_header( validDataBuffer.imgFile ) << endl;
+
+        vvf img = trainDataBuffer.fetch_next_image();
+        vf  lbl = trainDataBuffer.fetch_next_y();
+
+        trainDataBuffer.print_mnist_digit( img );
+        cout << lbl << endl;
+
+        img = validDataBuffer.fetch_next_image();
+        lbl = validDataBuffer.fetch_next_y();
+
+        validDataBuffer.print_mnist_digit( img );
+        cout << lbl << endl;
+
+        trainDataBuffer.seek_to_data();
+        validDataBuffer.seek_to_data();
+    }
+
+    ///// Test 2: MNIST //////////////////////////
+    bool  test2     = true;
+    float epochLoss =  0.0f;
+    uint  N_epoch   = 16; // 64; // 32 // 16
+    float acc /*-*/ =  0.0f;
+
+    if( test2 ){
+        for( uint i = 0; i < N_epoch; i++ ){
+            cout << "##### Epoch " << (i+1) << " #####" << endl;
+            epochLoss = net.train_one_MNIST_epoch( &trainDataBuffer );
+            cout << endl << "Average loss for one epoch: " << epochLoss << endl << endl;
+        }
+        cout << "##### Validation #####" << endl;
+        acc = net.validate_on_MNIST( &validDataBuffer );
+        cout << "Validation Accuracy: " << acc << endl << endl;
     }
 
     trainDataBuffer.close();
