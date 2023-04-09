@@ -3,11 +3,8 @@ MLP.cpp
 James Watson, 2023-04
 Simplest demo of a scratch-built multi-layer perceptron (MLP)
 g++ MLP.cpp -std=gnu++17 -I /usr/include/eigen3
-*/
 
-/* ///// DEV PLAN /////
-[Y] Binary Perceptron @ plane
-[ ] Binary MLP w/ Backprop @ MNIST
+WARNING: This implementation is absurdly unoptimized!
 */
 
 ////////// INIT ////////////////////////////////////////////////////////////////////////////////////
@@ -177,13 +174,13 @@ struct MNISTBuffer{
     uint     cols; // ----- Width of each image in pixels
     uint     N; // -------- Number of examples in this dataset
 
-    vector<int> fetch_header( ifstream& file ){
+    vector<int> fetch_image_header(){
         // Fetch the header info from the file and return as a vector
         vector<int> header;
         int elem;
-        file.seekg( 0, std::ios::beg );
+        imgFile.seekg( 0, std::ios::beg );
         for( ubyte i = 0; i < 4; i++ ){ // WARNING: THE LABEL FILE HEADER IS A DIFFERENT LENGTH!
-            fetch_next_int( file, &elem );
+            fetch_next_int( imgFile, &elem );
             header.push_back( elem );
         }
         return header;
@@ -209,7 +206,7 @@ struct MNISTBuffer{
         char byte;
         imgFile = ifstream{ imgPath };
         lblFile = ifstream{ lblPath };
-        vector<int> imgHeader = fetch_header( imgFile );
+        vector<int> imgHeader = fetch_image_header();
         N    = (uint) imgHeader[1];
         rows = (uint) imgHeader[2];
         cols = (uint) imgHeader[3];
@@ -740,7 +737,7 @@ int main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net{ 0.0001 }; // 0.001
+    MLP net{ 0.0002 }; // 0.001
     net.layers.push_back( new BinaryPerceptronLayer( 784, 16, net.lr ) );  cout << "Layer 1 created!" << endl;
     net.layers.push_back( new BinaryPerceptronLayer(  16, 16, net.lr ) );  cout << "Layer 2 created!" << endl;
     net.layers.push_back( new BinaryPerceptronLayer(  16, 10, net.lr ) );  cout << "Layer 3 created!" << endl;
@@ -761,8 +758,10 @@ int main(){
     bool testHeader = false;
 
     if( testHeader ){
-        cout << trainDataBuffer.fetch_header( trainDataBuffer.imgFile ) << endl;
-        cout << validDataBuffer.fetch_header( validDataBuffer.imgFile ) << endl;
+        cout << endl << "### Data Fetch Test ###" << endl;
+
+        cout << trainDataBuffer.fetch_image_header() << endl;
+        cout << validDataBuffer.fetch_image_header() << endl;
 
         vvf img = trainDataBuffer.fetch_next_image();
         vf  lbl = trainDataBuffer.fetch_next_y();
