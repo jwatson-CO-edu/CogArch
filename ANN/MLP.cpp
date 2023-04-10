@@ -273,23 +273,28 @@ struct MNISTBuffer{
 
 ////////// MULTI-LAYERED PERCEPTRON ////////////////////////////////////////////////////////////////
 
+/// Troubleshooting Flag ///
+bool _TS_FORWARD = true;
+bool _TS_BACKPRP = true;
+
 ////////// BinaryPerceptronLayer /////////////////
 
 struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Simplest Perception layer with a binary output vector
 
-    uint     dI;
-    uint     dIp1; // -- Input  dimensions + 1 (bias)
-    uint     dO; // ---- Output dimensions
-    MatrixXd x; // ----- Input  values
-    MatrixXd lossInp; // Loss to the previous layer
-    MatrixXd y; // ----- Output values
-    MatrixXd lossOut; // Loss from the following layer
-    MatrixXd W; // ----- Weight matrix
-    MatrixXd grad; // -- Per-output gradients
-    float    lr; // ---- Learning rate
+    uint     dI; // ----- Input  dimensions 
+    uint     dIp1; // --- Input  dimensions + 1 (bias)
+    uint     dO; // ----- Output dimensions
+    MatrixXd x; // ------ Input  values
+    MatrixXd lossInp; //- Loss to the previous layer
+    MatrixXd y; // ------ Output values
+    MatrixXd lossOut; //- Loss from the following layer
+    MatrixXd W; // ------ Weight matrix
+    MatrixXd grad; // --- Per-output gradients
+    float    lr; // ----- Learning rate
+    float    rc; // ----- Regularization constant
 
-    BinaryPerceptronLayer( uint inputDim, uint outputDim, float learnRate ){
+    BinaryPerceptronLayer( uint inputDim, uint outputDim, float learnRate, float lambda = 0.0f ){
         // Allocate arrays and init all weights randomly
 
         // Set params
@@ -297,6 +302,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         dIp1 = inputDim + 1; // Input  dimensions plus 1 for bias
         dO   = outputDim; // -- Output dimensions
         lr   = learnRate; // -- Learning rate
+        rc   = lambda; // ----- Regularization constant
 
         // Init I/O
         x /*-*/ = MatrixXd{ dIp1, 1 };
@@ -444,6 +450,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             y(i,0) /*----*/ = sigmoid( y(i,0) ); 
             activation(i,0) = y(i,0); 
         }
+        if( _TS_FORWARD )  cout << "Layer Output:\n" << y << endl;
         return activation;
     }
 
@@ -464,6 +471,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             else
                 yOut.push_back( 0.0f );
         }
+        if( _TS_FORWARD )  cout << "Prediction: " << yOut << endl;
         return yOut;
     }
 
@@ -471,6 +479,18 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Compute dLoss/dActivation for the OUTPUT layer ONLY
         for( uint i = 0; i < dO; i++ ){
             lossOut(i,0) = 2.0f*( y(i,0) - y_Actual[i] ); // 2*(predicted-desired)
+        }
+    }
+
+    void add_L1_to_loss(){
+        // Add L1 norm of weights to loss
+        float accum;
+        for( uint i = 0; i < dO; i++ ){
+            accum = 0.0f;
+            for( uint j = 0; j < dO; j++ ){
+                accum += abs( W(i,j) );
+            }
+            lossOut(i,0) += rc * accum;
         }
     }
 
@@ -539,11 +559,18 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // WARNING: NO DIMS CHECKED!
 
     float /*--------------------*/ lr; // --- Learning rate
+    float /*--------------------*/ rc; // --- Regularization constant
+    bool /*---------------------*/ useL1reg; // Whether to use L1 regularization
     vector<BinaryPerceptronLayer*> layers; // Dense layers
 
-    MLP( float learnRate ){
-        // Init learn rate
+    MLP( float learnRate, float lambda = 0.0f ){
+        // Init hyperparams
         lr = learnRate;
+        rc = lambda;
+        if( lambda > 0.0f ){  
+            useL1reg = true;  
+            cout << "L1 Norm will be applied to loss!" << endl;
+        }else{  useL1reg = false;  }
     }
 
     vf flatten( const vvf& matx ){
@@ -576,8 +603,14 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         long N = layers.size();
         long M;
         layers.back()->store_output_loss( y_Actual );
+
+        if( _TS_BACKPRP ){
+            cout << "Output Loss:\n" << layers.back()->lossOut << endl;
+        }
+
         // foreach_reverse( BinaryPerceptronLayer layer; layers[0..$-1] ){
         for( long i = N-1; i > -1; i-- ){
+            if( useL1reg )  layers[i]->add_L1_to_loss();
             layers[i]->calc_grad();
             layers[i]->descend_grad();
             layers[i]->store_previous_loss();
@@ -585,6 +618,10 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             if( i > 0 ){
                 M = layers[i-1]->dO;
                 layers[i-1]->lossOut.block(0,0,M,1) = layers[i]->lossInp.block(0,0,M,1);
+                if( _TS_BACKPRP ){
+                    cout << "Layer " << (i+1) << " Input Loss:\n"  << layers[i]->lossInp   << endl;
+                    cout << "Layer " << (i  ) << " Output Loss:\n" << layers[i-1]->lossOut << endl;
+                }       
             }
         }
     }
@@ -737,10 +774,10 @@ int main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net{ 0.0005 }; // 0.0002 // 0.001
-    net.layers.push_back( new BinaryPerceptronLayer( 784, 16, net.lr ) );  cout << "Layer 1 created!" << endl;
-    net.layers.push_back( new BinaryPerceptronLayer(  16, 16, net.lr ) );  cout << "Layer 2 created!" << endl;
-    net.layers.push_back( new BinaryPerceptronLayer(  16, 10, net.lr ) );  cout << "Layer 3 created!" << endl;
+    MLP net{ 0.05, 0.5 }; // 0.0002 // 0.001
+    net.layers.push_back( new BinaryPerceptronLayer( 784, 16, net.lr, net.rc ) );  cout << "Layer 1 created!" << endl;
+    net.layers.push_back( new BinaryPerceptronLayer(  16, 16, net.lr, net.rc ) );  cout << "Layer 2 created!" << endl;
+    net.layers.push_back( new BinaryPerceptronLayer(  16, 10, net.lr, net.rc ) );  cout << "Layer 3 created!" << endl;
     net.random_weight_init(); /*----------------------------------------*/ cout << "Weights init!"    << endl;
 
     MNISTBuffer trainDataBuffer{
@@ -779,8 +816,43 @@ int main(){
         validDataBuffer.seek_to_data();
     }
 
+    if( _TS_FORWARD || _TS_BACKPRP ){
+        // -1. Init vars and reset data buffers
+        vvf   img; // --------------- Current image
+        vf    lbl; // --------------- Current label
+        uint  N; // ----------------- Number of training examples       
+        uint  div; // ------- Status print freq 
+        float avgLoss = 0.0f; // ---- Average loss for this epoch
+
+        N  = 1;
+
+        // 0. For every example in the dataset
+        for( uint i = 0; i < N; i++ ){
+
+            // 1. Fetch next image and its label
+            img.clear();
+            lbl.clear();
+            img = trainDataBuffer.fetch_next_image();
+            lbl = trainDataBuffer.fetch_next_y();
+
+            // 2. Make prediction and store
+            net.forward( img );          
+
+            // 3. One full backprop step
+            net.backpropagation( lbl );
+            if( _TS_BACKPRP ){
+                cout << "Gradient Norms: " << net.grad_norms() << endl;
+            }
+
+            // 4. Accum loss
+            avgLoss += net.get_loss();
+        }
+
+        cout << "Loss: " << avgLoss << endl;
+    }
+
     ///// Test 2: MNIST //////////////////////////
-    bool  test2     = true;
+    bool  test2     = true && ( ! _TS_FORWARD );
     float epochLoss =  0.0f;
     uint  N_epoch   = 64; // 64; // 32 // 16
     float acc /*-*/ =  0.0f;
