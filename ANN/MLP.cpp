@@ -782,7 +782,7 @@ int main(){
     ///// Test 2: MNIST //////////////////////////
     bool  test2     = true;
     float epochLoss =  0.0f;
-    uint  N_epoch   = 32; // 64; // 32 // 16
+    uint  N_epoch   = 64; // 64; // 32 // 16
     float acc /*-*/ =  0.0f;
 
     if( test2 ){
