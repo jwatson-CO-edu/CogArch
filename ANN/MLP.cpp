@@ -274,8 +274,8 @@ struct MNISTBuffer{
 ////////// MULTI-LAYERED PERCEPTRON ////////////////////////////////////////////////////////////////
 
 /// Troubleshooting Flag ///
-bool _TS_FORWARD = true;
-bool _TS_BACKPRP = true;
+bool _TS_FORWARD = false;
+bool _TS_BACKPRP = false;
 
 ////////// BinaryPerceptronLayer /////////////////
 
@@ -487,7 +487,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         float accum;
         for( uint i = 0; i < dO; i++ ){
             accum = 0.0f;
-            for( uint j = 0; j < dO; j++ ){
+            for( uint j = 0; j < dIp1; j++ ){
                 accum += abs( W(i,j) );
             }
             lossOut(i,0) += rc * accum;
@@ -511,6 +511,9 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 dOut_dWght = x(j,0);
                 grad(i,j) = dOut_dWght * dAct_dOut * dLoss_dAct;
             }
+        }
+        if( _TS_BACKPRP ){
+            cout << "Example Grad Calc: ( " << dOut_dWght << " )( " << dAct_dOut << " )( " << dLoss_dAct << " )" << endl;
         }
     }
 
@@ -610,7 +613,11 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         // foreach_reverse( BinaryPerceptronLayer layer; layers[0..$-1] ){
         for( long i = N-1; i > -1; i-- ){
-            if( useL1reg )  layers[i]->add_L1_to_loss();
+            if( useL1reg ){
+                if( _TS_BACKPRP )  cout << endl << "Weight Norm: " << layers[i]->W.norm() << ", Loss before L1: " << layers[i]->lossOut.norm();
+                layers[i]->add_L1_to_loss();
+                if( _TS_BACKPRP )  cout << ", Loss After L1: " << layers[i]->lossOut.norm() << endl;
+            }  
             layers[i]->calc_grad();
             layers[i]->descend_grad();
             layers[i]->store_previous_loss();
@@ -774,7 +781,10 @@ int main(){
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
-    MLP net{ 0.05, 0.5 }; // 0.0002 // 0.001
+    MLP net{ 
+        0.0005, // 0.0002 // 0.001
+        0.10 // 0.5 // 0.2 // 0.1
+    }; 
     net.layers.push_back( new BinaryPerceptronLayer( 784, 16, net.lr, net.rc ) );  cout << "Layer 1 created!" << endl;
     net.layers.push_back( new BinaryPerceptronLayer(  16, 16, net.lr, net.rc ) );  cout << "Layer 2 created!" << endl;
     net.layers.push_back( new BinaryPerceptronLayer(  16, 10, net.lr, net.rc ) );  cout << "Layer 3 created!" << endl;
@@ -854,7 +864,7 @@ int main(){
     ///// Test 2: MNIST //////////////////////////
     bool  test2     = true && ( ! _TS_FORWARD );
     float epochLoss =  0.0f;
-    uint  N_epoch   = 64; // 64; // 32 // 16
+    uint  N_epoch   = 16; // 64; // 32 // 16
     float acc /*-*/ =  0.0f;
 
     if( test2 ){
