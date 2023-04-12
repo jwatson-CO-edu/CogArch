@@ -86,6 +86,12 @@ float randf(){
     return  1.0f * rand() / RAND_MAX;
 }
 
+float randf( float lo, float hi ){
+    // Return a pseudo-random number between `lo` and `hi`
+    float span = hi - lo;
+    return lo + randf() * span;
+}
+
 void seed_rand(){  srand( time( NULL ) );  } // Provide a clock-based unpredictable seed to RNG
 
 float sigmoid( float x ){  return 1.0f / (1.0f + exp(-x));  }
@@ -318,11 +324,11 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         x( dIp1-1, 0 ) = 1.0f;
     }
 
-    void random_weight_init(){
+    void random_weight_init( float lo = 0.0f, float hi = 1.0f ){
         // Set all weights and biases to uniformly-distributed random numbers
         for( uint i = 0; i < dO; i++ ){
             for( uint j = 0; j < dIp1; j++ ){
-                W(i,j) = randf();
+                W(i,j) = randf( lo, hi );
             }
         }
     }
@@ -642,10 +648,10 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return norms;
     }
 
-    void random_weight_init(){
+    void random_weight_init( float lo = 0.0f, float hi = 1.0f ){
         // Set all weights and biases to uniformly-distributed random numbers
         for( BinaryPerceptronLayer* layer : layers ){
-            layer->random_weight_init();
+            layer->random_weight_init( lo, hi );
         }
     }
 
@@ -782,13 +788,15 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.0005, // 0.0002 // 0.001
-        0.10 // 0.5 // 0.2 // 0.1
+        0.001, // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001
+        0.002 // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
     }; 
+    uint N_epoch   = 32; // 64; // 32 // 16
+
     net.layers.push_back( new BinaryPerceptronLayer( 784, 16, net.lr, net.rc ) );  cout << "Layer 1 created!" << endl;
     net.layers.push_back( new BinaryPerceptronLayer(  16, 16, net.lr, net.rc ) );  cout << "Layer 2 created!" << endl;
     net.layers.push_back( new BinaryPerceptronLayer(  16, 10, net.lr, net.rc ) );  cout << "Layer 3 created!" << endl;
-    net.random_weight_init(); /*----------------------------------------*/ cout << "Weights init!"    << endl;
+    net.random_weight_init( 0.001, 0.1 ); /*------------------------------------*/ cout << "Weights init!"    << endl;
 
     MNISTBuffer trainDataBuffer{
         "../Data/MNIST/train-images.idx3-ubyte",
@@ -864,7 +872,6 @@ int main(){
     ///// Test 2: MNIST //////////////////////////
     bool  test2     = true && ( ! _TS_FORWARD );
     float epochLoss =  0.0f;
-    uint  N_epoch   = 16; // 64; // 32 // 16
     float acc /*-*/ =  0.0f;
 
     if( test2 ){
