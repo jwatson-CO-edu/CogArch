@@ -134,3 +134,4 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 # Resources
 * [Top 14 C++ Machine Learning Libraries](https://anywhere.epam.com/business/c-plus-plus-ml-libraries)
     - FANN?
+* [Adam Optimizer](https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.)
