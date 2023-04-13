@@ -20,9 +20,11 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - `[Y]` Issue: Apparent hanging and massive resource usage, 2023-04-09 - Sol'n: Datafile size read with wrong endianness and program was attemting to read 1.6B images!
             * `[Y]` Verify that next image is fetched, 2023-04-09: Image is clear and label matches!
             * `[Y]` Verify that next label is fetched, 2023-04-09: Image is clear and label matches!
-        - `[>]` Program needs testing
-            * `[ ]` Verify forward @ all layers
-            * `[ ]` Verify backprop @ all layers
+        - `[>]` Issue: Rotten Performance
+            * `[N]` If training examples are not shuffled, then shuffle them, 2023-04-13: Only 1 in ten examples is from a consecutive class
+            * `[ ]` If perf still bad, then do batch updates
+            * `[ ]` If perf still bad, then double-check gradient math
+            * `[ ]` If perf still bad, then use [Adam Optimizer](https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.)
 
 1. `[>]` Bayesian Neural Network (BNN, C++)
     * `[>]` Take notes and develop a dev plan

@@ -243,6 +243,20 @@ struct MNISTBuffer{
         return label;
     }
 
+    float count_consecutive_fraction(){
+        // Determine if the data has been shuffled for us
+        seek_to_data();
+        ulong Nsame = 0;
+        ubyte Ylast = fetch_next_label();
+        ubyte Ycurr;
+        for( uint i = 1; i < N; i++ ){
+            Ycurr = fetch_next_label();
+            if( Ycurr == Ylast )  Nsame++;
+            Ylast = Ycurr;
+        }
+        return 1.0f * Nsame / N;
+    }
+
     vf fetch_next_y(){
         // Fetch one label as a vector, should be called with the same cadence as `fetch_next_image`
         vf    rtnVec;
@@ -282,6 +296,7 @@ struct MNISTBuffer{
 /// Troubleshooting Flag ///
 bool _TS_FORWARD = false;
 bool _TS_BACKPRP = false;
+bool _TS_DATASET = true;
 
 ////////// BinaryPerceptronLayer /////////////////
 
@@ -299,8 +314,12 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MatrixXd grad; // --- Per-output gradients
     float    lr; // ----- Learning rate
     float    rc; // ----- Regularization constant
+    ulong    Nb; // ----- Batch size
 
-    BinaryPerceptronLayer( uint inputDim, uint outputDim, float learnRate, float lambda = 0.0f ){
+    BinaryPerceptronLayer( 
+        uint inputDim, uint outputDim, float learnRate, 
+        float lambda = 0.0f //, ulong batchSize = 0
+    ){
         // Allocate arrays and init all weights randomly
 
         // Set params
@@ -549,6 +568,8 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
+    // FIXME, START HERE: ACCUMULATE LOSS FOR MINIBATCHES
+
     float get_loss(){
         // Get the Manhattan distance between predicted and actual
         float rtnLoss = 0.0f;
@@ -567,19 +588,32 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Simplest Multi-Layer Perceptron Implementation, Very inefficient
     // WARNING: NO DIMS CHECKED!
 
-    float /*--------------------*/ lr; // --- Learning rate
-    float /*--------------------*/ rc; // --- Regularization constant
-    bool /*---------------------*/ useL1reg; // Whether to use L1 regularization
-    vector<BinaryPerceptronLayer*> layers; // Dense layers
+    float /*--------------------*/ lr; // --------- Learning rate
+    float /*--------------------*/ rc; // --------- Regularization constant
+    ulong /*--------------------*/ Nb; // --------- Batch size
+    bool /*---------------------*/ useL1reg; // --- Whether to use L1 regularization
+    bool /*---------------------*/ useMiniBatch; // Whether to use batches
+    vector<BinaryPerceptronLayer*> layers; // ----- Dense layers
 
-    MLP( float learnRate, float lambda = 0.0f ){
+    MLP( float learnRate, float lambda = 0.0f, ulong batchSize = 0 ){
         // Init hyperparams
         lr = learnRate;
         rc = lambda;
+        Nb = batchSize;
         if( lambda > 0.0f ){  
             useL1reg = true;  
             cout << "L1 Norm will be applied to loss!" << endl;
         }else{  useL1reg = false;  }
+        if( batchSize > 0 ){
+            useMiniBatch = true;
+            cout << "Using mini-batches of size " << Nb << "!" << endl;
+        }
+    }
+
+    void append_dense_layer( uint inputDim, uint outputDim ){
+        // Create a dense layer with specified size, and the learning rate, norm const, and batch size given by parent net
+        layers.push_back( new BinaryPerceptronLayer( inputDim, outputDim, lr, rc ) );  
+        cout << "Layer " << (layers.size()+1) << " created!" << endl;
     }
 
     vf flatten( const vvf& matx ){
@@ -793,22 +827,31 @@ int main(){
     }; 
     uint N_epoch   = 32; // 64; // 32 // 16
 
-    net.layers.push_back( new BinaryPerceptronLayer( 784, 16, net.lr, net.rc ) );  cout << "Layer 1 created!" << endl;
-    net.layers.push_back( new BinaryPerceptronLayer(  16, 16, net.lr, net.rc ) );  cout << "Layer 2 created!" << endl;
-    net.layers.push_back( new BinaryPerceptronLayer(  16, 10, net.lr, net.rc ) );  cout << "Layer 3 created!" << endl;
-    net.random_weight_init( 0.001, 0.1 ); /*------------------------------------*/ cout << "Weights init!"    << endl;
-
+    if( ! _TS_DATASET ){
+        net.append_dense_layer( 784, 16 );
+        net.append_dense_layer(  16, 16 );
+        net.append_dense_layer(  16, 10 );
+        net.random_weight_init( 0.001, 0.1 );  cout << "Weights init!"    << endl;
+    }
+    
     MNISTBuffer trainDataBuffer{
         "../Data/MNIST/train-images.idx3-ubyte",
         "../Data/MNIST/train-labels.idx1-ubyte"
     }; 
     cout << "Loaded training data!" << endl;
+    if( _TS_DATASET ){
+        cout << "Training data has " << trainDataBuffer.count_consecutive_fraction() << " consecutive fraction." << endl;
+    }
+
 
     MNISTBuffer validDataBuffer{ 
         "../Data/MNIST/t10k-images.idx3-ubyte",
         "../Data/MNIST/t10k-labels.idx1-ubyte"
     };  
     cout << "Loaded testing data!" << endl;
+    if( _TS_DATASET ){
+        cout << "Validation data has " << validDataBuffer.count_consecutive_fraction() << " consecutive fraction." << endl;
+    }
 
     bool testHeader = false;
 
@@ -870,7 +913,7 @@ int main(){
     }
 
     ///// Test 2: MNIST //////////////////////////
-    bool  test2     = true && ( ! _TS_FORWARD );
+    bool  test2     = true && ( ! _TS_FORWARD ) && ( ! _TS_DATASET );
     float epochLoss =  0.0f;
     float acc /*-*/ =  0.0f;
 
