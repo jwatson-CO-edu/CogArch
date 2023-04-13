@@ -664,14 +664,14 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Run simple backrop (non-batch) on every training example of an `MNISTBuffer`
 
         // -1. Init vars and reset data buffers
-        vvf   img; // --------------- Current image
-        vf    lbl; // --------------- Current label
-        uint  N; // ----------------- Number of training examples       
-        uint  div; // ------- Status print freq 
-        float avgLoss = 0.0f; // ---- Average loss for this epoch
+        vvf   img; // ---------- Current image
+        vf    lbl; // ---------- Current label
+        uint  N; // ------------ Number of training examples       
+        uint  div; // ---------- Status print freq 
+        float avgLoss = 0.0f; // Average loss for this epoch
 
         N   = dataSet->N;
-        div = N/100; // ------- Status print freq 
+        div = N/100; // Status print freq 
         
         dataSet->seek_to_data();
 
@@ -788,8 +788,8 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.005, // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
-        0.01  // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
+        0.002, // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.005 // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
     }; 
     uint N_epoch   = 32; // 64; // 32 // 16
 
