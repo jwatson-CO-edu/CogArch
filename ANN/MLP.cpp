@@ -296,7 +296,7 @@ struct MNISTBuffer{
 /// Troubleshooting Flag ///
 bool _TS_FORWARD = false;
 bool _TS_BACKPRP = false;
-bool _TS_DATASET = true;
+bool _TS_DATASET = false;
 
 ////////// BinaryPerceptronLayer /////////////////
 
@@ -312,6 +312,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MatrixXd lossOut; //- Loss from the following layer
     MatrixXd W; // ------ Weight matrix
     MatrixXd grad; // --- Per-output gradients
+    MatrixXd gAcc; // --- Batching gradient accumulator
     float    lr; // ----- Learning rate
     float    rc; // ----- Regularization constant
     ulong    Nb; // ----- Batch size
@@ -338,6 +339,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Init weights && Gradient
         W    = MatrixXd{ dO, dIp1 };
         grad = MatrixXd{ dO, dIp1 };
+        gAcc = MatrixXd::Zero( dO, dIp1 );
 
         // Bias is unity input at last index
         x( dIp1-1, 0 ) = 1.0f;
@@ -542,6 +544,24 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
+    void clear_grad_accum(){
+        // Set all elements of the gradient accumulator to zero
+        gAcc = MatrixXd::Zero( dO, dIp1 );
+    }
+
+    void accum_grad(){
+        // Accumulate the current gradient elements
+        for( uint i = 0; i < dO; i++ ){
+            for( uint j = 0; j < dIp1; j++ ){
+                gAcc(i,j) += grad(i,j);
+            }
+        }
+    }
+
+    void set_grad_to_accum(){
+        grad = gAcc;
+    }
+
     float grad_norm(){
         // Return the Frobenius norm of the gradient
         return grad.norm();
@@ -591,15 +611,17 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     float /*--------------------*/ lr; // --------- Learning rate
     float /*--------------------*/ rc; // --------- Regularization constant
     ulong /*--------------------*/ Nb; // --------- Batch size
+    ulong /*--------------------*/ Kb; // --------- Batch counter
     bool /*---------------------*/ useL1reg; // --- Whether to use L1 regularization
     bool /*---------------------*/ useMiniBatch; // Whether to use batches
     vector<BinaryPerceptronLayer*> layers; // ----- Dense layers
 
     MLP( float learnRate, float lambda = 0.0f, ulong batchSize = 0 ){
         // Init hyperparams
-        lr = learnRate;
-        rc = lambda;
-        Nb = batchSize;
+        lr = learnRate; // Learning rate
+        rc = lambda; // -- Regularization constant
+        Nb = batchSize; // Batch size
+        Kb = 0; // ------- Batch counter
         if( lambda > 0.0f ){  
             useL1reg = true;  
             cout << "L1 Norm will be applied to loss!" << endl;
@@ -673,6 +695,46 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
+    void backup_and_accum( const vf& y_Actual ){
+        // Calc gradient, accumulate, and descend batch grad when counter expires
+        Kb++;
+        long N = layers.size();
+        long M;
+        layers.back()->store_output_loss( y_Actual );
+
+        if( _TS_BACKPRP ){
+            cout << "Output Loss:\n" << layers.back()->lossOut << endl;
+        }
+
+        for( long i = N-1; i > -1; i-- ){
+            if( useL1reg ){
+                if( _TS_BACKPRP )  cout << endl << "Weight Norm: " << layers[i]->W.norm() << ", Loss before L1: " << layers[i]->lossOut.norm();
+                layers[i]->add_L1_to_loss();
+                if( _TS_BACKPRP )  cout << ", Loss After L1: " << layers[i]->lossOut.norm() << endl;
+            }  
+            layers[i]->calc_grad();
+            layers[i]->accum_grad();
+            if( Kb >= Nb ){
+                layers[i]->set_grad_to_accum();
+                layers[i]->descend_grad();
+                layers[i]->clear_grad_accum();
+            }
+            layers[i]->store_previous_loss();
+
+            if( i > 0 ){
+                M = layers[i-1]->dO;
+                layers[i-1]->lossOut.block(0,0,M,1) = layers[i]->lossInp.block(0,0,M,1);
+                if( _TS_BACKPRP ){
+                    cout << "Layer " << (i+1) << " Input Loss:\n"  << layers[i]->lossInp   << endl;
+                    cout << "Layer " << (i  ) << " Output Loss:\n" << layers[i-1]->lossOut << endl;
+                }       
+            }
+        }
+        if( Kb >= Nb ){
+            Kb = 0;
+        }
+    }
+
     vf grad_norms(){
         // Return the Frobenius norm of the gradient of each layer, in order
         vf norms;
@@ -722,7 +784,10 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             forward( img );          
 
             // 3. One full backprop step
-            backpropagation( lbl );
+            if( useMiniBatch )
+                backup_and_accum( lbl );
+            else
+                backpropagation( lbl );
 
             // 4. Accum loss
             avgLoss += get_loss();
@@ -822,8 +887,9 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.002, // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
-        0.005 // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
+        0.0001, // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.0, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
+        256
     }; 
     uint N_epoch   = 32; // 64; // 32 // 16
 
