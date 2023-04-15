@@ -22,8 +22,10 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
             * `[Y]` Verify that next label is fetched, 2023-04-09: Image is clear and label matches!
         - `[>]` Issue: Rotten Performance
             * `[N]` If training examples are not shuffled, then shuffle them, 2023-04-13: Only 1 in ten examples is from a consecutive class
+            * `[ ]` If perf still bad, then add trainable params
             * `[ ]` If perf still bad, then do batch updates
             * `[ ]` If perf still bad, then double-check gradient math
+                - `[ ]` Try a binary classifier to see if the network can identify one digit!
             * `[ ]` If perf still bad, then use [Adam Optimizer](https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.)
 
 1. `[>]` Bayesian Neural Network (BNN, C++)
