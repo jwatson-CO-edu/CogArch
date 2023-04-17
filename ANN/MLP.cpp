@@ -620,6 +620,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         rc = lambda; // -- Regularization constant
         Nb = batchSize; // Batch size
         Kb = 0; // ------- Batch counter
+        cout << "Learning Rate: " << lr << endl;
         if( lambda > 0.0f ){  
             useL1reg = true;  
             cout << "L1 Norm will be applied to loss!" << endl;
@@ -634,6 +635,17 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Create a dense layer with specified size, and the learning rate, norm const, and batch size given by parent net
         layers.push_back( new BinaryPerceptronLayer( inputDim, outputDim, lr, rc ) );  
         cout << "Layer " << layers.size() << " created!" << endl;
+    }
+
+    void print_arch(){
+        // Print the network architecture
+        uint i = 1;
+        cout << "\n### Network Summary ###" << endl;
+        for( BinaryPerceptronLayer* layer : layers ){
+            cout << "Layer " << i << ": Input " << layer->dI << "  X  Output " << layer->dO << endl;
+            i++;
+        }
+        cout << "# End of Summary #" << endl << endl;
     }
 
     vf flatten( const vvf& matx ){
@@ -793,6 +805,8 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             if( i%div == 0 )  cout << "." << flush;
         }
 
+        cout << "Grad Norms: " << grad_norms() << endl;
+
         // N. Return the average loss across all training example predictions
         return avgLoss / (float) N;
     }
@@ -885,9 +899,9 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.0001, // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
-        0.00005, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
-        250
+        0.00001, // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.000005, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
+        125 // 250 // 500
     }; 
     uint N_epoch   = 64; // 64; // 32 // 16
 
@@ -896,6 +910,7 @@ int main(){
         net.append_dense_layer(  64,  32 );
         net.append_dense_layer(  32,  10 );
         net.random_weight_init( 0.001, 0.1 );  cout << "Weights init!"    << endl;
+        net.print_arch();
     }
     
     MNISTBuffer trainDataBuffer{
