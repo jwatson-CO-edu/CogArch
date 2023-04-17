@@ -805,7 +805,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             if( i%div == 0 )  cout << "." << flush;
         }
 
-        cout << "Grad Norms: " << grad_norms() << endl;
+        cout << "\nGrad Norms: " << grad_norms() << endl;
 
         // N. Return the average loss across all training example predictions
         return avgLoss / (float) N;
@@ -995,6 +995,8 @@ int main(){
     bool  test2     = true && ( ! _TS_FORWARD ) && ( ! _TS_DATASET );
     float epochLoss =  0.0f;
     float acc /*-*/ =  0.0f;
+
+    cout << "About to train for " << N_epoch << " epochs ..." << endl;
 
     if( test2 ){
         for( uint i = 0; i < N_epoch; i++ ){
