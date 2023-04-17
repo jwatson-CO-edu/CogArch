@@ -623,7 +623,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         cout << "Learning Rate: " << lr << endl;
         if( lambda > 0.0f ){  
             useL1reg = true;  
-            cout << "L1 Norm will be applied to loss!" << endl;
+            cout << "L1 Norm will be applied to loss!, lambda = " << rc << endl;
         }else{  useL1reg = false;  }
         if( batchSize > 0 ){
             useMiniBatch = true;
