@@ -27,6 +27,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
             * `[ ]` If perf still bad, then double-check gradient math
                 - Resources:
                     * [From scratch in C++, 1](https://www.youtube.com/watch?v=LA4I3cWkp1E)
+                        - Backprop @ 40:00
                     * [From scratch in C++, 2 (by neuron, not by layer)](https://www.youtube.com/watch?v=sK9AbJ4P8ao)
                     * [Live coding in C++](https://www.youtube.com/playlist?list=PL3MCKCM5GS4UmZJs-h6Rm11dlExhBPS-k)
                 - `[ ]` Try a binary classifier to see if the network can identify one digit!

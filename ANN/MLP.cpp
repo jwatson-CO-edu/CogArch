@@ -573,7 +573,9 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         for( uint j = 0; j < dIp1; j++ ){
             accum = 0.0f;
             for( uint i = 0; i < dO; i++ ){
-                accum += grad(i,j);
+                // accum += grad(i,j);
+                // https://youtu.be/LA4I3cWkp1E?t=2686
+                accum += grad(i,j) * W(i,j);
             }
             lossInp(j,0) = accum;
         }
@@ -899,9 +901,9 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.00001, // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
-        0.000002, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
-        125 // 250 // 500
+        0.000005, // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.000000, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
+        1000 // 25 //125 // 250 // 500 // 1000
     }; 
     uint N_epoch   = 32; // 64; // 32 // 16
 
