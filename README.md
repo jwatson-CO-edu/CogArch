@@ -24,12 +24,13 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
             * `[N]` If training examples are not shuffled, then shuffle them, 2023-04-13: Only 1 in ten examples is from a consecutive class
             * `[Y]` If perf still bad, then add trainable params, 2023-04-14: Network is bigger, but trains much more slowly (timewise)
             * `[Y]` If perf still bad, then do batch updates, 2023-04-14: Batches implemented, Learning still stalls at every learning rate and L1 rate attempted 
-            * `[ ]` If perf still bad, then double-check gradient math
+            * `[Y]` If perf still bad, then double-check gradient math, 2023-04-20: Consider this on good footing until further notice
                 - Resources:
-                    * [From scratch in C++, 1](https://www.youtube.com/watch?v=LA4I3cWkp1E)
+                    * `[Y]` [From scratch in C++, 1](https://www.youtube.com/watch?v=LA4I3cWkp1E), 2023-04-20: I have some doubts about their calcs of losses to pass to the prev layer
                         - Backprop @ 40:00
-                    * [From scratch in C++, 2 (by neuron, not by layer)](https://www.youtube.com/watch?v=sK9AbJ4P8ao)
+                    * `[Y]` [Backprop from Scratch](https://www.youtube.com/watch?v=Z97XGNUUx9o), 2023-04-20: Seems to corroborate the above
                     * [Live coding in C++](https://www.youtube.com/playlist?list=PL3MCKCM5GS4UmZJs-h6Rm11dlExhBPS-k)
+                    * [From scratch in C++, 2 (by neuron, not by layer)](https://www.youtube.com/watch?v=sK9AbJ4P8ao)
                 - `[ ]` Try a binary classifier to see if the network can identify one digit!
             * `[ ]` If perf still bad, then use gradient clipping?
             * `[ ]` If perf still bad, then use [Adam Optimizer](https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.)

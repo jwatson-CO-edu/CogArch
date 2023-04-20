@@ -315,11 +315,12 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MatrixXd gAcc; // --- Batching gradient accumulator
     float    lr; // ----- Learning rate
     float    rc; // ----- Regularization constant
+    float    gs; // ----- Gradient scale
     ulong    Nb; // ----- Batch size
 
     BinaryPerceptronLayer( 
         uint inputDim, uint outputDim, float learnRate, 
-        float lambda = 0.0f //, ulong batchSize = 0
+        float lambda = 0.0f, float gradScale = 0.0f
     ){
         // Allocate arrays and init all weights randomly
 
@@ -329,6 +330,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         dO   = outputDim; // -- Output dimensions
         lr   = learnRate; // -- Learning rate
         rc   = lambda; // ----- Regularization constant
+        gs   = gradScale; // -- Gradient scale
 
         // Init I/O
         x /*-*/ = MatrixXd{ dIp1, 1 };
@@ -532,6 +534,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // predict_sigmoid( false ); // This already should have been called
         for( uint i = 0; i < dO; i++ ){
             // dLoss_dAct = 2.0f*( y_Predict[i] - y_Actual[i] ); // 2*(predicted-desired)
+            // https://youtu.be/Z97XGNUUx9o?t=1520 seems to corroborate the below
             dLoss_dAct = lossOut(i,0); // 2*(predicted-desired)
             dAct_dOut  = y(i,0)*(1.0-y(i,0)); // --- sigmoid(Out)*(1.0-sigmoid(Out))
             for( uint j = 0; j < dIp1; j++ ){
@@ -567,6 +570,12 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return grad.norm();
     }
 
+    void scale_grad(){
+        // Scale the gradient to an appropriate magnitude
+        float mag = grad.norm();
+        grad = (grad / mag) * gs;
+    }
+
     void store_previous_loss(){
         // Calculate loss to be backpropagated to the previous layer
         float accum;
@@ -575,6 +584,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             for( uint i = 0; i < dO; i++ ){
                 // accum += grad(i,j);
                 // https://youtu.be/LA4I3cWkp1E?t=2686
+                // https://youtu.be/Z97XGNUUx9o?t=1520 corroborates
                 accum += grad(i,j) * W(i,j);
             }
             lossInp(j,0) = accum;
@@ -610,16 +620,19 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     float /*--------------------*/ lr; // --------- Learning rate
     float /*--------------------*/ rc; // --------- Regularization constant
+    float /*--------------------*/ gs; // --------- Gradient scale
     ulong /*--------------------*/ Nb; // --------- Batch size
     ulong /*--------------------*/ Kb; // --------- Batch counter
     bool /*---------------------*/ useL1reg; // --- Whether to use L1 regularization
+    bool /*---------------------*/ pScaleGrad; // - Whether to scale gradients before applying
     bool /*---------------------*/ useMiniBatch; // Whether to use batches
     vector<BinaryPerceptronLayer*> layers; // ----- Dense layers
 
-    MLP( float learnRate, float lambda = 0.0f, ulong batchSize = 0 ){
+    MLP( float learnRate, float lambda = 0.0f, float gradScale = 0.0f, ulong batchSize = 0 ){
         // Init hyperparams
         lr = learnRate; // Learning rate
         rc = lambda; // -- Regularization constant
+        gs = gradScale; // Gradient scale
         Nb = batchSize; // Batch size
         Kb = 0; // ------- Batch counter
         cout << "Learning Rate: " << lr << endl;
@@ -627,6 +640,10 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             useL1reg = true;  
             cout << "L1 Norm will be applied to loss!, lambda = " << rc << endl;
         }else{  useL1reg = false;  }
+        if( gradScale > 0.0f ){
+            pScaleGrad = true;
+            cout << "Each layer's gradient will be scaled to " << gs << endl;
+        }else{  pScaleGrad = false;  }
         if( batchSize > 0 ){
             useMiniBatch = true;
             cout << "Using mini-batches of size " << Nb << "!" << endl;
@@ -693,8 +710,11 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 if( _TS_BACKPRP )  cout << ", Loss After L1: " << layers[i]->lossOut.norm() << endl;
             }  
             layers[i]->calc_grad();
-            layers[i]->descend_grad();
             layers[i]->store_previous_loss();
+            if( pScaleGrad ){
+                layers[i]->scale_grad();
+            }
+            layers[i]->descend_grad();
 
             if( i > 0 ){
                 M = layers[i-1]->dO;
@@ -728,11 +748,14 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             layers[i]->accum_grad();
             if( Kb >= Nb ){
                 layers[i]->set_grad_to_accum();
+                layers[i]->store_previous_loss();
+                if( pScaleGrad ){
+                    layers[i]->scale_grad();
+                }
                 layers[i]->descend_grad();
                 layers[i]->clear_grad_accum();
             }
-            layers[i]->store_previous_loss();
-
+            
             if( i > 0 ){
                 M = layers[i-1]->dO;
                 layers[i-1]->lossOut.block(0,0,M,1) = layers[i]->lossInp.block(0,0,M,1);
