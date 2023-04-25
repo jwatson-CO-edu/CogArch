@@ -23,6 +23,8 @@ using std::cout, std::endl, std::flush, std::ostream;
 using std::vector;
 #include <set>
 using std::set;
+#include <list>
+using std::list, std::advance;
 #include <string>
 using std::string;
 #include <fstream>
@@ -179,6 +181,11 @@ struct MNISTBuffer{
     uint     rows; // ----- Height of each image in pixels
     uint     cols; // ----- Width of each image in pixels
     uint     N; // -------- Number of examples in this dataset
+    uint     Nbyte_img;
+    uint     Nbyte_imgHdr;
+    uint     Nbyte_lbl;
+    uint     Nbyte_lblHdr;
+     
 
     vector<int> fetch_image_header(){
         // Fetch the header info from the file and return as a vector
@@ -207,6 +214,37 @@ struct MNISTBuffer{
         seek_to_data( lblFile, 2 );
     }
 
+    bool seek_to_sample( uint i ){
+        // Advance the files to the i^{th} sample, Return true if we got there
+        if( i >= N ){  
+            return false;
+        }else{
+            imgFile.seekg( Nbyte_imgHdr + i*Nbyte_img );
+            lblFile.seekg( Nbyte_lblHdr + i*Nbyte_lbl );
+            if((imgFile.peek() == EOF) || (lblFile.peek() == EOF))  
+                return false;
+            else
+                return true;
+        }
+    }
+
+    vector<uint> generate_random_ordering_of_samples(){
+        // Generate and return a vector of randomized indices to access during the epoch
+        list<uint> /*-----*/ ordered; //- DLL for O(1) removal
+        vector<uint> /*---*/ rndmOrd; //- Vector of indices for the epoch
+        list<uint>::iterator it; // ----- Iterator to fetch and pop from
+        uint /*-----------*/ fetchDex; // Index of the index to add to the vector
+        for( uint i = 0; i < N; i++ ){  ordered.push_back(i);  } // For 0 to N-1, Add the index to the DLL
+        for( uint i = 0; i < N; i++ ){ // For 0 to N-1, pop an index from the DLL and add it to the vector to return
+            it /*-*/ = ordered.begin(); // ------- Go to the beginning of the list
+            fetchDex = rand() % ordered.size(); // Generate a random index within the current list size
+            advance( it, fetchDex ); // ---------- Go to that index
+            rndmOrd.push_back( *it ); // --------- Fetch elem
+            ordered.erase( it ); // -------------- Pop elem
+        }
+        return rndmOrd;
+    }
+
     MNISTBuffer( string imgPath, string lblPath ){
         // Load metadata and seek to the beginning of both data files
         char byte;
@@ -216,6 +254,10 @@ struct MNISTBuffer{
         N    = (uint) imgHeader[1];
         rows = (uint) imgHeader[2];
         cols = (uint) imgHeader[3];
+        Nbyte_imgHdr = sizeof( int ) * 4;
+        Nbyte_lblHdr = sizeof( int ) * 2;
+        Nbyte_img    = sizeof( ubyte ) * rows * cols;
+        Nbyte_lbl    = sizeof( ubyte );
         // 3. Set buffer indices to the beginning of labeled data
         seek_to_data();
     }
