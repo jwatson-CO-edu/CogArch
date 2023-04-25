@@ -24,8 +24,9 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
             * `[N]` If training examples are not shuffled, then shuffle them, 2023-04-13: Only 1 in ten examples is from a consecutive class
             * `[Y]` If perf still bad, then add trainable params, 2023-04-14: Network is bigger, but trains much more slowly (timewise)
             * `[Y]` If perf still bad, then do batch updates, 2023-04-14: Batches implemented, Learning still stalls at every learning rate and L1 rate attempted 
-            * `[Y]` If perf still bad, then double-check gradient math, 2023-04-20: Consider this on good footing until further notice
+            * `[>]` If perf still bad, then double-check gradient math, 2023-04-20: Consider this on good footing until further notice
                 - Resources:
+                    * `[>]` [Sebastian Lague Tut](https://www.youtube.com/watch?v=hfMk-kjRv4c)
                     * `[Y]` [From scratch in C++, 1](https://www.youtube.com/watch?v=LA4I3cWkp1E), 2023-04-20: I have some doubts about their calcs of losses to pass to the prev layer
                         - Backprop @ 40:00
                     * `[Y]` [Backprop from Scratch](https://www.youtube.com/watch?v=Z97XGNUUx9o), 2023-04-20: Seems to corroborate the above
