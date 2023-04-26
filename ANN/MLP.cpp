@@ -668,15 +668,17 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     bool /*---------------------*/ useL1reg; // --- Whether to use L1 regularization
     bool /*---------------------*/ pScaleGrad; // - Whether to scale gradients before applying
     bool /*---------------------*/ useMiniBatch; // Whether to use batches
+    bool /*---------------------*/ rn; // --------- Whether to randomize epochs
     vector<BinaryPerceptronLayer*> layers; // ----- Dense layers
 
-    MLP( float learnRate, float lambda = 0.0f, float gradScale = 0.0f, ulong batchSize = 0 ){
+    MLP( float learnRate, float lambda = 0.0f, float gradScale = 0.0f, ulong batchSize = 0, bool randomizeEpochs = true ){
         // Init hyperparams
-        lr = learnRate; // Learning rate
-        rc = lambda; // -- Regularization constant
-        gs = gradScale; // Gradient scale
-        Nb = batchSize; // Batch size
-        Kb = 0; // ------- Batch counter
+        lr = learnRate; // ----- Learning rate
+        rc = lambda; // -------- Regularization constant
+        gs = gradScale; // ----- Gradient scale
+        Nb = batchSize; // ----- Batch size
+        Kb = 0; // ------------- Batch counter
+        rn = randomizeEpochs; // Whether to randomize epochs
         cout << "Learning Rate: " << lr << endl;
         if( lambda > 0.0f ){  
             useL1reg = true;  
@@ -689,6 +691,9 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         if( batchSize > 0 ){
             useMiniBatch = true;
             cout << "Using mini-batches of size " << Nb << "!" << endl;
+        }
+        if( randomizeEpochs ){
+            cout << "Data will be shuffled each epoch!" << endl;
         }
     }
 
@@ -837,11 +842,13 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Run simple backrop (non-batch) on every training example of an `MNISTBuffer`
 
         // -1. Init vars and reset data buffers
-        vvf   img; // ---------- Current image
-        vf    lbl; // ---------- Current label
-        uint  N; // ------------ Number of training examples       
-        uint  div; // ---------- Status print freq 
-        float avgLoss = 0.0f; // Average loss for this epoch
+        vvf /*----*/ img; // ---------- Current image
+        vf /*-----*/ lbl; // ---------- Current label
+        uint /*---*/ N; // ------------ Number of training examples       
+        uint /*---*/ div; // ---------- Status print freq 
+        float /*--*/ avgLoss = 0.0f; // Average loss for this epoch
+        vector<uint> indices;
+        if( rn ){  indices = dataSet->generate_random_ordering_of_samples();  }
 
         N   = dataSet->N;
         div = N/100; // Status print freq 
@@ -850,6 +857,8 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         // 0. For every example in the dataset
         for( uint i = 0; i < N; i++ ){
+
+            if( rn ){  dataSet->seek_to_sample( indices[i] );  }
 
             // 1. Fetch next image and its label
             img.clear();
@@ -960,13 +969,14 @@ int main(){
     }
 
     ///// Test 2: Multiple Layers ////////////////
+    bool testRandOrder = false;
     // - 3Blue1Brown Architecture
     //     > Layer 0: Flatten 2D image to 1D vector of 784 elements
     //     > Layer 1: Input 784 --to-> Output  16
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.0005f, // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.00005f, // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
         0.000000f, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
         1.0f,
         10 // 25 // 125 // 250 // 500 // 1000
@@ -996,6 +1006,16 @@ int main(){
         "../Data/MNIST/t10k-labels.idx1-ubyte"
     };  
     cout << "Loaded testing data!" << endl;
+
+    if( testRandOrder ){
+        trainDataBuffer.seek_to_sample( 839 );
+        trainDataBuffer.print_mnist_digit( trainDataBuffer.fetch_next_image() );
+        cout << trainDataBuffer.fetch_next_y() << endl;
+        vector<uint> indices = trainDataBuffer.generate_random_ordering_of_samples();
+        cout << indices[0] << ", " << indices[5000] << ", " << indices[839] << endl;
+    }
+
+
     if( _TS_DATASET ){
         cout << "Validation data has " << validDataBuffer.count_consecutive_fraction() << " consecutive fraction." << endl;
     }
@@ -1064,9 +1084,10 @@ int main(){
     float epochLoss =  0.0f;
     float acc /*-*/ =  0.0f;
 
-    cout << "About to train for " << N_epoch << " epochs ..." << endl;
+    
 
     if( test2 ){
+        cout << "About to train for " << N_epoch << " epochs ..." << endl;
         for( uint i = 0; i < N_epoch; i++ ){
             cout << "##### Epoch " << (i+1) << " #####" << endl;
             epochLoss = net.train_one_MNIST_epoch( &trainDataBuffer );
