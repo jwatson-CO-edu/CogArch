@@ -82,7 +82,9 @@ available
                     - Using a Gaussian prior reduces the scaling symmetry problem, as it favors weights with the same Frobenius norm on each layer
                     - A soft version of the activation normalization can also be implemented by using a consistency condition
                     - Givens transformations (also called Givens rotations) have been proposed as a mean to constrain the norm of the hidden layers and address the scaling symmetry issue
-            - The link between regularization and priors
-                * FIXME: pg 6, col 2, bottom
+            - The link between regularization and priors: Regularization acts as a soft constraint on the search space, in a manner similar to what a prior does for a posterior
+            - Prior With a Consistency Condition $C(\mathbf{\theta},\mathbf{x})$ which is a function used to measure how well the model respects some hypothesis given a parametrization $\mathbf{\theta}$ and an input $\mathbf{x}$
+    - Degree of Supervision and Alternative Forms of Prior Knowledge
+        * Noisy Labels and Semi-Supervised Learning
 
 

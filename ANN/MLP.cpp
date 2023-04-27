@@ -83,6 +83,17 @@ vector<T> get_slice( const vector<T>& vec, ulong bgn, ulong end ){
 
 ////////// MATH FUNCTIONS //////////////////////////////////////////////////////////////////////////
 
+double randd(){
+    // Return a pseudo-random number between 0.0 and 1.0
+    return  1.0 * rand() / RAND_MAX;
+}
+
+double randd( double lo, double hi ){
+    // Return a pseudo-random number between `lo` and `hi`
+    double span = hi - lo;
+    return lo + randd() * span;
+}
+
 float randf(){
     // Return a pseudo-random number between 0.0 and 1.0
     return  1.0f * rand() / RAND_MAX;
@@ -96,8 +107,8 @@ float randf( float lo, float hi ){
 
 void seed_rand(){  srand( time( NULL ) );  } // Provide a clock-based unpredictable seed to RNG
 
-float sigmoid( float x ){  return 1.0f / (1.0f + exp(-x));  }
-float ddz_sigmoid( float sigZ ){  return sigZ * ( 1.0 - sigZ );  }
+double sigmoid( double x ){  return 1.0 / (1.0 + exp(-x));  }
+double ddz_sigmoid( double sigZ ){  return sigZ * ( 1.0 - sigZ );  }
 
 
 ///// RANDOM SAMPLING ////////////////////////////
@@ -355,14 +366,14 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MatrixXd W; // ------ Weight matrix
     MatrixXd grad; // --- Per-output gradients
     MatrixXd gAcc; // --- Batching gradient accumulator
-    float    lr; // ----- Learning rate
-    float    rc; // ----- Regularization constant
-    float    gs; // ----- Gradient scale
+    double    lr; // ----- Learning rate
+    double    rc; // ----- Regularization constant
+    double    gs; // ----- Gradient scale
     ulong    Nb; // ----- Batch size
 
     BinaryPerceptronLayer( 
-        uint inputDim, uint outputDim, float learnRate, 
-        float lambda = 0.0f, float gradScale = 0.0f
+        uint inputDim, uint outputDim, double learnRate, 
+        double lambda = 0.0f, double gradScale = 0.0f
     ){
         // Allocate arrays and init all weights randomly
 
@@ -389,11 +400,11 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         x( dIp1-1, 0 ) = 1.0f;
     }
 
-    void random_weight_init( float lo = 0.0f, float hi = 1.0f ){
+    void random_weight_init( double lo = 0.0f, double hi = 1.0f ){
         // Set all weights and biases to uniformly-distributed random numbers
         for( uint i = 0; i < dO; i++ ){
             for( uint j = 0; j < dIp1; j++ ){
-                W(i,j) = randf( lo, hi );
+                W(i,j) = randd( lo, hi );
             }
         }
     }
@@ -401,12 +412,12 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     ///// Margin Update //////////////////////////
 
     MatrixXd forward(){
-        // Return a raw float prediction
+        // Return a raw double prediction
         return W * x;
     }
 
     vf forward_vec(){
-        // Return a raw float prediction
+        // Return a raw double prediction
         return col_vector_to_cpp_vector( forward() );
     }
 
@@ -514,7 +525,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     //         > Layer 3: Input  16 --to-> Output  10, Output class for each digit
 
     MatrixXd forward_sigmoid(){
-        // Return a raw float prediction with sigmoid activation
+        // Return a raw double prediction with sigmoid activation
         y = forward();
         MatrixXd activation = MatrixXd{ dO, 1 };
         for( uint i = 0; i < dO; i++ ){
@@ -528,7 +539,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     vf get_prediction(){
         // Return a vector with the highest weight label as the answer
         vf    yOut;
-        float maxVal = -1000.0f;
+        double maxVal = -1000.0f;
         uint  maxDex = 0;
         for( uint j = 0; j < dO; j++ ){
             if( y(j,0) > maxVal ){
@@ -555,7 +566,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     void add_L1_to_loss(){
         // Add L1 norm of weights to loss
-        float accum;
+        double accum;
         for( uint i = 0; i < dO; i++ ){
             accum = 0.0f;
             for( uint j = 0; j < dIp1; j++ ){
@@ -569,10 +580,10 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Calculate the error gradient for the last prediction, given the `y_Actual` labels
         // NOTE: This function assumes that the correct input has already been loaded
         // NOTE: This function assumes that forward inference has already been run
-        // float[] y_Predict = predict_sigmoid();
-        float dLoss_dAct;
-        float dAct_dOut;
-        float dOut_dWght;
+        // double[] y_Predict = predict_sigmoid();
+        double dLoss_dAct;
+        double dAct_dOut;
+        double dOut_dWght;
         // predict_sigmoid( false ); // This already should have been called
         for( uint i = 0; i < dO; i++ ){
             // dLoss_dAct = 2.0f*( y_Predict[i] - y_Actual[i] ); // 2*(predicted-desired)
@@ -607,20 +618,20 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         grad = gAcc;
     }
 
-    float grad_norm(){
+    double grad_norm(){
         // Return the Frobenius norm of the gradient
         return grad.norm();
     }
 
     void scale_grad(){
         // Scale the gradient to an appropriate magnitude
-        float mag = grad.norm();
+        double mag = grad.norm();
         grad = (grad / mag) * gs;
     }
 
     void store_previous_loss(){
         // Calculate loss to be backpropagated to the previous layer
-        float accum;
+        double accum;
         for( uint j = 0; j < dIp1; j++ ){
             accum = 0.0f;
             for( uint i = 0; i < dO; i++ ){
@@ -642,9 +653,9 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    float get_loss(){
+    double get_loss(){
         // Get the Manhattan distance between predicted and actual
-        float rtnLoss = 0.0f;
+        double rtnLoss = 0.0f;
         for( uint i = 0; i < dO; i++ ){
             rtnLoss += abs( lossOut(i,0) ); // 2*(predicted-desired)
         }
@@ -660,9 +671,9 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Simplest Multi-Layer Perceptron Implementation, Very inefficient
     // WARNING: NO DIMS CHECKED!
 
-    float /*--------------------*/ lr; // --------- Learning rate
-    float /*--------------------*/ rc; // --------- Regularization constant
-    float /*--------------------*/ gs; // --------- Gradient scale
+    double /*--------------------*/ lr; // --------- Learning rate
+    double /*--------------------*/ rc; // --------- Regularization constant
+    double /*--------------------*/ gs; // --------- Gradient scale
     ulong /*--------------------*/ Nb; // --------- Batch size
     ulong /*--------------------*/ Kb; // --------- Batch counter
     bool /*---------------------*/ useL1reg; // --- Whether to use L1 regularization
@@ -671,7 +682,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     bool /*---------------------*/ rn; // --------- Whether to randomize epochs
     vector<BinaryPerceptronLayer*> layers; // ----- Dense layers
 
-    MLP( float learnRate, float lambda = 0.0f, float gradScale = 0.0f, ulong batchSize = 0, bool randomizeEpochs = true ){
+    MLP( double learnRate, double lambda = 0.0f, double gradScale = 0.0f, ulong batchSize = 0, bool randomizeEpochs = true ){
         // Init hyperparams
         lr = learnRate; // ----- Learning rate
         rc = lambda; // -------- Regularization constant
@@ -718,7 +729,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Unpack the matrix into a vector by rows
         vf rtnArr;
         for( vf row : matx ){
-            for( float elem : row ){
+            for( double elem : row ){
                 rtnArr.push_back( elem );
             }
         }
@@ -826,19 +837,19 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return norms;
     }
 
-    void random_weight_init( float lo = 0.0f, float hi = 1.0f ){
+    void random_weight_init( double lo = 0.0f, double hi = 1.0f ){
         // Set all weights and biases to uniformly-distributed random numbers
         for( BinaryPerceptronLayer* layer : layers ){
             layer->random_weight_init( lo, hi );
         }
     }
 
-    float get_loss(){
+    double get_loss(){
         // Get the Manhattan distance between predicted and actual
         return layers.back()->get_loss();
     }
 
-    float train_one_MNIST_epoch( MNISTBuffer* dataSet ){
+    double train_one_MNIST_epoch( MNISTBuffer* dataSet ){
         // Run simple backrop (non-batch) on every training example of an `MNISTBuffer`
 
         // -1. Init vars and reset data buffers
@@ -846,7 +857,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         vf /*-----*/ lbl; // ---------- Current label
         uint /*---*/ N; // ------------ Number of training examples       
         uint /*---*/ div; // ---------- Status print freq 
-        float /*--*/ avgLoss = 0.0f; // Average loss for this epoch
+        double /*--*/ avgLoss = 0.0f; // Average loss for this epoch
         vector<uint> indices;
         if( rn ){  indices = dataSet->generate_random_ordering_of_samples();  }
 
@@ -884,10 +895,10 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         cout << "\nGrad Norms: " << grad_norms() << endl;
 
         // N. Return the average loss across all training example predictions
-        return avgLoss / (float) N;
+        return avgLoss / (double) N;
     }
     
-    float compare_answers( const vf& pre, const vf& act ){
+    double compare_answers( const vf& pre, const vf& act ){
         // Return true only if `pre` and `act` are identical
         if( pre == act )
             return 1.0f;
@@ -895,14 +906,14 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             return 0.0f;
     }
 
-    float validate_on_MNIST( MNISTBuffer* dataSet ){
+    double validate_on_MNIST( MNISTBuffer* dataSet ){
         // Run inference on the validation set and return accuracy
 
         // -1. Init vars and reset data buffers
         vvf   img; // ------------ Current image
         vf    lbl; // ------------ Current label
         vf    ans; // ------------ Current inference result
-        float acc = 0.0f; // ----- Accuracy for this dataset
+        double acc = 0.0f; // ----- Accuracy for this dataset
         uint  N   = dataSet->N; // Number of training examples       
         uint  div = N/100; // ---- Status print freq 
         dataSet->seek_to_data();
@@ -928,7 +939,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             if( i%div == 0 )  cout << "." << flush;
         }
 
-        acc /= (float) N;
+        acc /= (double) N;
 
         cout << endl << "\nValidation Accuracy: " << acc << endl << endl;
 
@@ -976,9 +987,9 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.00005f, // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.0000005f, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
         0.000000f, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
-        1.0f,
+        10.0f, // 1.0 // 10.0
         10 // 25 // 125 // 250 // 500 // 1000
     }; 
     uint N_epoch   = 64; // 64; // 32 // 16
@@ -1050,7 +1061,7 @@ int main(){
         vf    lbl; // --------------- Current label
         uint  N; // ----------------- Number of training examples       
         uint  div; // ------- Status print freq 
-        float avgLoss = 0.0f; // ---- Average loss for this epoch
+        double avgLoss = 0.0f; // ---- Average loss for this epoch
 
         N  = 1;
 
@@ -1081,8 +1092,8 @@ int main(){
 
     ///// Test 2: MNIST //////////////////////////
     bool  test2     = true && ( ! _TS_FORWARD ) && ( ! _TS_DATASET );
-    float epochLoss =  0.0f;
-    float acc /*-*/ =  0.0f;
+    double epochLoss =  0.0f;
+    double acc /*-*/ =  0.0f;
 
     
 
