@@ -366,9 +366,9 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MatrixXd W; // ------ Weight matrix
     MatrixXd grad; // --- Per-output gradients
     MatrixXd gAcc; // --- Batching gradient accumulator
-    double    lr; // ----- Learning rate
-    double    rc; // ----- Regularization constant
-    double    gs; // ----- Gradient scale
+    double   lr; // ----- Learning rate
+    double   rc; // ----- Regularization constant
+    double   gs; // ----- Gradient scale
     ulong    Nb; // ----- Batch size
 
     BinaryPerceptronLayer( 
@@ -397,7 +397,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         gAcc = MatrixXd::Zero( dO, dIp1 );
 
         // Bias is unity input at last index
-        x( dIp1-1, 0 ) = 1.0f;
+        x( dIp1-1, 0 ) = 1.0;
     }
 
     void random_weight_init( double lo = 0.0f, double hi = 1.0f ){
@@ -538,13 +538,13 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     vf get_prediction(){
         // Return a vector with the highest weight label as the answer
-        vf    yOut;
-        double maxVal = -1000.0f;
-        uint  maxDex = 0;
+        vf     yOut;
+        double maxVal = -1000.0;
+        uint   maxDex = 0;
         for( uint j = 0; j < dO; j++ ){
             if( y(j,0) > maxVal ){
                 maxDex = j;
-                maxVal = (j,0);
+                maxVal = y(j,0);
             }  
         }
         for( uint j = 0; j < dO; j++ ){
@@ -987,16 +987,16 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.0000005f, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
-        0.000000f, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
-        10.0f, // 1.0 // 10.0
+        0.000005, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.000000, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
+        10.0, // 1.0 // 10.0
         10 // 25 // 125 // 250 // 500 // 1000
     }; 
-    uint N_epoch   = 64; // 64; // 32 // 16
+    uint N_epoch   = 16; // 64; // 32 // 16
 
     if( ! _TS_DATASET ){
-        net.append_dense_layer( 784,  32 );
-        net.append_dense_layer(  32,  16 );
+        net.append_dense_layer( 784,  16 );
+        net.append_dense_layer(  16,  16 );
         net.append_dense_layer(  16,  10 );
         net.random_weight_init( 0.001, 0.1 );  cout << "Weights init!"    << endl;
         net.print_arch();
