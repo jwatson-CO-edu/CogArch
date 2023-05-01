@@ -40,12 +40,14 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 1. `[>]` Bayesian Neural Network (BNN, C++)
     * `[>]` Take notes and develop a dev plan
-        - `[>]` https://arxiv.org/pdf/2007.06823.pdf
+        - `[Y]` https://arxiv.org/pdf/2007.06823.pdf, 2023-05-01
+        - `[>]` https://sanjaykthakur.com/2018/12/05/the-very-basics-of-bayesian-neural-networks/
         - `[ ]` https://neptune.ai/blog/bayesian-neural-networks-with-jax
         - `[ ]` https://wjmaddox.github.io/assets/BNN_tutorial_CILVR.pdf
         - `[ ]` https://towardsdatascience.com/making-your-neural-network-say-i-dont-know-bayesian-nns-using-pyro-and-pytorch-b1c24e6ab8cd
         - `[ ]` https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
         - `[ ]` https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks
+
 1. `[20]` Self-Organizing Map (SOM, C++)
     * `[ ]` Take notes and develop a dev plan
         - `[ ]` https://medium.com/machine-learning-researcher/self-organizing-map-som-c296561e2117
