@@ -638,7 +638,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 // accum += grad(i,j);
                 // https://youtu.be/LA4I3cWkp1E?t=2686
                 // https://youtu.be/Z97XGNUUx9o?t=1520 corroborates
-                accum += grad(i,j) * W(i,j);
+                accum += grad(i,j) * W(i,j); // 2023-05-02: Slightly better perf w this one
             }
             lossInp(j,0) = accum;
         }
@@ -987,16 +987,16 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.000001, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
-        0.0000002, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
+        0.0000015, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.000002, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
         10.0, // 1.0 // 10.0
         10 // 25 // 125 // 250 // 500 // 1000
     }; 
     uint N_epoch = 128; // 64; // 32 // 16
 
     if( ! _TS_DATASET ){
-        net.append_dense_layer( 784,  16 );
-        net.append_dense_layer(  16,  16 );
+        net.append_dense_layer( 784,  32 );
+        net.append_dense_layer(  32,  16 );
         net.append_dense_layer(  16,  10 );
         net.random_weight_init( -0.5, +0.5 );  cout << "Weights init!"    << endl;
         net.print_arch();
