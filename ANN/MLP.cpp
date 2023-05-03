@@ -51,7 +51,7 @@ typedef unsigned char /*---*/ ubyte;
 
 template<typename T>
 ostream& operator<<( ostream& os , const vector<T>& vec ) { 
-    // ostream '<<' operator for vectors
+    // ostream '<<' operator for generic vectors
     // NOTE: This function assumes that the ostream '<<' operator for T has already been defined
     os << "[ ";
     for (size_t i = 0; i < vec.size(); i++) {
@@ -64,6 +64,7 @@ ostream& operator<<( ostream& os , const vector<T>& vec ) {
 
 template<typename T>
 bool operator==( const vector<T>& vec1, const vector<T>& vec2 ){
+    // Equality operator for generic vectors
     if( vec1.size() != vec2.size() ){
         return false;
     }else{
@@ -74,6 +75,7 @@ bool operator==( const vector<T>& vec1, const vector<T>& vec2 ){
 
 template<typename T>
 vector<T> get_slice( const vector<T>& vec, ulong bgn, ulong end ){
+    // Get a slice from a generic vector and return it as a vector of the same
     vector<T> rtnVec;
     for( ulong i = bgn; i < end; i++ ){  rtnVec.push_back( vec[i] );  }
     return rtnVec;
@@ -183,19 +185,15 @@ struct MNISTBuffer{
     // Simplest container for MNIST data
 
     // Members //
-    // vector<ubyte> imgBuffer; //- Byte buffer of handwritten digit images
-    // size_t /*--*/ imgBuffDex; // Points to the next byte to read in the image buffer
-    // vector<ubyte> lblBuffer; //- Byte buffer of image labels
-    // size_t /*--*/ lblBuffDex; // Points to the next byte to read in the label buffer
-    ifstream imgFile;
-    ifstream lblFile;
-    uint     rows; // ----- Height of each image in pixels
-    uint     cols; // ----- Width of each image in pixels
-    uint     N; // -------- Number of examples in this dataset
-    uint     Nbyte_img;
-    uint     Nbyte_imgHdr;
-    uint     Nbyte_lbl;
-    uint     Nbyte_lblHdr;
+    ifstream imgFile; // ---- Handle to the image file
+    ifstream lblFile; // ---- Handle to the label file
+    uint     rows; // ------- Height of each image in pixels
+    uint     cols; // ------- Width of each image in pixels
+    uint     N; // ---------- Number of examples in this dataset
+    uint     Nbyte_img; // -- Number of bytes in one image
+    uint     Nbyte_imgHdr; // Number of bytes in the image file header
+    uint     Nbyte_lbl; // -- Number of bytes in one label
+    uint     Nbyte_lblHdr; // Number of bytes in the label file header
      
 
     vector<int> fetch_image_header(){
@@ -397,7 +395,8 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         gAcc = MatrixXd::Zero( dO, dIp1 );
 
         // Bias is unity input at last index
-        x( dIp1-1, 0 ) = 1.0;
+        x( dI, 0 ) = 1.0;
+        lossInp( dI, 0 ) = 1.0; // Otherwise this will never be assigned????
     }
 
     void random_weight_init( double lo = 0.0f, double hi = 1.0f ){
@@ -998,7 +997,7 @@ int main(){
         net.append_dense_layer( 784,  32 );
         net.append_dense_layer(  32,  16 );
         net.append_dense_layer(  16,  10 );
-        net.random_weight_init( -0.5, +0.5 );  cout << "Weights init!"    << endl;
+        net.random_weight_init( -0.75, +0.75 );  cout << "Weights init!"    << endl;
         net.print_arch();
     }
     
