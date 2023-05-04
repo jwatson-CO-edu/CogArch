@@ -24,6 +24,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
             * `[N]` If training examples are not shuffled, then shuffle them, 2023-04-13: Only 1 in ten examples is from a consecutive class
             * `[Y]` If perf still bad, then add trainable params, 2023-04-14: Network is bigger, but trains much more slowly (timewise)
             * `[Y]` If perf still bad, then do batch updates, 2023-04-14: Batches implemented, Learning still stalls at every learning rate and L1 rate attempted 
+            * 2023-05-03: Found a potential problem that might have been causing the biases not to update, steadiliy creeping above random performance
             * `[>]` If perf still bad, then double-check gradient math, 2023-04-20: Consider this on good footing until further notice
                 - Resources:
                     * `[>]` [Sebastian Lague Tut](https://www.youtube.com/watch?v=hfMk-kjRv4c)
@@ -39,14 +40,20 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
             * `[ ]` If perf still bad, then use [Adam Optimizer](https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.)
 
 1. `[>]` Bayesian Neural Network (BNN, C++)
-    * `[>]` Take notes and develop a dev plan
+    * `[>]` Reading Plan
         - `[Y]` https://arxiv.org/pdf/2007.06823.pdf, 2023-05-01
-        - `[>]` https://sanjaykthakur.com/2018/12/05/the-very-basics-of-bayesian-neural-networks/
-        - `[ ]` https://neptune.ai/blog/bayesian-neural-networks-with-jax
+        - `[Y]` https://sanjaykthakur.com/2018/12/05/the-very-basics-of-bayesian-neural-networks/, 2023-05-04
+        - `[>]` https://neptune.ai/blog/bayesian-neural-networks-with-jax
         - `[ ]` https://wjmaddox.github.io/assets/BNN_tutorial_CILVR.pdf
         - `[ ]` https://towardsdatascience.com/making-your-neural-network-say-i-dont-know-bayesian-nns-using-pyro-and-pytorch-b1c24e6ab8cd
         - `[ ]` https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
         - `[ ]` https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks
+    * `DEV PLAN`
+        - `[ ]` Choose a classification/inference problem (from the reading plan if available)
+            * Here?: https://github.com/french-paragon/BayesianNeuralNetwork-Tutorial-Metarepos 
+        - `[ ]` Test normal sampling function from RBM, is it Guassian?
+        - `[ ]` Basic BNN Class
+        - `[ ]` Basic BNN Test
 
 1. `[20]` Self-Organizing Map (SOM, C++)
     * `[ ]` Take notes and develop a dev plan
@@ -57,6 +64,8 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - `[ ]` http://blog.yhat.com/posts/self-organizing-maps-2.html
         - `[ ]` http://www.ai-junkie.com/ann/som/som1.html
         - `[ ]` https://github.com/abhinavralhan/kohonen-maps
+    * `DEV PLAN`
+        - `[ ]` Choose a classification/inference problem (from the reading plan if available)
 1. `[50]` Graph Convolutional Network (GATv2, Python, Tensorflow)
     * `[ ]` Take notes and develop a dev plan
 1. `[60]` Graph Generation with GCPN: Graph Convolutional Policy Network (You et al. 2018, Python, Tensorflow)  

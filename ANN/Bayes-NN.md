@@ -4,10 +4,11 @@
 
 ### Motivation
 * DNN Issues
-    - Prone to overfitting
-    - Overconfident predictions
+    - Point estimate only: tries to evaluate the maximum likelihood point estimates or MLE by maximizing the likelihood of the seen data given the parameters of the NN
+    - Prone to overfitting: fails to generalize
+    - Overconfident predictions, Unpredictable for out-of-distribution examples
     - Confidence is not modeled
-    - Max. likelihood point estimate only
+    
 
 ### Goals
 * Quantify uncertainty associated with deep network predictions
@@ -31,6 +32,17 @@ available
     - compare the predictions of multiple sampled model parametrizations $\theta$
         * If the different models agree, then the uncertainty is low. 
         * If they disagree, then the uncertainty is high
+* Bayesian Neural Network Basics
+    - Estimate the posterior distribution:  
+    $P(\mathbf{W} \mid D) = 
+    {\Large P(D \mid \mathbf{W}) P(\mathbf{W}) \over P(D)}$  
+    The probability of the weights given the data is (The probability of the data given the weights X The probability of the weights) divided by (The probability of the data).  This is equivalent to:  
+    $P(\mathbf{W} \mid D) = 
+    {\Large P(D \mid \mathbf{W}) P(\mathbf{W}) 
+    \over 
+    \int P(D \mid \mathbf{W}) P(\mathbf{W}) \ \ d\mathbf{W}}$
+    - We do not infer scalars or vectors, we infer **random variables**
+    - Prediction: Take the expectation of the output over the trained parameter distribution
 * Bayesian Neural Network Components
     - The model parametrization can be considered to be the hypothesis $H$ and the training set is the data $D$
     - Requires that we have a prior distribution, but this is not a problem because not only can we quantify its uncertainty, we can also update this distribution
