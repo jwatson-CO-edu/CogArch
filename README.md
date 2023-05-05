@@ -43,11 +43,11 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[>]` Reading Plan
         - `[Y]` https://arxiv.org/pdf/2007.06823.pdf, 2023-05-01
         - `[Y]` https://sanjaykthakur.com/2018/12/05/the-very-basics-of-bayesian-neural-networks/, 2023-05-04
-        - `[>]` https://neptune.ai/blog/bayesian-neural-networks-with-jax
-        - `[ ]` https://wjmaddox.github.io/assets/BNN_tutorial_CILVR.pdf
-        - `[ ]` https://towardsdatascience.com/making-your-neural-network-say-i-dont-know-bayesian-nns-using-pyro-and-pytorch-b1c24e6ab8cd
-        - `[ ]` https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
-        - `[ ]` https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks
+        - `[Y]` https://neptune.ai/blog/bayesian-neural-networks-with-jax, 2023-05-05
+        - `[~]` https://wjmaddox.github.io/assets/BNN_tutorial_CILVR.pdf, 2023-05-05
+        - `[N]` https://towardsdatascience.com/making-your-neural-network-say-i-dont-know-bayesian-nns-using-pyro-and-pytorch-b1c24e6ab8cd, 2023-05-05: Not so helpful
+        - `[N]` https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
+        - `[N]` https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks, 2023-05-05: Maths and proofs if I need them
     * `DEV PLAN`
         - `[ ]` Choose a classification/inference problem (from the reading plan if available)
             * Here?: https://github.com/french-paragon/BayesianNeuralNetwork-Tutorial-Metarepos 

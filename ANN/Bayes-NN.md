@@ -41,6 +41,7 @@ available
     {\Large P(D \mid \mathbf{W}) P(\mathbf{W}) 
     \over 
     \int P(D \mid \mathbf{W}) P(\mathbf{W}) \ \ d\mathbf{W}}$
+        * This integral is intractable, the function is the ANN itself
     - We do not infer scalars or vectors, we infer **random variables**
     - Prediction: Take the expectation of the output over the trained parameter distribution
 * Bayesian Neural Network Components
@@ -121,13 +122,16 @@ available
     - For nontrivial models, even if the evidence has been computed, directly sampling the posterior is prohibitively difficult due to the high dimensionality of the sampling space.
     - MCMC algorithms are the best tools for sampling from the exact posterior.  However, their lack of scalability has made them less popular for BNNs
     - Variational Inference
-        * scales better than MCMC algorithms
-        * not an exact method
+        * Changes the inference problem into an optimization problem. Optimize the classic maximum likelihood classification loss (e.g. the cross-entropy loss) on sampled from our variational distribution NN parameters
+        * Advantages
+            - scales better than MCMC algorithms
+            - not an exact method
         * The idea is to have a distribution, called the variational distribution, parametrized by a set of parameters, rather than sampling from the exact posterior
         * The values of the parameters are then learned such that the variational distribution is as close as possible to the exact posterior.
         * The measure of closeness that is commonly used is the Kullback-Leibler divergence (KL-divergence)
             - It measures the differences between probability distributions based on Shannon’s information theory
             - The KL-divergence represents the average number of additional bits required to encode a sample from P using a code optimized for q
+        * This approach has to allow for backpropagation. The parameters (mean and variance) must be updated in a reasoned way in order for our posterior estimate to get bettger
         * Stochastic variational inference (SVI), which is  the stochastic gradient descent method applied to variational inference
     - Bayes by Backpropagation
         * The main problem is that stochasticity stops backpropagation from functioning at the internal nodes of a network
@@ -154,7 +158,9 @@ available
         * The approach is to train a non-stochastic ANN to predict the marginal probability using a BNN as a teacher
         * This is related to the idea of knowledge distillation: possibly several pre-trained knowledge sources can be used to train a more functional system.
 
-
+* BNN Intermediate Topics
+    - Expected Calibration Error (ECE): the expected difference between model’s confidence and its
+accuracy
 
 * Meta-learning, in the broadest sense, is the use of machine learning algorithms to assist in the training and optimization of other machine learning models
 * Transfer learning designates methods that reuse some intermediate knowledge acquired on a given problem to address a different problem.
