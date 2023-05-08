@@ -13,8 +13,8 @@ using std::string;
 using std::cout, std::endl, std::flush, std::ostream;
 
 ///// Type Defines ///////////////////////////////
-typedef vector<float> /*---*/ vf;
-typedef vector<vector<float>> vvf;
+typedef vector<double> /*---*/ vf;
+typedef vector<vector<double>> vvf;
 typedef unsigned char /*---*/ ubyte;
 
 ////////// MNIST DATA PARSING //////////////////////////////////////////////////////////////////////

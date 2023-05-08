@@ -371,7 +371,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             if( i == 0 ){
                 layers[i]->load_input( flatten( matx ) );
             }else{
-                layers[i]->x.block(0,0,layers[i]->dI,1) = layers[i-1]->y;
+                layers[i]->x.block(0,0,layers[i]->dI,1) = layers[i-1]->y.block(0,0,layers[i]->dI,1);
             }
             layers[i]->forward_sigmoid();
         }
