@@ -35,7 +35,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
                     * [From scratch in C++, 2 (by neuron, not by layer)](https://www.youtube.com/watch?v=sK9AbJ4P8ao)
             * `[Y]` If perf still bad, then use gradient clipping?, 2023-04-22: Gradient *scaling* results in *faster training* but **NOT** *better perf*
             * `[Y]` No really, actually **shuffle** the data **each epoch**, 2023-04-28: Shuffled, but found a promising error
-                - `[Y]` Try a binary classifier to see if the network can identify one digit!
+                - `[N]` Try a binary classifier to see if the network can identify one digit!
             
             * `[ ]` If perf still bad, then use [Adam Optimizer](https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.)
 
