@@ -57,13 +57,12 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 1. `[20]` Self-Organizing Map (SOM, C++)
     * `[ ]` Take notes and develop a dev plan
-        - `[ ]` https://medium.com/machine-learning-researcher/self-organizing-map-som-c296561e2117
-        - `[ ]` https://medium.com/@abhinavr8/self-organizing-maps-ff5853a118d4
-        - `[ ]` https://en.wikipedia.org/wiki/Self-organizing_map
-        - `[ ]` http://www.pitt.edu/~is2470pb/Spring05/FinalProjects/Group1a/tutorial/som.html
-        - `[ ]` http://blog.yhat.com/posts/self-organizing-maps-2.html
-        - `[ ]` http://www.ai-junkie.com/ann/som/som1.html
-        - `[ ]` https://github.com/abhinavralhan/kohonen-maps
+        - `[Y]` https://medium.com/machine-learning-researcher/self-organizing-map-som-c296561e2117, 2023-05-09
+        - `[Y]` https://medium.com/@abhinavr8/self-organizing-maps-ff5853a118d4, 2023-05-09: This is just the wikipedia alticle
+        - `[Y]` https://en.wikipedia.org/wiki/Self-organizing_map, 2023-05-09
+        - `[N]` http://www.pitt.edu/~is2470pb/Spring05/FinalProjects/Group1a/tutorial/som.html, 2023-05-09
+        - `[~]` http://www.ai-junkie.com/ann/som/som1.html, 2023-05-09: Code might be useful
+        - `[~]` https://github.com/abhinavralhan/kohonen-maps, 2023-05-09: Code might be useful
     * `DEV PLAN`
         - `[ ]` Choose a classification/inference problem (from the reading plan if available)
 1. `[50]` Graph Convolutional Network (GATv2, Python, Tensorflow)
