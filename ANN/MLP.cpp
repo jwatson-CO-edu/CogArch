@@ -590,17 +590,17 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.000001, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.0000002, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
         0.00, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
         10.0, // 1.0 // 10.0
-        32 // 25 // 125 // 250 // 500 // 1000
+        0 // 25 // 125 // 250 // 500 // 1000
     }; 
-    uint N_epoch = 128; // 256; // 128; // 64; // 32 // 16
+    uint N_epoch = 256; // 256; // 128; // 64; // 32 // 16
 
     if( ! _TS_DATASET ){
-        net.append_dense_layer( 784,  32 );
-        net.append_dense_layer(  32,  16 );
-        net.append_dense_layer(  16,  10 );
+        net.append_dense_layer( 784,  64 );
+        net.append_dense_layer(  64,  32 );
+        net.append_dense_layer(  32,  10 );
         net.random_weight_init( -0.75, +0.75 );  cout << "Weights init!"    << endl;
         net.print_arch();
     }
