@@ -282,6 +282,17 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
+    void Adam_update(){
+        // Adam optimizer is the extended version of stochastic gradient descent
+        // URL: https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.
+        // m_tp1 = beta_1 * m_t + (1 - beta_1) * (delL / delW)
+        // v_tp1 = beta_2 * v_t + (1 - beta_2) * (delL / delW)^2
+        // Initially, both m_t and v_t are set to 0
+        // mHat_t = m_t / (1 - beta_1^t)
+        // vHat_t = v_t / (1 - beta_2^t)
+        // W_tp1 = W_t - alpha * ( mHat_t / sqrt( vHat_t ) + e )
+    }
+
     double get_loss(){
         // Get the Manhattan distance between predicted and actual
         double rtnLoss = 0.0f;
@@ -350,6 +361,18 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         for( BinaryPerceptronLayer* layer : layers ){
             cout << "Layer " << i << ": Input " << layer->dI << "  X  Output " << layer->dO << endl;
             i++;
+        }
+        if( useL1reg ){  
+            cout << "L1 Norm applied to loss!, lambda = " << rc << endl;
+        }else{  useL1reg = false;  }
+        if( pScaleGrad ){
+            cout << "Each layer's gradient scaled to " << gs << endl;
+        }else{  pScaleGrad = false;  }
+        if( useMiniBatch ){
+            cout << "Mini-batches of size " << Nb << "!" << endl;
+        }
+        if( rn ){
+            cout << "Data shuffled each epoch!" << endl;
         }
         cout << "# End of Summary #" << endl << endl;
     }
@@ -707,9 +730,10 @@ int main(){
             epochLoss = net.train_one_MNIST_epoch( &trainDataBuffer );
             cout << endl << "Average loss for one epoch: " << epochLoss << endl << endl;
         }
-        cout << "##### Validation #####" << endl;
         acc = net.validate_on_MNIST( &validDataBuffer );
         cout << "Validation Accuracy: " << acc << endl << endl;
+        net.print_arch();
+        cout << "##### END #####" << endl;
     }
 
     trainDataBuffer.close();
