@@ -405,16 +405,17 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Print the network architecture
         uint i = 1;
         cout << "\n### Network Summary ###" << endl;
+        cout << "Learning Rate: " << lr << endl;
         for( BinaryPerceptronLayer* layer : layers ){
             cout << "Layer " << i << ": Input " << layer->dI << "  X  Output " << layer->dO << endl;
             i++;
         }
         if( useL1reg ){  
             cout << "L1 Norm applied to loss!, lambda = " << rc << endl;
-        }else{  useL1reg = false;  }
-        if( pScaleGrad ){
+        }
+        if( gs > 0.0 ){
             cout << "Each layer's gradient scaled to " << gs << endl;
-        }else{  pScaleGrad = false;  }
+        }
         if( useMiniBatch ){
             cout << "Mini-batches of size " << Nb << "!" << endl;
         }
@@ -660,7 +661,7 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.00001, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.0002, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
         0.00, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
         10.0, // 1.0 // 10.0
         0 // 25 // 125 // 250 // 500 // 1000

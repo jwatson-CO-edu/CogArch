@@ -13,7 +13,22 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[Y]` Test reconstruction accuracy for partial input, 2023-04-06: Turns out the test set was already partial
     * `[Y]` Add `typedef`s, 2023-04-08: Aliases work and save space
 
-1. `[>]` Perceptrons + MLP, 2023-04: Re-write in C++ / Eigen3
+1. `[>]` Perceptrons + MLP, 2023-04: Re-write in C++ / Eigen3,  
+    Running Best:  
+
+    ```
+    Validation Accuracy: 0.7438
+    ### Network Summary ###
+    Learning Rate: 0.000005
+    Layer 1: Input 784  X  Output 64
+    Layer 2: Input 64  X  Output 32
+    Layer 3: Input 32  X  Output 10
+    Each layer's gradient scaled to 10
+    Mini-batches of size 0!
+    Data shuffled each epoch!
+    # End of Summary #
+    ```
+
     * `[Y]` Perceptron Margin Update, 2023-04-07: 0.99 accuracy
     * `[Y]` Add `typedef`s, 2023-04-08: Aliases work and save space
     * `[>]` Multi-Layer Perceptron + Backprop + MNIST Dataset
