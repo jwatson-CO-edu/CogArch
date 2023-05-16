@@ -43,6 +43,53 @@ bool _TS_FORWARD = false;
 bool _TS_BACKPRP = false;
 bool _TS_DATASET = false;
 
+
+////////// AdamParams ////////////////////////////
+
+struct AdamParams{
+    // Container / wrapper for Adam optimizer
+    // https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.
+    double beta_1;
+    double beta_2;
+    double m_t;
+    double v_t;
+    double delL;
+    double delW;
+    double e;
+    double t;
+
+    void reset(){
+        // Reset counter and momentum
+        m_t    = 0.0;
+        v_t    = 0.0;
+        t /**/ = 1.0;
+    }
+
+    AdamParams( double beta1, double beta2, double ep = 10.0e-8 ){
+        // Set params and init momentum
+        beta_1 = beta1;
+        beta_2 = beta2;
+        e /**/ = ep;
+        reset();
+    }
+
+    void step_t(){  t += 1.0;  } // Advance one timestep
+
+    void update_momentum( double delL, double delW ){
+        // Calc mass and vel for this iteration
+        m_t = beta_1 * m_t + (1.0 - beta_1) * (delL / delW);
+        v_t = beta_2 * v_t + (1.0 - beta_2) * pow( (delL / delW), 2 );
+    }
+
+    double get_factor(){
+        // Get the corrective factor for the learning rate
+        double mHat_t = m_t / (1.0 - pow( beta_1, t ));
+        double vHat_t = v_t / (1.0 - pow( beta_2, t ));
+        return mHat_t / sqrt( vHat_t ) + e;
+    }
+};
+
+
 ////////// BinaryPerceptronLayer /////////////////
 
 struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
