@@ -2,7 +2,7 @@
 MLP.cpp
 James Watson, 2023-04
 Simplest demo of a scratch-built multi-layer perceptron (MLP)
-g++ MLP.cpp -std=gnu++17 -I /usr/include/eigen3
+g++ MLP.cpp -std=gnu++17 -O3 -I /usr/include/eigen3 -o p1.out
 
 WARNING: This implementation is absurdly unoptimized!
 */
@@ -660,12 +660,12 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.0000002, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.00001, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
         0.00, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
         10.0, // 1.0 // 10.0
         0 // 25 // 125 // 250 // 500 // 1000
     }; 
-    uint N_epoch = 256; // 256; // 128; // 64; // 32 // 16
+    uint N_epoch = 128; // 256; // 128; // 64; // 32 // 16
 
     if( ! _TS_DATASET ){
         net.append_dense_layer( 784,  64 );
