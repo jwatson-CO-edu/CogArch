@@ -17,9 +17,10 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     Running Best:  
 
     ```
-    Validation Accuracy: 0.7438
+    Validation Accuracy: 0.7868
+
     ### Network Summary ###
-    Learning Rate: 0.000005
+    Learning Rate: 1e-05
     Layer 1: Input 784  X  Output 64
     Layer 2: Input 64  X  Output 32
     Layer 3: Input 32  X  Output 10

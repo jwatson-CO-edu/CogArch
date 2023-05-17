@@ -13,6 +13,7 @@ WARNING: This implementation is absurdly unoptimized!
 
 /// Standard Imports ///
 #include <cmath>// ---- `exp` 
+using std::isnan;
 #include <stdlib.h> //- `srand`, `rand` 
 #include <time.h> // -- `time` 
 #include <algorithm> // `clamp`
@@ -35,6 +36,20 @@ using Eigen::MatrixXd;
 /// Local ///
 #include "utils.hpp"
 #include "MNISTBuffer.hpp"
+
+////////// HELPER FUNCTIONS ////////////////////////////////////////////////////////////////////////
+
+bool p_any_nan( const MatrixXd& matx ){
+    // Return true if any of the elements of `matx` are NaN
+    uint r = matx.rows();
+    uint c = matx.cols();
+    for (uint i = 0; i < r; ++i){
+        for (uint j = 0; j < c; ++j){
+            if( isnan( matx(i,j) ) )  return true;
+        }
+    }
+    return false;
+}
 
 ////////// MULTI-LAYERED PERCEPTRON ////////////////////////////////////////////////////////////////
 
@@ -252,7 +267,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    void calc_grad(){
+    double calc_grad(){
         // Calculate the error gradient for the last prediction, given the `y_Actual` labels
         // NOTE: This function assumes that the correct input has already been loaded
         // NOTE: This function assumes that forward inference has already been run
@@ -273,6 +288,12 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
         if( _TS_BACKPRP ){
             cout << "Example Grad Calc: ( " << dOut_dWght << " )( " << dAct_dOut << " )( " << dLoss_dAct << " )" << endl;
+        }
+
+        if( p_any_nan( grad ) ){
+            return -1.0;
+        }else{
+            return grad_norm();
         }
     }
 
@@ -449,11 +470,13 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return layers.back()->get_prediction();
     }
 
-    void backpropagation( const vf& y_Actual ){
-        // Full backpropagation
+    bool backpropagation( const vf& y_Actual ){
+        // Full backpropagation, Return true if nothing funky happened with the grad calc
 
-        long N = layers.size();
-        long M;
+        long   N = layers.size();
+        long   M;
+        double currGradNorm;
+        bool   gradOK = true;
         layers.back()->store_output_loss( y_Actual );
 
         if( _TS_BACKPRP ){
@@ -467,7 +490,9 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 layers[i]->add_L1_to_loss();
                 if( _TS_BACKPRP )  cout << ", Loss After L1: " << layers[i]->lossOut.norm() << endl;
             }  
-            layers[i]->calc_grad();
+            currGradNorm = layers[i]->calc_grad();
+            gradOK /*-*/ = (currGradNorm > 0.0);
+            if( !gradOK )  break; // Do not descend if the gradient is fucked
             layers[i]->store_previous_loss();
             if( pScaleGrad ){
                 layers[i]->scale_grad();
@@ -483,13 +508,17 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 }       
             }
         }
+        return gradOK;
     }
 
-    void backup_and_accum( const vf& y_Actual ){
+    bool backup_and_accum( const vf& y_Actual ){
         // Calc gradient, accumulate, and descend batch grad when counter expires
         Kb++;
-        long N = layers.size();
-        long M;
+        long   N = layers.size();
+        long   M;
+        double currGradNorm;
+        bool   gradOK = true;
+
         layers.back()->store_output_loss( y_Actual );
 
         if( _TS_BACKPRP ){
@@ -502,7 +531,9 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 layers[i]->add_L1_to_loss();
                 if( _TS_BACKPRP )  cout << ", Loss After L1: " << layers[i]->lossOut.norm() << endl;
             }  
-            layers[i]->calc_grad();
+            currGradNorm = layers[i]->calc_grad();
+            gradOK /*-*/ = (currGradNorm > 0.0);
+            if( !gradOK )  break; // Do not descend if the gradient is fucked
             layers[i]->accum_grad();
             if( Kb >= Nb ){
                 layers[i]->set_grad_to_accum();
@@ -514,7 +545,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 layers[i]->clear_grad_accum();
             }
             
-            if( i > 0 ){
+            if( (i > 0) && gradOK ){
                 M = layers[i-1]->dO;
                 layers[i-1]->lossOut.block(0,0,M,1) = layers[i]->lossInp.block(0,0,M,1);
                 if( _TS_BACKPRP ){
@@ -526,6 +557,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         if( Kb >= Nb ){
             Kb = 0;
         }
+        return gradOK;
     }
 
     vf grad_norms(){
@@ -557,8 +589,11 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         vf /*-----*/ lbl; // ---------- Current label
         uint /*---*/ N; // ------------ Number of training examples       
         uint /*---*/ div; // ---------- Status print freq 
-        double /*--*/ avgLoss = 0.0f; // Average loss for this epoch
+        uint /*---*/ ic = 0; // ------- Iteration counter
+        double /*-*/ avgLoss = 0.0f; // Average loss for this epoch
         vector<uint> indices;
+        bool /*---*/ gradOK;
+
         if( rn ){  indices = dataSet->generate_random_ordering_of_samples();  }
 
         N   = dataSet->N;
@@ -582,12 +617,17 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
             // 3. One full backprop step
             if( useMiniBatch )
-                backup_and_accum( lbl );
+                gradOK = backup_and_accum( lbl );
             else
-                backpropagation( lbl );
+                gradOK = backpropagation( lbl );
 
+            if( !gradOK ){
+                cout << "!OOF!" << flush;
+                break;
+            }
             // 4. Accum loss
             avgLoss += get_loss();
+            ic++;
 
             if( i%div == 0 )  cout << "." << flush;
         }
@@ -595,7 +635,10 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         cout << "\nGrad Norms: " << grad_norms() << endl;
 
         // N. Return the average loss across all training example predictions
-        return avgLoss / (double) N;
+        if( gradOK )
+            return avgLoss / (double) ic;
+        else
+            return -1.0;
     }
     
     double compare_answers( const vf& pre, const vf& act ){
@@ -661,12 +704,12 @@ int main(){
     //     > Layer 2: Input  16 --to-> Output  16
     //     > Layer 3: Input  16 --to-> Output  10, Output class for each digit
     MLP net{ 
-        0.0002, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
+        0.0000225, // 0.000002 // 0.00005 // 0.0001 // 0.00015 // 0.0002 // 0.0003 // 0.0005 // 0.001 // 0.002 // 0.005
         0.00, // 0.00005 // 0.0002 // 0.0005 // 0.001 // 0.002 // 0.004 // 0.005 // 0.5 // 0.2 // 0.1 // 0.05
         10.0, // 1.0 // 10.0
         0 // 25 // 125 // 250 // 500 // 1000
     }; 
-    uint N_epoch = 128; // 256; // 128; // 64; // 32 // 16
+    uint N_epoch = 256; // 256; // 128; // 64; // 32 // 16
 
     if( ! _TS_DATASET ){
         net.append_dense_layer( 784,  64 );
@@ -765,9 +808,10 @@ int main(){
     }
 
     ///// Test 2: MNIST //////////////////////////
-    bool  test2     = true && ( ! _TS_FORWARD ) && ( ! _TS_DATASET );
+    bool   test2     = true && ( ! _TS_FORWARD ) && ( ! _TS_DATASET );
     double epochLoss =  0.0f;
     double acc /*-*/ =  0.0f;
+    uint   ec /*--*/ =  0; 
 
     
 
@@ -776,10 +820,13 @@ int main(){
         for( uint i = 0; i < N_epoch; i++ ){
             cout << "##### Epoch " << (i+1) << " #####" << endl;
             epochLoss = net.train_one_MNIST_epoch( &trainDataBuffer );
+            if( epochLoss <= 0.0 )  break; // Stop if the gradient is fucked
+            ec++;
             cout << endl << "Average loss for one epoch: " << epochLoss << endl << endl;
         }
         acc = net.validate_on_MNIST( &validDataBuffer );
-        cout << "Validation Accuracy: " << acc << endl << endl;
+        cout << "Validation Accuracy: " << acc << endl; 
+        cout << "Trained for " << ec << " epochs!" << endl << endl;
         net.print_arch();
         cout << "##### END #####" << endl;
     }
