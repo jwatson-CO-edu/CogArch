@@ -54,7 +54,7 @@ struct BayesNeuralLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         uint inputDim, uint outputDim, double learnRate
     ){
         // Set params
-        dI   = inputDim;
+        dI   = inputDim; // --- Input  dimensions 
         dIp1 = inputDim + 1; // Input  dimensions plus 1 for bias
         dO   = outputDim; // -- Output dimensions
         lr   = learnRate; // -- Learning rate
@@ -66,8 +66,8 @@ struct BayesNeuralLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         lossOut = MatrixXd{ dO  , 1 };
 
         // Init weights && Gradient
-        W = MatrixXd{ dO, dIp1 };
-        V = MatrixXd{ dO, dIp1 };
+        W = MatrixXd{ dO, dIp1 }; // Weight matrix
+        V = MatrixXd{ dO, dIp1 }; // Variance matrix
 
         // Bias is unity input at last index
         x( dI, 0 ) = 1.0;
