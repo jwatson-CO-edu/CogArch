@@ -12,15 +12,15 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[Y]` Test reconstruction accuracy for full input, 2023-04-06: 0.819597, Reconstruction accuracy is 0.8% better than the D implementation
     * `[Y]` Test reconstruction accuracy for partial input, 2023-04-06: Turns out the test set was already partial
     * `[Y]` Add `typedef`s, 2023-04-08: Aliases work and save space
-
-1. `[>]` Perceptrons + MLP, 2023-04: Re-write in C++ / Eigen3,  
+1. `[Y]` Perceptrons + MLP, 2023-04: Re-write in C++ / Eigen3, 2023-05-18: 80% accuracy achieved, anything above this is just tuning  
     Running Best:  
 
     ```
-    Validation Accuracy: 0.7868
+    Validation Accuracy: 0.8157
+    Trained for 117 epochs!
 
     ### Network Summary ###
-    Learning Rate: 1e-05
+    Learning Rate: 3e-05
     Layer 1: Input 784  X  Output 64
     Layer 2: Input 64  X  Output 32
     Layer 3: Input 32  X  Output 10
@@ -29,14 +29,13 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     Data shuffled each epoch!
     # End of Summary #
     ```
-
     * `[Y]` Perceptron Margin Update, 2023-04-07: 0.99 accuracy
     * `[Y]` Add `typedef`s, 2023-04-08: Aliases work and save space
-    * `[>]` Multi-Layer Perceptron + Backprop + MNIST Dataset
+    * `[Y]` Multi-Layer Perceptron + Backprop + MNIST Dataset, 2023-05-18: 80% accuracy achieved, anything above this is just tuning
         - `[Y]` Issue: Apparent hanging and massive resource usage, 2023-04-09 - Sol'n: Datafile size read with wrong endianness and program was attemting to read 1.6B images!
             * `[Y]` Verify that next image is fetched, 2023-04-09: Image is clear and label matches!
             * `[Y]` Verify that next label is fetched, 2023-04-09: Image is clear and label matches!
-        - `[>]` Issue: Rotten Performance
+        - `[Y]` Issue: Rotten Performance
             * `[N]` If training examples are not shuffled, then shuffle them, 2023-04-13: Only 1 in ten examples is from a consecutive class
             * `[Y]` If perf still bad, then add trainable params, 2023-04-14: Network is bigger, but trains much more slowly (timewise)
             * `[Y]` If perf still bad, then do batch updates, 2023-04-14: Batches implemented, Learning still stalls at every learning rate and L1 rate attempted 
@@ -53,7 +52,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
             * `[Y]` No really, actually **shuffle** the data **each epoch**, 2023-04-28: Shuffled, but found a promising error
                 - `[N]` Try a binary classifier to see if the network can identify one digit!
             
-            * `[ ]` If perf still bad, then use [Adam Optimizer](https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.)
+            * `[N]` If perf still bad, then use [Adam Optimizer](https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.), 2023-05-18: 80% accuracy achieved, anything above this is just tuning
 
 1. `[>]` Bayesian Neural Network (BNN, C++)
     * `[>]` Reading Plan
