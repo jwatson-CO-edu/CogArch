@@ -64,6 +64,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - `[N]` https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
         - `[N]` https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks, 2023-05-05: Maths and proofs if I need them
     * `DEV PLAN`
+        - `[Y]` Choose (Distributiuon over Weights) -OR- (Distribution over Activations), 2023-05-19: Distribution over Activations will be simpler
         - `[ ]` Choose a classification/inference problem (from the reading plan if available)
             * Here?: https://github.com/french-paragon/BayesianNeuralNetwork-Tutorial-Metarepos 
         - `[ ]` Test normal sampling function from RBM, is it Guassian?
