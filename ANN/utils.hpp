@@ -72,4 +72,12 @@ void seed_rand(){  srand( time( NULL ) );  } // Provide a clock-based unpredicta
 double sigmoid( double x ){  return 1.0 / (1.0 + exp(-x));  }
 double ddz_sigmoid( double sigZ ){  return sigZ * ( 1.0 - sigZ );  }
 
+double Box_Muller_normal_sample( double mu = 0.0f, double sigma = 1.0f ){
+    // Transform 2 uniform samples into a zero-mean normal sample
+    // Source: https://www.baeldung.com/cs/uniform-to-normal-distribution
+    double u1 = randd();
+    double u2 = randd();
+    return mu + sqrt( -2.0 * log( u1 ) ) * cos( 2.0 * M_PI * u2 ) * sigma;
+}
+
 #endif // UTILS_HPP

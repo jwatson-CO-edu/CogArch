@@ -67,17 +67,19 @@ struct BayesNeuralLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         initVar = 1.0; //- Default variance for all activations
 
         // Init I/O
-        x /*-*/  = MatrixXd{ dIp1, 1 };
+        x /*-*/  = MatrixXd{ dIp1, Ninpt };
         lossInp  = MatrixXd{ dIp1, 1 };
-        y /*-*/  = MatrixXd{ dO  , 1 };
+        // y /*-*/  = MatrixXd{ dO  , 1 };
+        ySamples = MatrixXd{ dO  , Ninpt*Nsmpl };
         z /*-*/  = MatrixXd{ dO  , 1 };
         lossOut  = MatrixXd{ dO  , 1 };
-        ySamples = MatrixXd{ dO  , Ninpt*Nsmpl };
+        
 
         // Init weights && Gradient
         W = MatrixXd{ dO, dIp1 }; // Weight matrix
 
         // Bias is unity input at last index
+        // FIXME: THERE SHOULD BE AN ENTIRE ROW OF 1s
         x( dI, 0 ) = 1.0;
         lossInp( dI, 0 ) = 1.0;
     }
@@ -95,16 +97,28 @@ struct BayesNeuralLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     ///// Inference //////////////////////////
 
-    void load_input( const vf& x_t ){
-        // Load values into the input vector
+    void load_inputs( const vvf& x_t ){
+        // Load values into the input matrix
         // NOTE: This struct does not require the client code to add the unity input bias
-        for( uint i = 0; i < dI; i++ ){  x(i,0) = x_t[i];  }
-    }
-
-    void stochastic_forward( const MatrixXd& inputs ){
-        for( uint i = 0; i < Ninpt; i++ ){
-            // FIXME, START HERE: LOAD INPUTS ONE AT A TIME, THEN FORWARD, LAST SAMPLE DIST
+        for( uint j = 0; j < Ninpt; j++ ){  
+            for( uint i = 0; i < dI; i++ ){
+                x(i,j) = x_t[j][i];
+            }
         }
     }
 
+    void stochastic_forward(){
+        // Sample forward inference `Nsmpl` time per each of the `Ninpt` inputs
+        // NOTE: This function assumes that `load_inputs` has already been called
+        uint c = 0;
+        for( uint i = 0; i < Ninpt; i++ ){
+            for( uint j = 0; j < Nsmpl; j++ ){
+                ySamples.block( 0, c, dO, 1 ) = W * x.block( 0, i, dIp1, 1 );
+                for( uint k = 0; k < dO; k++ ){
+                    ySamples(k,c) += Box_Muller_normal_sample( 0.0, z(k,0) );
+                }
+                c++;
+            }
+        }
+    }
 };
