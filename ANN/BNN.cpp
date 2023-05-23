@@ -27,6 +27,9 @@ using Eigen::MatrixXd;
 #include "utils.hpp"
 #include "MNISTBuffer.hpp"
 
+///// Type Defines ///////////////////////////////
+typedef vector<uint> /*---*/ vu;
+
 
 ////////// BAYESIAN NEURAL NETWORK /////////////////////////////////////////////////////////////////
 
@@ -49,6 +52,7 @@ struct BayesNeuralLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double   lr; // ----- Learning rate
     uint     Ninpt; // -- How many samples from the previous layer
     uint     Nsmpl; // -- How many samples to generate per previous sample
+    uint     Noutp; // -- Total number of outputs for this layer
     double   initVar; //- Default variance for all activations
 
 
@@ -64,13 +68,14 @@ struct BayesNeuralLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         lr /**/ = learnRate; // -- Learning rate
         Ninpt   = upstreamInputs;
         Nsmpl   = samples;  // --- How many samples to generate
+        Noutp   = upstreamInputs * samples;
         initVar = 1.0; //- Default variance for all activations
 
         // Init I/O
         x /*-*/  = MatrixXd{ dIp1, Ninpt };
         lossInp  = MatrixXd{ dIp1, 1 };
         // y /*-*/  = MatrixXd{ dO  , 1 };
-        ySamples = MatrixXd{ dO  , Ninpt*Nsmpl };
+        ySamples = MatrixXd{ dO  , Noutp };
         z /*-*/  = MatrixXd{ dO  , 1 };
         lossOut  = MatrixXd{ dO  , 1 };
         
@@ -108,17 +113,41 @@ struct BayesNeuralLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }
 
     void stochastic_forward(){
+        // Equation 8, Page 5
         // Sample forward inference `Nsmpl` time per each of the `Ninpt` inputs
         // NOTE: This function assumes that `load_inputs` has already been called
-        uint c = 0;
+        uint c = 0; // Output column counter
+        // For every input vector, sample `Nsmpl` predictions
         for( uint i = 0; i < Ninpt; i++ ){
+            // For every prediction vector, perturb each element
             for( uint j = 0; j < Nsmpl; j++ ){
                 ySamples.block( 0, c, dO, 1 ) = W * x.block( 0, i, dIp1, 1 );
                 for( uint k = 0; k < dO; k++ ){
-                    ySamples(k,c) += Box_Muller_normal_sample( 0.0, z(k,0) );
+                    ySamples(k,c) += Box_Muller_normal_sample( 0.0, z(k,0) ); // FIXME: IS THIS ACTUALLY A NORMAL DIST
                 }
-                c++;
+                c++; // Move to next column in the output matrix
             }
         }
+    }
+
+    vu count_outputs(){
+        // Equation 9, Page 5
+        // Filter and bin all the sample answers
+        vu     rtnVec;
+        uint   dexMax;
+        double valMax;
+        for( uint i = 0; i < dO; i++ ){  rtnVec.push_back( 0 );  }
+        for( uint j = 0; j < Noutp; j++ ){
+            dexMax =     0;
+            valMax = -1000.0;
+            for( uint i = 0; i < dO; i++ ){
+                if( ySamples(i,j) > valMax ){
+                    valMax = ySamples(i,j);
+                    dexMax = i;
+                }
+            }
+            rtnVec[ dexMax ] += 1;
+        }
+        return rtnVec;
     }
 };

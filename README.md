@@ -63,8 +63,12 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - `[N]` https://towardsdatascience.com/making-your-neural-network-say-i-dont-know-bayesian-nns-using-pyro-and-pytorch-b1c24e6ab8cd, 2023-05-05: Not so helpful
         - `[N]` https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
         - `[N]` https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks, 2023-05-05: Maths and proofs if I need them
+        - 
     * `DEV PLAN`
         - `[Y]` Choose (Distributiuon over Weights) -OR- (Distribution over Activations), 2023-05-19: Distribution over Activations will be simpler
+        - 2023-05-23: Need more detail in order to write the implementation, Mini Reading Plan:
+            * `[>]` Y. Gal, R. Islam, and Z. Ghahramani, “Deep Bayesian active learning with image data,” in Proc. 34th Int. Conf. Mach. Learn., 2017, vol. 70, pp. 1183 –1192.
+            * `[ ]` J. Zeng, A. Lesnikowski, and J. M. Alvarez, “The relevance of Bayesian layer positioning to model uncertainty in deep Bayesian active learning,” 2018. [Online]. Available: http://ar xiv.org/abs/1811.12535
         - `[ ]` Choose a classification/inference problem (from the reading plan if available)
             * Here?: https://github.com/french-paragon/BayesianNeuralNetwork-Tutorial-Metarepos 
         - `[ ]` Test normal sampling function from RBM, is it Guassian?
@@ -72,7 +76,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - `[ ]` Basic BNN Test
 
 1. `[20]` Self-Organizing Map (SOM, C++)
-    * `[ ]` Take notes and develop a dev plan
+    * `[Y]` Take notes and develop a dev plan, 2023-05-09: Code might be useful
         - `[Y]` https://medium.com/machine-learning-researcher/self-organizing-map-som-c296561e2117, 2023-05-09
         - `[Y]` https://medium.com/@abhinavr8/self-organizing-maps-ff5853a118d4, 2023-05-09: This is just the wikipedia alticle
         - `[Y]` https://en.wikipedia.org/wiki/Self-organizing_map, 2023-05-09
