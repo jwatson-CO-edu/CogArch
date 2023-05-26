@@ -166,3 +166,24 @@ accuracy
 * Transfer learning designates methods that reuse some intermediate knowledge acquired on a given problem to address a different problem.
 * Self-supervised learning is a learning strategy where the data themselves provide the "labels". Since the labels directly obtainable from the data do not match the task of interest, the problem is approached by learning a pretext (or proxy) task in addition to the task of interest.
 
+# Deep Bayesian Active Learning with Image Data
+## Active Learning
+* Active learning (AL) methods generally rely on being able to learn and update models from small amounts of data
+* In active learning, a model is trained on a small amount of data (the initial training set), and an acquisition function (often based on the model’s uncertainty) decides which data points to ask an external oracle for a label.
+* The agent must represent its uncertainty over unseen data.
+* An oracle (often a human expert) labels the selected data points, these are added to the training set, and a new model is trained on the updated training set.
+* This process is then repeated, with the training set increasing in size over time.
+## Semi-supervised Learning
+* A model is given a fixed set of labelled data, and a fixed set of unlabelled data. The model can use the unlabelled data to learn about the distribution of the inputs, in the hopes that this information will aid in learning from the small labelled set as well.
+## Bayesian Convolutional Neural Networks
+* CNNs with prior probability distributions placed over a set of model parameters
+* Stochastic regularisation techniques can be used to perform practical approximate inference in complex deep models
+    - To perform approximate inference in the Bayesian CNN model we make use of stochastic regularisation techniques such as dropout
+    - Dropout can be interpreted as a variational Bayesian approximation
+* Inference
+    - Inference is done by training a model with dropout before every weight layer, and by performing dropout at test time as well to sample from the approximate posterior (stochastic forward passes, referred to as MC dropout).
+    - This approach is equivalent to performing approximate variational inference where we find a distribution in a tractable family which minimises the Kullback-Leibler (KL) divergence to the true model posterior.
+## Acquisition Functions and their Approximations
+* An acquisition function is a function of x that the AL system uses to decide where to query next. Some examples:
+    - We might look for images with high predictive variance and choose those to ask an expert to label – in the hope that these will decrease model uncertainty.
+    - **FIXME, START HERE: SECTION 4 PAGE 3 LEFT COLUMN BOTTOM, ACQUISITION FUNC EXAMPLES**

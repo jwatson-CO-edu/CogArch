@@ -69,7 +69,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - 2023-05-23: Need more detail in order to write the implementation, Mini Reading Plan:
             * `[>]` Y. Gal, R. Islam, and Z. Ghahramani, “Deep Bayesian active learning with image data,” in Proc. 34th Int. Conf. Mach. Learn., 2017, vol. 70, pp. 1183 –1192.
             * `[ ]` J. Zeng, A. Lesnikowski, and J. M. Alvarez, “The relevance of Bayesian layer positioning to model uncertainty in deep Bayesian active learning,” 2018. [Online]. Available: http://ar xiv.org/abs/1811.12535
-        - `[ ]` Choose a classification/inference problem (from the reading plan if available)
+        - `[Y]` Choose a classification/inference problem, 2023-05-26: MNIST OK, Maybe skin cancer diagnosis from lesion images (ISIC2016 task)
             * Here?: https://github.com/french-paragon/BayesianNeuralNetwork-Tutorial-Metarepos 
         - `[ ]` Test normal sampling function from RBM, is it Guassian?
         - `[ ]` Basic BNN Class
