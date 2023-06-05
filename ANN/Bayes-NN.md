@@ -186,4 +186,26 @@ accuracy
 ## Acquisition Functions and their Approximations
 * An acquisition function is a function of x that the AL system uses to decide where to query next. Some examples:
     - We might look for images with high predictive variance and choose those to ask an expert to label – in the hope that these will decrease model uncertainty.
-    - **FIXME, START HERE: SECTION 4 PAGE 3 LEFT COLUMN BOTTOM, ACQUISITION FUNC EXAMPLES**
+    - Predictive Entropy
+    - Choose pool points that are expected to maximise the information gained about the model parameters, i.e. maximise the mutual information between predictions and model posterior
+    - Maximise the Variation Ratios
+    - Maximise mean standard deviation
+    - Random acquisition
+## Experimental Setup
+* Compare aquisition functions
+* Compare with semi-supervised methods
+* Network Architecture
+    - convolution
+    - relu
+    - convolution
+    - relu
+    - max pooling
+    - dropout
+    - dense 
+    - relu
+    - dropout 
+    - dense
+    - softmax
+* All models are trained on the MNIST dataset with a (random but balanced) initial training set of 20 data points
+* Validation set of 100 points
+    - Also used to tune weight decay

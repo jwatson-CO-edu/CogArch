@@ -1,8 +1,9 @@
-/*
-MLP.cpp
+/* 2023-06-05: PROJECT SUSPENDED
+
+BNN.cpp
 James Watson, 2023-04
-Simplest demo of a scratch-built multi-layer perceptron (MLP)
-g++ MLP.cpp -std=gnu++17 -O3 -I /usr/include/eigen3 -o p1.out
+Simplest demo of a scratch-built Bayesian Neural Network (BNN)
+g++ BNN.cpp -std=gnu++17 -O3 -I /usr/include/eigen3 -o p1.out
 
 WARNING: This implementation is absurdly unoptimized!
 */
