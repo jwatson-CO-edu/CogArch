@@ -1,3 +1,10 @@
+/*
+SOM.cpp
+Self-Organizing Map Example
+g++ SOM.cpp -std=gnu++17 -I /usr/include/eigen3
+g++ SOM.cpp -std=gnu++17 -O3 -I /usr/include/eigen3
+*/
+
 
 /// Eigen3 ///
 #include <Eigen/Dense>
@@ -15,22 +22,33 @@ void populate_grid_points( MatrixXd& pntMatx, const vector<vector<double>>& tics
     int  Mrows  = 1;
     int  Ncols  = tics.size();
     uint repeat = 1;
-    uint i;
-    
+    uint i,R,k,K;
     // Calculate grid size and allocate
     for( vector<double> dimTics : tics ){
         Mrows *= dimTics.size();
     }
+    // cout << "Matrix will be " << Mrows << " x " << Ncols << endl;
     pntMatx = MatrixXd::Zero( Mrows, Ncols );
+    // cout << "Matrix created!" << endl;
     
     // Repeat the tic the appropriate number of times for each dimension
+    R = 1;
     // For each dimension
     for( int j = Ncols-1; j > -1; j-- ){
         // Reset the row counter
-        i = 0;
-
-        // FIXME, START HERE: DO WHAT IT SAYS YOU WAS GONNA DO
-
+        i = k = 0;
+        K = tics[j].size();
+        while( i < Mrows ){
+            for( uint r = 0; r < R; r++ ){
+                // cout << "\t i= " << i << ", j= " << j
+                pntMatx(i,j) = tics[j][k];      
+                i++;  
+            }
+            k = (k+1)%K;
+        }
+        if( j > 0 ){
+            R *= tics[j-1].size();
+        }
     }
 }
 
@@ -72,8 +90,30 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             }
             tics.push_back( dimTics );
         }
+        populate_grid_points( maplocs, tics );
+        Nout = maplocs.rows();
+        W    = MatrixXd::Zero( Nout, dI );
     }
 
     /// Methods ///
 
 };
+
+
+
+////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
+
+int main(){
+
+    ///// Test 0: Grid Point Creation /////
+
+    if( false ){
+        MatrixXd /*---------*/ combos;
+        vector<vector<double>> tics = {{1,2,3},{1,2,3},{1,2,3}};
+        populate_grid_points( combos, tics );
+        cout << combos << endl;
+    }
+    
+
+    return 0;
+}
