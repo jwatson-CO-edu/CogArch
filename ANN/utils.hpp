@@ -13,8 +13,8 @@ using std::cout, std::endl, std::flush, std::ostream;
 #include <cmath>// ---- `exp` 
 
 ///// Type Defines ///////////////////////////////
-typedef vector<double> /*---*/ vf;
-typedef vector<vector<double>> vvf;
+typedef vector<double> /*---*/ vd;
+typedef vector<vector<double>> vvd;
 typedef unsigned char /*----*/ ubyte;
 
 ////////// HELPER FUNCTIONS ////////////////////////////////////////////////////////////////////////

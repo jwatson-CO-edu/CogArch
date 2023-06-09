@@ -52,6 +52,17 @@ void populate_grid_points( MatrixXd& pntMatx, const vector<vector<double>>& tics
     }
 }
 
+void random_elem_init_d( MatrixXd& W, double lo = 0.0f, double hi = 1.0f ){
+    // Set all weights and biases to uniformly-distributed random numbers
+    uint M = W.rows();
+    uint N = W.cols();
+    for( uint i = 0; i < M; i++ ){
+        for( uint j = 0; j < N; j++ ){
+            W(i,j) = randd( lo, hi );
+        }
+    }
+}
+
 
 
 ////////// SELF-ORGANIZING MAP /////////////////////////////////////////////////////////////////////
@@ -63,6 +74,8 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     uint     dI; // ---- Dimensionality of the input 
     uint     Nout; // -- Number of elements in the feature map (output) 
     MatrixXd W; // ----- Weight matrix relating input to features
+    MatrixXd x;
+    MatrixXd m;
     MatrixXd bounds; //- Hypercuboid defining the bounds of the map
     MatrixXd maplocs; // Locations of feature map elements
     
@@ -93,10 +106,41 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         populate_grid_points( maplocs, tics );
         Nout = maplocs.rows();
         W    = MatrixXd::Zero( Nout, dI );
+        x    = MatrixXd::Zero( 1   , dI );
+        random_elem_init_d( W, 0.01, 0.75 );
     }
 
     /// Methods ///
 
+    void load_input( const vd& x_t ){
+        // Load values into the input vector
+        // NOTE: This struct does not require the client code to add the unity input bias
+        for( uint i = 0; i < dI; i++ ){  x(0,i) = x_t[i];  }
+    }
+
+    uint find_BMU_for_x(){
+        // Find the closest point to the input vector, linear search
+        MatrixXd diff;
+        double   dist;
+        double   dMin = 1e9;
+        double   iMin = 0;
+        for( uint i = 0; i < Nout; i++ ){
+            diff = W.block(i,0,1,dI) - x;
+            dist = diff.norm();
+            if( dist < dMin ){
+                dMin = dist;
+                iMin = i;
+            }
+        }
+        return iMin;
+    }
+
+    void train_one_example( const vd& input ){
+        // Perform the SOM training procedure for one example
+        load_input( input );
+        uint BMUdex = find_BMU_for_x();
+        // FIXME: START HERE
+    }
 };
 
 

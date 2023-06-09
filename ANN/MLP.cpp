@@ -166,7 +166,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     ///// Inference //////////////////////////
 
-    void load_input( const vf& x_t ){
+    void load_input( const vd& x_t ){
         // Load values into the input vector
         // NOTE: This struct does not require the client code to add the unity input bias
         for( uint i = 0; i < dI; i++ ){  x(i,0) = x_t[i];  }
@@ -189,9 +189,9 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return activation;
     }
 
-    vf get_prediction(){
+    vd get_prediction(){
         // Return a vector with the highest weight label as the answer
-        vf     yOut;
+        vd     yOut;
         double maxVal = -1000.0;
         uint   maxDex = 0;
         for( uint j = 0; j < dO; j++ ){
@@ -248,7 +248,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     //         > Layer 2: Input  16 --to-> Output  16
     //         > Layer 3: Input  16 --to-> Output  10, Output class for each digit
 
-    void store_output_loss( const vf& y_Actual ){
+    void store_output_loss( const vd& y_Actual ){
         // Compute dLoss/dActivation for the OUTPUT layer ONLY
         for( uint i = 0; i < dO; i++ ){
             lossOut(i,0) = 2.0f*( y(i,0) - y_Actual[i] ); // 2*(predicted-desired)
@@ -446,10 +446,10 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         cout << "# End of Summary #" << endl << endl;
     }
 
-    vf flatten( const vvf& matx ){
+    vd flatten( const vvd& matx ){
         // Unpack the matrix into a vector by rows
-        vf rtnArr;
-        for( vf row : matx ){
+        vd rtnArr;
+        for( vd row : matx ){
             for( double elem : row ){
                 rtnArr.push_back( elem );
             }
@@ -457,7 +457,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return rtnArr;
     }
 
-    vf forward( const vvf& matx ){
+    vd forward( const vvd& matx ){
         // Use the network to run inference on the input image, layer by layer
         for( ulong i = 0; i < layers.size(); i++ ){
             if( i == 0 ){
@@ -470,7 +470,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return layers.back()->get_prediction();
     }
 
-    bool backpropagation( const vf& y_Actual ){
+    bool backpropagation( const vd& y_Actual ){
         // Full backpropagation, Return true if nothing funky happened with the grad calc
 
         long   N = layers.size();
@@ -511,7 +511,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return gradOK;
     }
 
-    bool backup_and_accum( const vf& y_Actual ){
+    bool backup_and_accum( const vd& y_Actual ){
         // Calc gradient, accumulate, and descend batch grad when counter expires
         Kb++;
         long   N = layers.size();
@@ -560,9 +560,9 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return gradOK;
     }
 
-    vf grad_norms(){
+    vd grad_norms(){
         // Return the Frobenius norm of the gradient of each layer, in order
-        vf norms;
+        vd norms;
         for( BinaryPerceptronLayer* layer : layers ){
             norms.push_back( layer->grad_norm() );
         }
@@ -585,8 +585,8 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Run simple backrop (non-batch) on every training example of an `MNISTBuffer`
 
         // -1. Init vars and reset data buffers
-        vvf /*----*/ img; // ---------- Current image
-        vf /*-----*/ lbl; // ---------- Current label
+        vvd /*----*/ img; // ---------- Current image
+        vd /*-----*/ lbl; // ---------- Current label
         uint /*---*/ N; // ------------ Number of training examples       
         uint /*---*/ div; // ---------- Status print freq 
         uint /*---*/ ic = 0; // ------- Iteration counter
@@ -641,7 +641,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             return -1.0;
     }
     
-    double compare_answers( const vf& pre, const vf& act ){
+    double compare_answers( const vd& pre, const vd& act ){
         // Return true only if `pre` and `act` are identical
         if( pre == act )
             return 1.0f;
@@ -653,9 +653,9 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Run inference on the validation set and return accuracy
 
         // -1. Init vars and reset data buffers
-        vvf   img; // ------------ Current image
-        vf    lbl; // ------------ Current label
-        vf    ans; // ------------ Current inference result
+        vvd   img; // ------------ Current image
+        vd    lbl; // ------------ Current label
+        vd    ans; // ------------ Current inference result
         double acc = 0.0f; // ----- Accuracy for this dataset
         uint  N   = dataSet->N; // Number of training examples       
         uint  div = N/100; // ---- Status print freq 
@@ -756,8 +756,8 @@ int main(){
         cout << trainDataBuffer.fetch_image_header() << endl;
         cout << validDataBuffer.fetch_image_header() << endl;
 
-        vvf img = trainDataBuffer.fetch_next_image();
-        vf  lbl = trainDataBuffer.fetch_next_y();
+        vvd img = trainDataBuffer.fetch_next_image();
+        vd  lbl = trainDataBuffer.fetch_next_y();
 
         trainDataBuffer.print_mnist_digit( img );
         cout << lbl << endl;
@@ -774,8 +774,8 @@ int main(){
 
     if( _TS_FORWARD || _TS_BACKPRP ){
         // -1. Init vars and reset data buffers
-        vvf   img; // --------------- Current image
-        vf    lbl; // --------------- Current label
+        vvd   img; // --------------- Current image
+        vd    lbl; // --------------- Current label
         uint  N; // ----------------- Number of training examples       
         uint  div; // ------- Status print freq 
         double avgLoss = 0.0f; // ---- Average loss for this epoch
