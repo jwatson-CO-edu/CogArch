@@ -173,7 +173,7 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         for( pair<uint,double> elem : neighborhood ){
             alpha = lr * elem.second;
             index = elem.first;
-            (1.0-alpha) * W.block( index, 0, 1, dI ) + alpha * x;
+            W.block( index, 0, 1, dI ) = (1.0-alpha) * W.block( index, 0, 1, dI ) + alpha * x;
         }
     }
 };
