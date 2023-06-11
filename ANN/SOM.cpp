@@ -5,6 +5,9 @@ g++ SOM.cpp -std=gnu++17 -I /usr/include/eigen3
 g++ SOM.cpp -std=gnu++17 -O3 -I /usr/include/eigen3
 */
 
+/// Standard ///
+#include <map>
+using std::pair;
 
 /// Eigen3 ///
 #include <Eigen/Dense>
@@ -78,14 +81,21 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MatrixXd m;
     MatrixXd bounds; //- Hypercuboid defining the bounds of the map
     MatrixXd maplocs; // Locations of feature map elements
+    double   releRad; // Relevance radius
+    double   scale; // - Problem scale
+    double   lr; // ---- Learning rate
     
     /// Constructor ///
 
-    SelfOrgMapLayer( const MatrixXd& mapBounds, const vector<double>& resolution ){
+    SelfOrgMapLayer( const MatrixXd& mapBounds, const vector<double>& resolution, double learnRate, 
+                     double searchRadius, double problemScale = 1.0 ){
         // Create a SOM layer with initial feature locations in a regular grid
-        // 1. Infer input dimension and store bounds
-        dI     = mapBounds.rows();
-        bounds = mapBounds;
+        // 1. Infer input dimension and store params
+        dI      = mapBounds.rows();
+        bounds  = mapBounds;
+        releRad = searchRadius; // FIXME: SHOULD THIS DECAY, AND IF SO, HOW?
+        scale   = problemScale;
+        lr /**/ = learnRate;
         // 2. Calculate the gradations for each of the dimensions and store in a ragged double vector
         vector<vector<double>> tics;
         vector<double> /*---*/ dimTics;
@@ -119,7 +129,7 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }
 
     uint find_BMU_for_x(){
-        // Find the closest point to the input vector, linear search
+        // Find the closest weight vector to the input vector, linear search
         MatrixXd diff;
         double   dist;
         double   dMin = 1e9;
@@ -135,11 +145,36 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return iMin;
     }
 
+    vector<pair<uint,double>> get_BMU_neighborhood( uint BMUdex, double radius ){
+        double /*--------------*/ dist;
+        MatrixXd /*------------*/ diff;
+        MatrixXd /*------------*/ BMU = maplocs.block( BMUdex, 0, 1, dI );
+        vector<pair<uint,double>> rtnDices;
+        for( uint i = 0; i < Nout; i++ ){
+            diff = maplocs.block(i,0,1,dI) - x;
+            dist = diff.norm();
+            // if( (dist <= radius) && (dist > 0.0) ){
+            if( dist <= radius ){
+                rtnDices.push_back( pair<uint,double>{i, exp(-dist/scale)} );
+            }
+        }
+        return rtnDices;
+    }
+
     void train_one_example( const vd& input ){
         // Perform the SOM training procedure for one example
+        double alpha;
+        uint   index;
+        // 0. Store input
         load_input( input );
-        uint BMUdex = find_BMU_for_x();
-        // FIXME: START HERE
+        // 1. Compute the Best Matching Unit and its neighborhood
+        uint /*----------------*/ BMUdex /*-*/ = find_BMU_for_x();
+        vector<pair<uint,double>> neighborhood = get_BMU_neighborhood( BMUdex, releRad );
+        for( pair<uint,double> elem : neighborhood ){
+            alpha = lr * elem.second;
+            index = elem.first;
+            (1.0-alpha) * W.block( index, 0, 1, dI ) + alpha * x;
+        }
     }
 };
 
