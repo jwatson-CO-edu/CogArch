@@ -155,6 +155,7 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             dist = diff.norm();
             // if( (dist <= radius) && (dist > 0.0) ){
             if( dist <= radius ){
+                // Membership is determined by an exponential decay function
                 rtnDices.push_back( pair<uint,double>{i, exp(-dist/scale)} );
             }
         }
@@ -170,7 +171,9 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // 1. Compute the Best Matching Unit and its neighborhood
         uint /*----------------*/ BMUdex /*-*/ = find_BMU_for_x();
         vector<pair<uint,double>> neighborhood = get_BMU_neighborhood( BMUdex, releRad );
+        // 2. Each neighboring node’s  weights are adjusted to make them more like the input vector
         for( pair<uint,double> elem : neighborhood ){
+            // `alpha`: The closer a node is to the BMU; the more its weights get altered.
             alpha = lr * elem.second;
             index = elem.first;
             W.block( index, 0, 1, dI ) = (1.0-alpha) * W.block( index, 0, 1, dI ) + alpha * x;
