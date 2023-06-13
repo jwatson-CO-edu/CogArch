@@ -10,9 +10,10 @@ Nkp  = 25
 pca  = PCA( n_components = Nkp )
 # pca  = PCA()
 
-def maxdex():
-    # FIXME, START HERE: FIND THE MAX INDEX OF A LIST
-    pass
+def maxdex( lst ):
+    """ Find the first index of the maximum value in the list """
+    valMax = max( lst )
+    return lst.index( valMax )
 
 # https://docs.python.org/3/library/csv.html
 print( "Reading file ..." ) 
@@ -32,9 +33,28 @@ pca.fit( data )
 print( pca.explained_variance_ratio_ )
 print( pca.components_.shape )
 
-# FIXME: FIND THE GREATEST COLUMN IN EACH OF THE COMPONENTS, THESE ARE THE MOST IMPORTANT COLUMNS IN THE DATA
+print( "Principal Components:" )
+sigCols = []
+reData  = np.zeros( (data.shape[0],Nkp,) )
 for component in pca.components_:
-    pass
+    abLst = [abs( elem ) for elem in component]
+    mxdx = maxdex( abLst )
+    print( mxdx, ",", max( abLst ) )
+    sigCols.append( mxdx )
+
+for i, col in enumerate( sigCols ):
+    reData[:,i] = data[:,col]
+
+print( reData[0,:] )
+
+nuFileName = 'seizure-reduced-25col_no-headings.csv'
+with open( nuFileName, 'w') as csvfile:
+    spamwriter = csv.writer( csvfile, delimiter=',' )
+    for row in reData:
+        spamwriter.writerow( row )
+
+print( f"Wrote {nuFileName} with {reData.shape[0]} rows and {reData.shape[1]} columns!" )
+
 
 
 
