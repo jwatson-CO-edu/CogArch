@@ -11,10 +11,16 @@ using std::vector;
 #include <iostream>
 using std::cout, std::endl, std::flush, std::ostream;
 #include <cmath>// ---- `exp` 
+#include <string>
+using std::string, std::stod;
+#include <sys/stat.h>
+#include <fstream>
+using std::ifstream, std::ofstream;
 
 ///// Type Defines ///////////////////////////////
 typedef vector<double> /*---*/ vd;
 typedef vector<vector<double>> vvd;
+typedef vector<string> /*---*/ vstr;
 typedef unsigned char /*----*/ ubyte;
 
 ////////// HELPER FUNCTIONS ////////////////////////////////////////////////////////////////////////
@@ -78,6 +84,30 @@ double Box_Muller_normal_sample( double mu = 0.0f, double sigma = 1.0f ){
     double u1 = randd();
     double u2 = randd();
     return mu + sqrt( -2.0 * log( u1 ) ) * cos( 2.0 * M_PI * u2 ) * sigma;
+}
+
+
+
+////////// FILE OPERATIONS /////////////////////////////////////////////////////////////////////////
+
+bool file_exists( const string& fName ){ 
+    // Return true if the file exists , otherwise return false
+    struct stat buf; 
+    if( stat( fName.c_str() , &buf ) != -1 ){ return true; } else { return false; }
+}
+
+vector<string> read_lines( string path ){ 
+    // Return all the lines of text file as a string vector
+    vector<string> rtnVec;
+    if( file_exists( path ) ){
+        ifstream fin( path ); // Open the list file for reading
+        string   line; // String to store each line
+        while ( std::getline( fin , line ) ){ // While we are able to fetch a line
+            rtnVec.push_back( line ); // Add the file to the list to read
+        }
+        fin.close();
+    } else { cout << "readlines: Could not open the file " << path << endl; }
+    return rtnVec;
 }
 
 #endif // UTILS_HPP

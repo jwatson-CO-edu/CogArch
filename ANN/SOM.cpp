@@ -66,6 +66,71 @@ void random_elem_init_d( MatrixXd& W, double lo = 0.0f, double hi = 1.0f ){
     }
 }
 
+vstr split_string_sep( string input, char sepChar = ' ' ){
+    // Return a vector of strings found in `input` separated by whitespace
+    vstr   rtnWords;
+    string currWord;
+    char   currChar;
+    size_t strLen = input.size();
+    bool   wsMode = (sepChar == ' ');
+    bool   p_sep  = false;
+
+    input.push_back( sepChar ); // Separator hack
+    
+    for( size_t i = 0 ; i < strLen ; i++ ){
+        // 1. Load char
+        currChar = input[i];
+        // 2. Check char
+        if( wsMode && isspace( currChar ) )
+            p_sep = true;
+        else if( (!wsMode) && (currChar == sepChar) )
+            p_sep = true;
+        else
+            p_sep = false;
+        // 3. Handle char
+        if( p_sep ){
+            if( currWord.length() > 0 )  rtnWords.push_back( currWord );
+            currWord = "";
+        }else{
+            currWord.push_back( currChar );
+        }
+    }
+    return rtnWords; 
+}
+
+vd doublify_string_vec( const vstr& rawVec ){
+    // Read a vector of strings into a vector of doubles
+    vd rtnVec;
+    for( string elem : rawVec ){  rtnVec.push_back( stod( elem ) );  }
+    return rtnVec;
+}
+
+
+////////// CSV STRUCT //////////////////////////////////////////////////////////////////////////////
+
+struct BufferCSVd{
+    // Container for data read from CSV file, double data in ragged vector rows
+
+    /// Members ///
+    vvd data;
+
+    /// Methods ///
+
+    bool read_CSV( string fPath, char separator = ' ' ){
+        // Read the contents of the CSV file into `data` as ragged vector rows of doubles
+        vstr strRow;
+        vd   dblRow;
+        vstr rawLines = read_lines( fPath );
+        for( string strLine : rawLines ){
+            strRow = split_string_sep( strLine, separator );
+            dblRow = doublify_string_vec( strRow );
+            data.push_back( dblRow );
+        }
+    }
+
+    // FIXME, START HERE: GET THE RANGES OF EACH OF THE DIMENSIONS SO THAT IT CAN BE GRIDDED!
+};
+
 
 
 ////////// SELF-ORGANIZING MAP /////////////////////////////////////////////////////////////////////
