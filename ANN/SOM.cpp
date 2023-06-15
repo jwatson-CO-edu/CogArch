@@ -66,6 +66,25 @@ void random_elem_init_d( MatrixXd& W, double lo = 0.0f, double hi = 1.0f ){
     }
 }
 
+inline string& ltrim_ws( string& s, const char* t = " \t\n\r\f\v" ){
+    // trim whitespace from left
+    s.erase( 0, s.find_first_not_of(t) );
+    return s;
+}
+
+
+inline string& rtrim_ws( string& s, const char* t = " \t\n\r\f\v" ){
+    // trim whitespace from right
+    s.erase( s.find_last_not_of(t) + 1 );
+    return s;
+}
+
+
+inline string& trim_ws( string& s, const char* t = " \t\n\r\f\v" ){
+    // trim whitespace from left & right
+    return ltrim_ws( rtrim_ws(s, t), t );
+}
+
 vstr split_string_sep( string input, char sepChar = ' ' ){
     // Return a vector of strings found in `input` separated by whitespace
     vstr   rtnWords;
@@ -75,6 +94,7 @@ vstr split_string_sep( string input, char sepChar = ' ' ){
     bool   wsMode = (sepChar == ' ');
     bool   p_sep  = false;
 
+    input = trim_ws( input );
     input.push_back( sepChar ); // Separator hack
     
     for( size_t i = 0 ; i < strLen ; i++ ){
@@ -106,6 +126,9 @@ vd doublify_string_vec( const vstr& rawVec ){
 }
 
 
+
+
+
 ////////// CSV STRUCT //////////////////////////////////////////////////////////////////////////////
 
 struct BufferCSVd{
@@ -121,14 +144,46 @@ struct BufferCSVd{
         vstr strRow;
         vd   dblRow;
         vstr rawLines = read_lines( fPath );
+        uint i = 0;
+        cout << rawLines[  0] << endl;
+        cout << rawLines[100] << endl;
         for( string strLine : rawLines ){
             strRow = split_string_sep( strLine, separator );
             dblRow = doublify_string_vec( strRow );
+            if( i < 2 ){
+                cout << strRow << endl;
+                cout << dblRow << endl;
+            }
             data.push_back( dblRow );
+            i++;
+        }
+        if(rawLines.size() > 0){
+            cout << "Read in " << data.size() << " rows and " << data[0].size() << " columns!" << endl;
+            return true;
+        }else{
+            cout << "No data in " << fPath << "!" << endl;
+            return false;
         }
     }
 
-    // FIXME, START HERE: GET THE RANGES OF EACH OF THE DIMENSIONS SO THAT IT CAN BE GRIDDED!
+    vvd get_column_ranges(){
+        // Get the range of each dimension so a grid can be built
+        // NOTE: This function assumes a uniform number of columns across rows, not ragged
+        uint   rows = data.size();
+        uint   cols = data[0].size();
+        double datum;
+        vvd    ranges;
+        for( uint i = 0; i < cols; i++ ){  ranges.push_back( { 1e9,-1e9} );  }
+        for( uint i = 0; i < rows; i++ ){
+            for( uint j = 0; j < cols; j++ ){
+                datum = data[i][j];
+                if( datum < ranges[j][0] )  ranges[j][0] = datum;
+                if( datum > ranges[j][1] )  ranges[j][1] = datum;
+            }
+        }
+        return ranges;
+    }
+    
 };
 
 
@@ -259,6 +314,13 @@ int main(){
         vector<vector<double>> tics = {{1,2,3},{1,2,3},{1,2,3}};
         populate_grid_points( combos, tics );
         cout << combos << endl;
+    }
+
+    ///// Test 1: Read CSV /////
+    if( true ){
+        BufferCSVd buf;
+        buf.read_CSV( "../Data/Seizure-Data/seizure-reduced-10col_no-headings.csv", ',' );
+        cout << buf.get_column_ranges() << endl;
     }
     
 

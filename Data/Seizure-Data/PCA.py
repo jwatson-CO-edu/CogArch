@@ -6,7 +6,7 @@ from sklearn.decomposition import PCA
 rows = 0 
 rLen = 0
 data = []
-Nkp  = 25
+Nkp  = 10 #25
 pca  = PCA( n_components = Nkp )
 # pca  = PCA()
 
@@ -47,7 +47,7 @@ for i, col in enumerate( sigCols ):
 
 print( reData[0,:] )
 
-nuFileName = 'seizure-reduced-25col_no-headings.csv'
+nuFileName = 'seizure-reduced-10col_no-headings.csv' # 'seizure-reduced-25col_no-headings.csv'
 with open( nuFileName, 'w') as csvfile:
     spamwriter = csv.writer( csvfile, delimiter=',' )
     for row in reData:
