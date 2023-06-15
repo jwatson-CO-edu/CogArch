@@ -68,6 +68,7 @@ void random_elem_init_d( MatrixXd& W, double lo = 0.0f, double hi = 1.0f ){
 
 inline string& ltrim_ws( string& s, const char* t = " \t\n\r\f\v" ){
     // trim whitespace from left
+    // Original Author: Galik, https://stackoverflow.com/a/25829233
     s.erase( 0, s.find_first_not_of(t) );
     return s;
 }
@@ -75,6 +76,7 @@ inline string& ltrim_ws( string& s, const char* t = " \t\n\r\f\v" ){
 
 inline string& rtrim_ws( string& s, const char* t = " \t\n\r\f\v" ){
     // trim whitespace from right
+    // Original Author: Galik, https://stackoverflow.com/a/25829233
     s.erase( s.find_last_not_of(t) + 1 );
     return s;
 }
@@ -82,6 +84,7 @@ inline string& rtrim_ws( string& s, const char* t = " \t\n\r\f\v" ){
 
 inline string& trim_ws( string& s, const char* t = " \t\n\r\f\v" ){
     // trim whitespace from left & right
+    // Original Author: Galik, https://stackoverflow.com/a/25829233
     return ltrim_ws( rtrim_ws(s, t), t );
 }
 
