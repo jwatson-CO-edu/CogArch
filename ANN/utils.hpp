@@ -21,6 +21,7 @@ using std::ifstream, std::ofstream;
 typedef vector<double> /*---*/ vd;
 typedef vector<vector<double>> vvd;
 typedef vector<string> /*---*/ vstr;
+typedef vector<uint> /*-----*/ vui;
 typedef unsigned char /*----*/ ubyte;
 
 ////////// HELPER FUNCTIONS ////////////////////////////////////////////////////////////////////////

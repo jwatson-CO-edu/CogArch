@@ -19,8 +19,33 @@ using Eigen::MatrixXd;
 
 ////////// HELPER FUNCTIONS ////////////////////////////////////////////////////////////////////////
 
+vvd get_N_tics( const vui& Ntics, const vvd& ranges ){
+    // Separate each dimension's range into per-dimension `Ntics`
+    // NOTE: This function assumes that `Ntics` and `ranges` are the same length
+    uint   Ndim = Ntics.size();
+    uint   N_i;
+    double span_i, div, val;
+    vd     dimTics;
+    vvd    tics;
+    
+    for( uint i = 0; i < Ndim; i++ ){
+        span_i = ranges[i][1] - ranges[i][0];
+        N_i    = Ntics[i]-1;
+        div    = span_i / (1.0 * N_i);
+        val    = ranges[i][0];
+        dimTics.clear();
+        dimTics.push_back( val );
+        for( uint j = 0; j < N_i; j++ ){
+            val += div;
+            dimTics.push_back( val );
+        }
+        tics.push_back( dimTics );
+    }
+    return tics;
+}
 
-void populate_grid_points( MatrixXd& pntMatx, const vector<vector<double>>& tics ){
+
+void populate_grid_points( MatrixXd& pntMatx, const vvd& tics ){
     // Populate `pntMatx` with rectangular grid points defined by `tics`
     int  Mrows  = 1;
     int  Ncols  = tics.size();
@@ -55,6 +80,7 @@ void populate_grid_points( MatrixXd& pntMatx, const vector<vector<double>>& tics
     }
 }
 
+
 void random_elem_init_d( MatrixXd& W, double lo = 0.0f, double hi = 1.0f ){
     // Set all weights and biases to uniformly-distributed random numbers
     uint M = W.rows();
@@ -65,6 +91,7 @@ void random_elem_init_d( MatrixXd& W, double lo = 0.0f, double hi = 1.0f ){
         }
     }
 }
+
 
 inline string& ltrim_ws( string& s, const char* t = " \t\n\r\f\v" ){
     // trim whitespace from left
@@ -187,6 +214,13 @@ struct BufferCSVd{
         return ranges;
     }
     
+    vvd even_tics_for_grid_covering_data( uint Ntics ){
+        // Separate each dimension of the dataset into `Ntics` for a grid that covers the dataset domain
+        vvd colRanges = get_column_ranges();
+        vui NperDim;
+        for( uint i = 0; i < colRanges.size(); i++ ){  NperDim.push_back( Ntics );  }
+        return get_N_tics( NperDim, colRanges ); 
+    }
 };
 
 
@@ -202,41 +236,25 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MatrixXd W; // ----- Weight matrix relating input to features
     MatrixXd x;
     MatrixXd m;
-    MatrixXd bounds; //- Hypercuboid defining the bounds of the map
     MatrixXd maplocs; // Locations of feature map elements
     double   releRad; // Relevance radius
     double   scale; // - Problem scale
     double   lr; // ---- Learning rate
     
-    /// Constructor ///
+    /// Constructor & Init ///
 
-    SelfOrgMapLayer( const MatrixXd& mapBounds, const vector<double>& resolution, double learnRate, 
-                     double searchRadius, double problemScale = 1.0 ){
+    SelfOrgMapLayer( double learnRate, double searchRadius, double problemScale = 1.0 ){
         // Create a SOM layer with initial feature locations in a regular grid
         // 1. Infer input dimension and store params
-        dI      = mapBounds.rows();
-        bounds  = mapBounds;
         releRad = searchRadius; // FIXME: SHOULD THIS DECAY, AND IF SO, HOW?
         scale   = problemScale;
         lr /**/ = learnRate;
-        // 2. Calculate the gradations for each of the dimensions and store in a ragged double vector
-        vector<vector<double>> tics;
-        vector<double> /*---*/ dimTics;
-        double val, lim, res;
-        for( uint i = 0; i < dI; i++ ){
-            val = mapBounds(i,0);
-            lim = mapBounds(i,1);
-            res = resolution[i];
-            dimTics.clear();
-            dimTics.push_back( val );
-            val += res;
-            while( val < lim ){
-                dimTics.push_back( val );
-                val += res;
-            }
-            tics.push_back( dimTics );
-        }
+    }
+
+    void structure_init_from_tics( const vvd& tics ){
+        // Populate the grid according to per-dimension `tics` provided by the `BufferCSVd`
         populate_grid_points( maplocs, tics );
+        dI   = tics.size();
         Nout = maplocs.rows();
         W    = MatrixXd::Zero( Nout, dI );
         x    = MatrixXd::Zero( 1   , dI );
@@ -325,7 +343,11 @@ int main(){
         buf.read_CSV( "../Data/Seizure-Data/seizure-reduced-10col_no-headings.csv", ',' );
         cout << buf.get_column_ranges() << endl;
     }
-    
+
+    ///// Test 2: Grid from CSV /////
+    // 5^10 =  9,765,625
+    // 6^10 = 60,466,176
+    // FIXME, START HERE: GRIDULIZE
 
     return 0;
 }
