@@ -1,7 +1,6 @@
 /*
 SOM.cpp
 Self-Organizing Map Example
-g++ SOM.cpp -std=gnu++17 -I /usr/include/eigen3
 g++ SOM.cpp -std=gnu++17 -O3 -I /usr/include/eigen3
 */
 
@@ -165,9 +164,29 @@ struct BufferCSVd{
     // Container for data read from CSV file, double data in ragged vector rows
 
     /// Members ///
-    vvd data;
+    vvd    data;
+    size_t rowDex;
+    size_t Mrows;
+    size_t Ncols;
+
+    /// Constructor ///
+
+    BufferCSVd( string fPath, char separator = ' ' ){
+        // Set the current data row and read the file by rows
+        rowDex = 0;
+        read_CSV( fPath, separator );
+        Mrows = data.size();
+        Ncols = data[0].size();
+    }
 
     /// Methods ///
+
+    vd get_next_row(){
+        // Fetch row and advance the row index
+        vd rtnRow = data[ rowDex ];
+        rowDex = (rowDex+1) % data.size();
+        return rtnRow;
+    }
 
     bool read_CSV( string fPath, char separator = ' ' ){
         // Read the contents of the CSV file into `data` as ragged vector rows of doubles
@@ -175,15 +194,15 @@ struct BufferCSVd{
         vd   dblRow;
         vstr rawLines = read_lines( fPath );
         uint i = 0;
-        cout << rawLines[  0] << endl;
-        cout << rawLines[100] << endl;
+        // cout << rawLines[  0] << endl;
+        // cout << rawLines[100] << endl;
         for( string strLine : rawLines ){
             strRow = split_string_sep( strLine, separator );
             dblRow = doublify_string_vec( strRow );
-            if( i < 2 ){
-                cout << strRow << endl;
-                cout << dblRow << endl;
-            }
+            // if( i < 2 ){
+            //     cout << strRow << endl;
+            //     cout << dblRow << endl;
+            // }
             data.push_back( dblRow );
             i++;
         }
@@ -211,6 +230,7 @@ struct BufferCSVd{
                 if( datum > ranges[j][1] )  ranges[j][1] = datum;
             }
         }
+        cout << ranges << endl;
         return ranges;
     }
     
@@ -240,13 +260,15 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double   releRad; // Relevance radius
     double   scale; // - Problem scale
     double   lr; // ---- Learning rate
+    double   dc; // ---- Decay constant
     
     /// Constructor & Init ///
 
-    SelfOrgMapLayer( double learnRate, double searchRadius, double problemScale = 1.0 ){
+    SelfOrgMapLayer( double learnRate, double searchRadius, double problemScale = 1.0, double decayConst = 0.99 ){
         // Create a SOM layer with initial feature locations in a regular grid
         // 1. Infer input dimension and store params
         releRad = searchRadius; // FIXME: SHOULD THIS DECAY, AND IF SO, HOW?
+        dc /**/ = decayConst;
         scale   = problemScale;
         lr /**/ = learnRate;
     }
@@ -258,7 +280,8 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         Nout = maplocs.rows();
         W    = MatrixXd::Zero( Nout, dI );
         x    = MatrixXd::Zero( 1   , dI );
-        random_elem_init_d( W, 0.01, 0.75 );
+        // random_elem_init_d( W, 0.01, 0.75 );
+        random_elem_init_d( W, -2000.0, 2000.0 );
     }
 
     /// Methods ///
@@ -269,7 +292,7 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         for( uint i = 0; i < dI; i++ ){  x(0,i) = x_t[i];  }
     }
 
-    uint find_BMU_for_x(){
+    uint find_BMU_for_x( bool report = false ){
         // Find the closest weight vector to the input vector, linear search
         MatrixXd diff;
         double   dist;
@@ -283,10 +306,11 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 iMin = i;
             }
         }
+        if( report )  cout << "Example: " << x << endl << "BMU Weights: " << W.block(iMin,0,1,dI) << endl;
         return iMin;
     }
 
-    vector<pair<uint,double>> get_BMU_neighborhood( uint BMUdex, double radius ){
+    vector<pair<uint,double>> get_BMU_neighborhood( uint BMUdex, double radius, bool report = false ){
         double /*--------------*/ dist;
         MatrixXd /*------------*/ diff;
         MatrixXd /*------------*/ BMU = maplocs.block( BMUdex, 0, 1, dI );
@@ -300,29 +324,49 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 rtnDices.push_back( pair<uint,double>{i, exp(-dist/scale)} );
             }
         }
+        if( report )  cout << "There are " << rtnDices.size() << " neighbors of the BMU, " << BMU << endl;
         return rtnDices;
     }
 
-    void train_one_example( const vd& input ){
+    void train_one_example( const vd& input, bool report = false ){
         // Perform the SOM training procedure for one example
-        double alpha;
-        uint   index;
+        double   alpha;
+        uint     index;
+        MatrixXd Wrow;
+        double   delta = 0.0;
         // 0. Store input
         load_input( input );
         // 1. Compute the Best Matching Unit and its neighborhood
-        uint /*----------------*/ BMUdex /*-*/ = find_BMU_for_x();
-        vector<pair<uint,double>> neighborhood = get_BMU_neighborhood( BMUdex, releRad );
+        uint /*----------------*/ BMUdex /*-*/ = find_BMU_for_x( report );
+        vector<pair<uint,double>> neighborhood = get_BMU_neighborhood( BMUdex, releRad, report );
         // 2. Each neighboring node’s  weights are adjusted to make them more like the input vector
         for( pair<uint,double> elem : neighborhood ){
             // `alpha`: The closer a node is to the BMU; the more its weights get altered.
             alpha = lr * elem.second;
             index = elem.first;
-            W.block( index, 0, 1, dI ) = (1.0-alpha) * W.block( index, 0, 1, dI ) + alpha * x;
+            Wrow  = W.block( index, 0, 1, dI );
+            W.block( index, 0, 1, dI ) = (1.0-alpha) * Wrow + alpha * x;
+            if( report )  delta += (Wrow - W.block( index, 0, 1, dI )).norm();
         }
+        if( report )  cout << "Net weights changes: " << delta << endl << endl;
+        // 3. Search radius decays exponentially
+        releRad *= dc;
     }
 };
 
-
+void train_one_epoch( BufferCSVd& buf, SelfOrgMapLayer& som, size_t reportDiv = 100 ){
+    // Train on every example of the CSV buffer
+    bool report = false;
+    for( size_t i = 0; i < buf.Mrows; i++ ){
+        report = (i%reportDiv==0);
+        if( report )  cout << endl << endl;
+        som.train_one_example( buf.get_next_row(), report );    
+        if( report )  
+            cout << endl;
+        else
+            cout << "." << flush;
+    }
+}
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
 
@@ -338,16 +382,32 @@ int main(){
     }
 
     ///// Test 1: Read CSV /////
-    if( true ){
-        BufferCSVd buf;
-        buf.read_CSV( "../Data/Seizure-Data/seizure-reduced-10col_no-headings.csv", ',' );
+    if( false ){
+        BufferCSVd buf{ "../Data/Seizure-Data/seizure-reduced-10col_no-headings.csv", ',' };
         cout << buf.get_column_ranges() << endl;
     }
 
-    ///// Test 2: Grid from CSV /////
+    ///// Test 2: Grid from CSV, Teach one row /////
     // 5^10 =  9,765,625
     // 6^10 = 60,466,176
-    // FIXME, START HERE: GRIDULIZE
+    if( false ){
+        BufferCSVd buf{ "../Data/Seizure-Data/seizure-reduced-10col_no-headings.csv", ',' };
+        SelfOrgMapLayer som{ 0.001, 4000.0/5.0*1.25, 4000.0/5.0 };
+        cout << "About to build structure ..." << endl;
+        som.structure_init_from_tics( buf.even_tics_for_grid_covering_data( 5 ) );
+        cout << som.W.rows() << " x " << som.W.cols() << endl; // 9765625, Correct!
+        som.train_one_example( buf.get_next_row() );
+    }
+
+    ///// Test 3: Train one epoch /////
+    if( true ){
+        BufferCSVd /**/ buf{ "../Data/Seizure-Data/seizure-reduced-10col_no-headings.csv", ',' };
+        SelfOrgMapLayer som{ 0.02, 4000.0/2.0, 4000.0/5.0, 0.9999 };
+        cout << "About to build structure ..." << endl;
+        som.structure_init_from_tics( buf.even_tics_for_grid_covering_data( 5 ) );
+        cout << som.W.rows() << " x " << som.W.cols() << endl; // 9765625, Correct!
+        train_one_epoch( buf, som, 100 );
+    }
 
     return 0;
 }
