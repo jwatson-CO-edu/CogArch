@@ -2,6 +2,7 @@
 SOM.cpp
 Self-Organizing Map Example
 g++ SOM.cpp -std=gnu++17 -O3 -I /usr/include/eigen3
+WARNING: This implementation is wildly unoptimized and suffers badly from a lack of spatial tree lookup!
 */
 
 /// Standard ///
@@ -328,7 +329,7 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return rtnDices;
     }
 
-    void train_one_example( const vd& input, bool report = false ){
+    double train_one_example( const vd& input, bool report = false ){
         // Perform the SOM training procedure for one example
         double   alpha;
         uint     index;
@@ -351,21 +352,48 @@ struct SelfOrgMapLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         if( report )  cout << "Net weights changes: " << delta << endl << endl;
         // 3. Search radius decays exponentially
         releRad *= dc;
+        // N. Return dist from BMU weights to eval convergence
+        return (x - W.block( BMUdex, 0, 1, dI )).norm();
     }
 };
 
 void train_one_epoch( BufferCSVd& buf, SelfOrgMapLayer& som, size_t reportDiv = 100 ){
     // Train on every example of the CSV buffer
-    bool report = false;
+    bool   report = false;
+    double dTotal = 0.0;
     for( size_t i = 0; i < buf.Mrows; i++ ){
         report = (i%reportDiv==0);
         if( report )  cout << endl << endl;
-        som.train_one_example( buf.get_next_row(), report );    
-        if( report )  
+        dTotal += som.train_one_example( buf.get_next_row(), report );    
+        if( report ){
+            cout << "Average distance to BMU: " << (dTotal/(1.0*reportDiv)) << endl;
+            dTotal = 0.0;
             cout << endl;
-        else
+        }else
             cout << "." << flush;
     }
+}
+
+double evaluate_on_CSV( BufferCSVd& buf, SelfOrgMapLayer& som, size_t reportDiv = 100 ){
+    // Reset the CSV, then evaluate the average dist between each datum and its assigned cluster
+    bool   report = false;
+    double dTotal = 0.0;
+    uint   BMUdex;
+    buf.rowDex = 0;
+    for( size_t i = 0; i < buf.Mrows; i++ ){
+        report = (i%reportDiv==0);
+        som.load_input( buf.get_next_row() );
+        // 1. Compute the Best Matching Unit
+        BMUdex = som.find_BMU_for_x( report );
+        dTotal += (som.x - som.W.block( BMUdex, 0, 1, som.dI )).norm();    
+        if( report )  cout << ">" << flush;
+    }
+    cout << endl << endl << "########## Self-Organizing Map Report ##########" << endl;
+    cout << "Average distance to BMU: " << (dTotal/(1.0*buf.Mrows)) << endl;
+    cout << "Final Search Radius: ___ " << som.releRad << endl;
+    cout << "Learning Rate: _________ " << som.lr << endl;
+    cout << "Problem Scale: _________ " << som.scale << endl;
+    cout << "Decay Constant: ________ " << som.dc << endl << endl;
 }
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
