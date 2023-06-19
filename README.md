@@ -6,18 +6,6 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 # `DEV PLAN`
 
 ## Artificial Neural Networks
-1. `[>]` Self-Organizing Map (SOM, C++)
-    * `[Y]` Take notes and develop a dev plan, 2023-05-09: Code might be useful
-        - `[Y]` https://medium.com/machine-learning-researcher/self-organizing-map-som-c296561e2117, 2023-05-09
-        - `[Y]` https://medium.com/@abhinavr8/self-organizing-maps-ff5853a118d4, 2023-05-09: This is just the wikipedia alticle
-        - `[Y]` https://en.wikipedia.org/wiki/Self-organizing_map, 2023-05-09
-        - `[N]` http://www.pitt.edu/~is2470pb/Spring05/FinalProjects/Group1a/tutorial/som.html, 2023-05-09
-        - `[~]` http://www.ai-junkie.com/ann/som/som1.html, 2023-05-09: Code might be useful
-        - `[~]` https://github.com/abhinavralhan/kohonen-maps, 2023-05-09: Code might be useful
-    * `DEV PLAN`
-        - `[Y]` Choose a classification/inference problem (from the reading plan if available), 2023-06-05: Seizure Datasets
-        - `[>]` Re-read SOM notes and decide how to solve problem
-        - `[ ]` Decide on an architecture
 
 1. `[50]` Graph Convolutional Network (GATv2, Python, Tensorflow)
     * `[ ]` Take notes and develop a dev plan
@@ -114,7 +102,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     - FANN?
 * [Adam Optimizer](https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.)
 
-# Projects on Hold
+# Suspended Projects
 
 1. `[~]` Bayesian Neural Network (BNN, C++), 2023-06-05: The convolutional BNN is a complex network that would take significant time to make from scratch, Delaying this in favor of other projects
     * `[Y]` Reading Plan
@@ -138,6 +126,24 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - `[ ]` Basic BNN Test
 
 # Completed Projects
+1. `[Y]` Self-Organizing Map (SOM, C++), 2023-06-19: Seems to converge, not going to count clusters at this time
+    ```
+    ########## Self-Organizing Map Report ##########
+    Average distance to BMU: 171.483
+    Final Search Radius: ___ 633.237
+    Learning Rate: _________ 0.02
+    Problem Scale: _________ 800
+    Decay Constant: ________ 0.9999
+    ```
+    * `[Y]` Take notes and develop a dev plan, 2023-05-09: Code might be useful
+        - `[Y]` https://medium.com/machine-learning-researcher/self-organizing-map-som-c296561e2117, 2023-05-09
+        - `[Y]` https://medium.com/@abhinavr8/self-organizing-maps-ff5853a118d4, 2023-05-09: This is just the wikipedia alticle
+        - `[Y]` https://en.wikipedia.org/wiki/Self-organizing_map, 2023-05-09
+        - `[N]` http://www.pitt.edu/~is2470pb/Spring05/FinalProjects/Group1a/tutorial/som.html, 2023-05-09
+        - `[~]` http://www.ai-junkie.com/ann/som/som1.html, 2023-05-09: Code might be useful
+        - `[~]` https://github.com/abhinavralhan/kohonen-maps, 2023-05-09: Code might be useful
+    * `DEV PLAN`
+        - `[Y]` Choose a classification/inference problem (from the reading plan if available), 2023-06-05: Seizure Datasets
 1. `[Y]` Perceptrons + MLP, 2023-04: Re-write in C++ / Eigen3, 2023-05-18: 80% accuracy achieved, anything above this is just tuning  
     Running Best:  
 
