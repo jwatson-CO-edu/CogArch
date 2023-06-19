@@ -374,7 +374,7 @@ void train_one_epoch( BufferCSVd& buf, SelfOrgMapLayer& som, size_t reportDiv = 
     }
 }
 
-double evaluate_on_CSV( BufferCSVd& buf, SelfOrgMapLayer& som, size_t reportDiv = 100 ){
+void evaluate_on_CSV( BufferCSVd& buf, SelfOrgMapLayer& som, size_t reportDiv = 100 ){
     // Reset the CSV, then evaluate the average dist between each datum and its assigned cluster
     bool   report = false;
     double dTotal = 0.0;
