@@ -435,6 +435,7 @@ int main(){
         som.structure_init_from_tics( buf.even_tics_for_grid_covering_data( 5 ) );
         cout << som.W.rows() << " x " << som.W.cols() << endl; // 9765625, Correct!
         train_one_epoch( buf, som, 100 );
+        evaluate_on_CSV( buf, som, 100 );
     }
 
     return 0;
