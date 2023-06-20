@@ -5,6 +5,10 @@ g++ SOM.cpp -std=gnu++17 -O3 -I /usr/include/eigen3
 WARNING: This implementation is wildly unoptimized and suffers badly from a lack of spatial tree lookup!
 */
 
+////////// INIT ////////////////////////////////////////////////////////////////////////////////////
+
+///// Imports ////////////////////////////////////
+
 /// Standard ///
 #include <map>
 using std::pair;
@@ -15,6 +19,7 @@ using Eigen::MatrixXd;
 
 /// Local ///
 #include "utils.hpp"
+
 
 
 ////////// HELPER FUNCTIONS ////////////////////////////////////////////////////////////////////////

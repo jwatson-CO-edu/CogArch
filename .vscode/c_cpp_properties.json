@@ -4,6 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/include/",
                 "/usr/include/eigen3"
             ],
             "defines": [],
