@@ -20,6 +20,8 @@ using std::ifstream, std::ofstream;
 using std::pair;
 #include <array>
 using std::array;
+#include <algorithm>
+using std::max;
 
 ///// Type Defines ///////////////////////////////
 typedef vector<double> /*---*/ vd;
