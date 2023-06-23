@@ -21,7 +21,7 @@ using std::pair;
 #include <array>
 using std::array;
 #include <algorithm>
-using std::max;
+using std::max, std::min;
 
 ///// Type Defines ///////////////////////////////
 typedef vector<double> /*---*/ vd;
@@ -56,6 +56,15 @@ bool operator==( const vector<T>& vec1, const vector<T>& vec2 ){
     }
 }
 
+template<typename T> // NOTE: Templated functions must have their definition in the header file
+bool is_arg_in_vec( T arg , const std::vector<T>& vec ){
+	// Return true if 'arg' is in 'st' , false otherwise
+	// URL , resolve dependent templated typenames: https://stackoverflow.com/a/11275548
+	// URL , const_iterator: https://stackoverflow.com/a/309589
+	typename std::vector<T>::const_iterator it = find( vec.begin() , vec.end() , arg ); 
+	return it != vec.end();
+}
+
 ////////// MATH FUNCTIONS //////////////////////////////////////////////////////////////////////////
 
 double randd(){
@@ -78,6 +87,17 @@ float randf( float lo, float hi ){
     // Return a pseudo-random number between `lo` and `hi`
     float span = hi - lo;
     return lo + randf() * span;
+}
+
+uint randu(){
+    // Return a random unsigned int
+    return (uint) rand();
+}
+
+uint randu( uint lo, uint hi ){
+    // Return a pseudo-random number between `lo` and `hi`
+    uint span = hi - lo;
+    return (uint) (lo + randf() * span);
 }
 
 void seed_rand(){  srand( time( NULL ) );  } // Provide a clock-based unpredictable seed to RNG

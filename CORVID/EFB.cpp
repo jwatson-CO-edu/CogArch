@@ -45,7 +45,7 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     /// Members ///
     EFB_Op /*------------*/ opType; // Type of operation
-    vector<array<size_t,2>> addrs; //- Addresses for operand lookup
+    vector<array<uint,2>> addrs; //- Addresses for operand lookup
     double /*------------*/ param; //- Tuning parameter for the feature
     double /*------------*/ pAvg; // - Tuning parameter mean
     double /*------------*/ pVar; // - Tuning parameter variance
@@ -133,21 +133,59 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 };
 
-struct EFB_Layer{
+struct EFB_Layer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // A layer of transformed input
     vd /*------------*/ y; // ------ Output
     vector<EFB_Feature> features; // Features that define the output
 };
 
-struct EFB{
+struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Simplest Evolutionary Feature Bus (EFB)
-    vd /*----------*/ x; // Input
-    vector<EFB_Layer> layers; // Layers that define the bus
+    uint /*------------*/ dI; // ---- Input dimension 
+    vd /*--------------*/ x; // ----- Input vector
+    uint /*------------*/ operMax; // Max number of operands for any operation
+    uint /*------------*/ dpthMax; // Max depth beyond input
+    vector<EFB_Layer>     layers; //- Layers that define the bus
+    vector<array<uint,2>> addrs; // - Available addresses
 
-    uint load_input( const vd& input ){
-        // Load the input and return the length of the input
+    /// Constructor ///
+
+    EFB( uint inputDim, uint maxOperands, uint maxDepth ){
+        // Init input
+        dI = inputDim;
+        // The input is Layer 0
+        for( uint i = 0; i < dI; i++ ){  addrs.push_back( {0, i} );  }
+        operMax = maxOperands;
+        dpthMax = maxDepth;
+    }
+
+    /// Methods ///
+
+    void load_input( const vd& input ){
+        // Copy the input and return the length of the input
         x.clear();
         x = input;
-        return x.size();
+        if( x.size() != dI )  cout << "Input dimension " << x.size() << ", but expected " << dI << " !" << endl;
     }
+
+    void create_feature(){
+        // Create a new feature, assuming the decision to create the feature has already been made
+        // 1. Choose the number of operands
+        uint Noper = randu( 1, min( operMax, (uint) addrs.size() ) );
+        uint Naddr = addrs.size();
+        // 2. Choose the addresses
+        uint layrMax = 0;
+        vector<array<uint,2>> opAddrs;
+        array<uint,2> oneAddr;
+        for( uint i = 0; i < Noper; i++ ){
+            oneAddr = addrs[ randu(0, Naddr-1) ];
+            while( is_arg_in_vec( oneAddr, opAddrs ) ){  oneAddr = addrs[ randu(0, Naddr-1) ];  }
+            opAddrs.push_back( oneAddr );
+        }
+        // 3. Choose the operation type
+        // FIXME, START HERE: HOW TO CHOOSE A RANDOM ELEM OF AN Enum?
+        // 4. Choose the parameter 
+    }
+
+    
 };
