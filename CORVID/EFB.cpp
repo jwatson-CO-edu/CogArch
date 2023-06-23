@@ -24,10 +24,13 @@ using Eigen::MatrixXd;
 #include "utils.hpp"
 
 
+///// Aliases ////////////////////////////////////
+typedef Eigen::MatrixXd matxX;
 
 ////////// EVOLUTIONARY FEATURE BUS ////////////////////////////////////////////////////////////////
 
 enum EFB_Op{ 
+    // Possible operation types
     NOP, // NO-OP
     ADD, // Add
     SUB, // Subtract
@@ -50,7 +53,7 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     uint /*--------------*/ bufLen; // Length of 
     deque<double> /*-----*/ vHst; // - History of values, used for Delay
     deque<double> /*-----*/ pHst; // - History of parameter values
-    deque<double> /*-----*/ rHst; // - History of reward
+    deque<double> /*-----*/ eHst; // - History of error
     
     /// Constructor ///
 
@@ -69,12 +72,13 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         param = Box_Muller_normal_sample( pAvg, pVar );
     }
 
-    void store_param_reward( double reward_t ){
-        pHst.push_back( param    );
-        rHst.push_back( reward_t );
+    void store_param_error( double error_t ){
+        // Store the parameter and the error associated with it
+        pHst.push_back( param   );
+        eHst.push_back( error_t );
         while( pHst.size() > bufLen ){
             pHst.pop_front();
-            rHst.pop_front();
+            eHst.pop_front();
         }
     }
 
@@ -97,8 +101,11 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 break;
             case DLY: //Delay
                 delay  = (uint) max( 0.0, param );
-                if( vHst.size() >= delay )  rtnRes = vHst[ delay-1 ];
-                vHst.push_back( rtnRes );
+                if( vHst.size() )
+                    rtnRes = vHst.front();
+                else
+                    rtnRes = operands[0];
+                vHst.push_back( operands[0] );
                 while( vHst.size() > delay ){
                     vHst.pop_front();
                 }
@@ -109,18 +116,38 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return rtnRes;
     }
 
-    double param_grad_ascent(){
-        // FIXME, START HERE: UNROLL DQs INTO MATRICES, CALC GRAD, AND ASCEND PARAMETER GRAD
+    double param_grad_descent(){
+        // Calc gradient and adjust the parameter
+        uint  Nelem = pHst.size();
+        matxX P     = matxX::Ones( Nelem, 2 );
+        matxX E     = matxX::Ones( Nelem, 1 );
+        for( uint i = 0; i < Nelem; i++ ){
+            P(i,0) = pHst[i];
+            E(i,0) = eHst[i];
+        }
+        matxX  soln = (P.transpose() * P).ldlt().solve(P.transpose() * E);
+        double grad = soln(0,0);
+        param -= grad * lr;
+        return grad;
     }
 
 };
 
 struct EFB_Layer{
+    // A layer of transformed input
     vd /*------------*/ y; // ------ Output
     vector<EFB_Feature> features; // Features that define the output
 };
 
 struct EFB{
     // Simplest Evolutionary Feature Bus (EFB)
-    vd /*------------*/ x; // ------ Input
+    vd /*----------*/ x; // Input
+    vector<EFB_Layer> layers; // Layers that define the bus
+
+    uint load_input( const vd& input ){
+        // Load the input and return the length of the input
+        x.clear();
+        x = input;
+        return x.size();
+    }
 };
