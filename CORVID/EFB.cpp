@@ -31,11 +31,11 @@ typedef Eigen::MatrixXd matxX;
 
 enum EFB_Op{ 
     // Possible operation types
-    NOP, // NO-OP
-    ADD, // Add
-    SUB, // Subtract
-    CON, // Constant
-    DLY, // Delay
+    NOP = 0, // NO-OP
+    ADD = 1, // Add
+    SUB = 2, // Subtract
+    CON = 3, // Constant
+    DLY = 4, // Delay
 };
 
 struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -44,16 +44,17 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // 2023-06-21: Members could have probably been represented as matrices at the layer level, just MVP at this point please 
 
     /// Members ///
-    EFB_Op /*------------*/ opType; // Type of operation
+    EFB_Op /*----------*/ opType; // Type of operation
     vector<array<uint,2>> addrs; //- Addresses for operand lookup
-    double /*------------*/ param; //- Tuning parameter for the feature
-    double /*------------*/ pAvg; // - Tuning parameter mean
-    double /*------------*/ pVar; // - Tuning parameter variance
-    double /*------------*/ lr; // --- Learning rate 
-    uint /*--------------*/ bufLen; // Length of 
-    deque<double> /*-----*/ vHst; // - History of values, used for Delay
-    deque<double> /*-----*/ pHst; // - History of parameter values
-    deque<double> /*-----*/ eHst; // - History of error
+    double /*----------*/ param; //- Tuning parameter for the feature
+    double /*----------*/ pAvg; // - Tuning parameter mean
+    double /*----------*/ pVar; // - Tuning parameter variance
+    double /*----------*/ lr; // --- Learning rate 
+    double /*----------*/ output; // Output 
+    uint /*------------*/ Nhst; // - Steps of history to retain
+    deque<double> /*---*/ vHst; // - History of values, used for Delay
+    deque<double> /*---*/ pHst; // - History of parameter values
+    deque<double> /*---*/ eHst; // - History of error
     
     /// Constructor ///
 
@@ -61,8 +62,8 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Default constructor
         opType = NOP;
         param  =  0.0;
-        bufLen = 10;
-        lr     = 0.001;
+        Nhst   = 10;
+        lr     =  0.001;
     }
 
     /// Methods ///
@@ -72,48 +73,51 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         param = Box_Muller_normal_sample( pAvg, pVar );
     }
 
-    void store_param_error( double error_t ){
+    void store_step_values( double error_t ){
         // Store the parameter and the error associated with it
-        pHst.push_back( param   );
-        eHst.push_back( error_t );
-        while( pHst.size() > bufLen ){
-            pHst.pop_front();
-            eHst.pop_front();
+        vHst.push_front( output  );
+        pHst.push_front( param   );
+        eHst.push_front( error_t );
+        while( pHst.size() > Nhst ){
+            vHst.pop_back();
+            pHst.pop_back();
+            eHst.pop_back();
         }
     }
 
     double apply( const vd& operands ){
         // Apply the operation to the input operands to produce a scalar output signal
-        double rtnRes = 0.0;
-        uint   delay;
+        output = 0.0;
+        uint delay;
         switch( opType ){
             case ADD: // Add
-                for( double operand : operands ){  rtnRes += operand;  }
-                rtnRes += param;
+                for( double operand : operands ){  output += operand;  }
+                output += param;
                 break;
             case SUB: // Subtract
-                rtnRes = operands[0];
-                for( size_t i = 1; i < operands.size(); i++ ){  rtnRes -= operands[i];  }
-                rtnRes -= param;
+                output = operands[0];
+                for( size_t i = 1; i < operands.size(); i++ ){  output -= operands[i];  }
+                output -= param;
                 break;
             case CON: // Constant
-                rtnRes = param;
+                output = param;
                 break;
             case DLY: //Delay
                 delay  = (uint) max( 0.0, param );
-                if( vHst.size() )
-                    rtnRes = vHst.front();
-                else
-                    rtnRes = operands[0];
-                vHst.push_back( operands[0] );
-                while( vHst.size() > delay ){
-                    vHst.pop_front();
+                if( vHst.size() ){
+                    if( vHst.size() >= delay ){
+                        output = vHst[ delay-1 ];
+                    }else{
+                        output = vHst.back();
+                    }
+                }else{
+                    output = operands[0];
                 }
                 break;
             case NOP:
             default:
         }
-        return rtnRes;
+        return output;
     }
 
     double param_grad_descent(){
@@ -127,26 +131,57 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
         matxX  soln = (P.transpose() * P).ldlt().solve(P.transpose() * E);
         double grad = soln(0,0);
-        param -= grad * lr;
+        pAvg -= grad * lr;
         return grad;
     }
 
+    matxX get_history(){
+        // Get the history of each of the queues
+        // NOTE: ROWS OF MATRIX IN REVERSE TIME ORDER
+        matxX rtnArr = matxX::Zero( Nhst, 3 );
+        for( uint i = 0; i < Nhst; i++ ){
+            if( i < vHst.size() ){
+                rtnArr(i,0) = vHst[i];
+                rtnArr(i,1) = pHst[i];
+                rtnArr(i,2) = eHst[i];
+            }
+        }
+        return rtnArr;
+    }
 };
 
 struct EFB_Layer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // A layer of transformed input
-    vd /*------------*/ y; // ------ Output
+
+    /// Members ///
     vector<EFB_Feature> features; // Features that define the output
+    uint /*----------*/ Nhst; // ----- Steps of history to retain
+    vd /*------------*/ y; // ------ Output
+
+    /// Methods ///
+
+    matxX get_history(){
+        // Get the history of all features 
+        matxX rtnArr = matxX::Zero( Nhst, 3*features.size() );
+        for( uint i = 0; i < Nhst; i++ ){
+            rtnArr.block( 0, i*3, Nhst, 3 ) = features[i].get_history();
+        }
+        return rtnArr;
+    }
+
 };
 
 struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Simplest Evolutionary Feature Bus (EFB)
-    uint /*------------*/ dI; // ---- Input dimension 
-    vd /*--------------*/ x; // ----- Input vector
-    uint /*------------*/ operMax; // Max number of operands for any operation
-    uint /*------------*/ dpthMax; // Max depth beyond input
-    vector<EFB_Layer>     layers; //- Layers that define the bus
-    vector<array<uint,2>> addrs; // - Available addresses
+    uint /*------------*/ dI; // ------- Input dimension 
+    vd /*--------------*/ x; // -------- Input vector
+    uint /*------------*/ operMax; // -- Max number of operands for any operation
+    uint /*------------*/ dpthMax; // -- Max depth beyond input
+    uint /*------------*/ Nhst; // ----- Steps of history to retain
+    vector<EFB_Layer>     layers; // --- Layers that define the bus
+    vector<array<uint,2>> addrs; // ---- Available addresses
+    array<double,2> /*-*/ paramRange; // Range that a parameter can take
+    double /*----------*/ paramVar; // - Variance of parameters
 
     /// Constructor ///
 
@@ -168,24 +203,75 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         if( x.size() != dI )  cout << "Input dimension " << x.size() << ", but expected " << dI << " !" << endl;
     }
 
-    void create_feature(){
+    bool create_feature(){
         // Create a new feature, assuming the decision to create the feature has already been made
+        // 0. Init
+        EFB_Feature rtnFeature;
+        bool /*--*/ placed = false;
         // 1. Choose the number of operands
         uint Noper = randu( 1, min( operMax, (uint) addrs.size() ) );
         uint Naddr = addrs.size();
         // 2. Choose the addresses
-        uint layrMax = 0;
+        uint /*------------*/ layrMax = 0;
         vector<array<uint,2>> opAddrs;
-        array<uint,2> oneAddr;
+        array<uint,2> /*---*/ oneAddr;
         for( uint i = 0; i < Noper; i++ ){
             oneAddr = addrs[ randu(0, Naddr-1) ];
             while( is_arg_in_vec( oneAddr, opAddrs ) ){  oneAddr = addrs[ randu(0, Naddr-1) ];  }
             opAddrs.push_back( oneAddr );
         }
+        rtnFeature.addrs = opAddrs;
         // 3. Choose the operation type
-        // FIXME, START HERE: HOW TO CHOOSE A RANDOM ELEM OF AN Enum?
+        rtnFeature.opType = static_cast<EFB_Op>( randu(1, 4) );
         // 4. Choose the parameter 
+        rtnFeature.pAvg = randd( paramRange[0], paramRange[1] );
+        rtnFeature.pVar = paramVar;
+        // 5. Place the feature, Report placement
+        uint maxLvl = 0;
+        uint nxtLvl;
+        for( array<uint,2> addr : opAddrs ){
+            if( addr[0] > maxLvl )  maxLvl = addr[0];
+        }
+        nxtLvl = maxLvl+1;
+        if(nxtLvl > dpthMax){
+            return false;
+        }else{
+            if(nxtLvl > layers.size())  layers.push_back( EFB_Layer{} );
+            layers[ nxtLvl-1 ].features.push_back( rtnFeature );
+            return true;
+        }
     }
+
+    vd fetch_input( const vector<array<uint,2>>& addrs ){
+        // Get the necessary inputs to this feature
+        vd rtnArr;
+        for( array<uint,2> addr_i : addrs ){
+            rtnArr.push_back( layers[ addr_i[0] ].y[ addr_i[1] ] );
+        }
+        return rtnArr;
+    }
+
+    void publish_output(){
+        // Move output from features to output arrays
+        for( EFB_Layer layer : layers ){
+            uint i = 0;
+            for( EFB_Feature feature : layer.features ){
+                layer.y[i] = feature.output;
+                i++;
+            }
+        }
+    }
+
+    void apply(){
+        // Run all features
+        for( EFB_Layer layer : layers ){
+            for( EFB_Feature feature : layer.features ){
+                feature.apply( fetch_input( feature.addrs ) );
+            }
+        }
+    }
+
+    
 
     
 };
