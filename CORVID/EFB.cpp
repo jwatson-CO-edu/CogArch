@@ -95,18 +95,22 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         uint delay;
         switch( opType ){
             case ADD: // Add
+                cout << "Apply ADD ..." << endl;
                 for( double operand : operands ){  output += operand;  }
                 output += param;
                 break;
             case SUB: // Subtract
+                cout << "Apply SUB ..." << endl;
                 output = operands[0];
                 for( size_t i = 1; i < operands.size(); i++ ){  output -= operands[i];  }
                 output -= param;
                 break;
             case CON: // Constant
+                cout << "Apply CON ..." << endl;
                 output = param;
                 break;
             case DLY: //Delay
+                cout << "Apply DLY ..." << endl;
                 delay  = (uint) max( 0.0, param );
                 if( vHst.size() ){
                     if( vHst.size() >= delay ){
@@ -119,9 +123,12 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 }
                 break;
             case NOP:
+                cout << "Apply NOP ..." << endl;
             default:
-                output = 0.0;
+                cout << "Apply `default` ..." << endl;
+                // output = 0.0;
         }
+        cout << "Feature Output: " << output << endl;
         return output;
     }
 
@@ -287,6 +294,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Get the necessary inputs to this feature
         // NOTE: Layer 0 is the EFB input
         vd   rtnArr;
+        cout << "Retrieve Operands: " << addrs << endl;
         for( array<uint,2> addr_i : addrs ){
             if( addr_i[0] == 0 ){
                 rtnArr.push_back( x[ addr_i[1] ] );
@@ -294,25 +302,38 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 rtnArr.push_back( layers[ addr_i[0]-1 ].y[ addr_i[1] ] );
             }
         }
+        cout << "Input Obtained!: " << rtnArr << endl;
         return rtnArr;
     }
 
     void publish_output(){
         // Move output from features to output arrays
-        for( EFB_Layer layer : layers ){
+        for( EFB_Layer& layer : layers ){
             uint i = 0;
-            for( EFB_Feature feature : layer.features ){
+            for( EFB_Feature& feature : layer.features ){
                 layer.y[i] = feature.output;
                 i++;
+            }
+            cout << "Published: " << layer.y << endl;
+        }
+    }
+
+    void sample_parameters(){
+        // Run all features
+        for( EFB_Layer& layer : layers ){
+            for( EFB_Feature& feature : layer.features ){
+                feature.sample_parameter();
             }
         }
     }
 
     void apply(){
         // Run all features
-        for( EFB_Layer layer : layers ){
-            for( EFB_Feature feature : layer.features ){
-                feature.apply( fetch_input( feature.addrs ) );
+        sample_parameters();
+        for( EFB_Layer& layer : layers ){
+            for( EFB_Feature& feature : layer.features ){
+                feature.output = feature.apply( fetch_input( feature.addrs ) );
+                cout << "Feature stored: " << feature.output << endl;
             }
         }
     }
@@ -327,6 +348,8 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 int main(){
 
+    seed_rand();
+
     ///// Test 1: Manually Add One Feature /////
     if( true ){
         EFB efb{ 1, 10, 5 };
@@ -335,6 +358,7 @@ int main(){
         efb.create_feature( inAddr, ADD, 5.0, 0.5 );
         cout << "There are " << efb.layers.size() << " layers!" << endl;
         efb.load_input( {2.0} );
+        // efb.sample_parameters();
         efb.apply();
         efb.publish_output();
         cout << "EFB output: " << efb.get_output() << endl;

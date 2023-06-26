@@ -37,11 +37,24 @@ ostream& operator<<( ostream& os , const vector<T>& vec ) {
     // ostream '<<' operator for generic vectors
     // NOTE: This function assumes that the ostream '<<' operator for T has already been defined
     os << "[ ";
-    for (size_t i = 0; i < vec.size(); i++) {
+    for (size_t i = 0; i < vec.size(); i++){
         os << (T) vec[i];
         if (i + 1 < vec.size()) { os << ", "; }
     }
     os << " ]";
+    return os; // You must return a reference to the stream!
+}
+
+template<typename T, size_t N>
+ostream& operator<<( ostream& os , const array<T,N>& vec ) { 
+    // ostream '<<' operator for generic vectors
+    // NOTE: This function assumes that the ostream '<<' operator for T has already been defined
+    os << "{";
+    for (size_t i = 0; i < N; i++){
+        os << (T) vec[i];
+        if (i + 1 < vec.size()) { os << ", "; }
+    }
+    os << "}";
     return os; // You must return a reference to the stream!
 }
 
