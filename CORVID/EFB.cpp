@@ -29,6 +29,8 @@ typedef Eigen::MatrixXd matxX;
 
 ////////// EVOLUTIONARY FEATURE BUS ////////////////////////////////////////////////////////////////
 
+///// Operation Types ////////////////////////////
+
 enum EFB_Op{ 
     // Possible operation types
     NOP = 0, // NO-OP
@@ -37,6 +39,8 @@ enum EFB_Op{
     CON = 3, // Constant
     DLY = 4, // Delay
 };
+
+///// Individual Operation ///////////////////////
 
 struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // A single operation
@@ -116,6 +120,7 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 break;
             case NOP:
             default:
+                output = 0.0;
         }
         return output;
     }
@@ -150,6 +155,8 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }
 };
 
+///// Layer Struct ///////////////////////////////
+
 struct EFB_Layer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // A layer of transformed input
 
@@ -170,6 +177,8 @@ struct EFB_Layer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }
 
 };
+
+///// Evolutionary Feature Bus ///////////////////
 
 struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Simplest Evolutionary Feature Bus (EFB)
@@ -212,7 +221,6 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         uint Noper = randu( 1, min( operMax, (uint) addrs.size() ) );
         uint Naddr = addrs.size();
         // 2. Choose the addresses
-        uint /*------------*/ layrMax = 0;
         vector<array<uint,2>> opAddrs;
         array<uint,2> /*---*/ oneAddr;
         for( uint i = 0; i < Noper; i++ ){
@@ -238,15 +246,53 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }else{
             if(nxtLvl > layers.size())  layers.push_back( EFB_Layer{} );
             layers[ nxtLvl-1 ].features.push_back( rtnFeature );
+            layers[ nxtLvl-1 ].y.push_back( 0.0 );
+            return true;
+        }
+    }
+
+    bool create_feature( const vector<array<uint,2>>& opAddrs, EFB_Op typ, double paramAvg, double pVariance ){
+        // Create a new feature, assuming the decision to create the feature has already been made
+        // 0. Init
+        EFB_Feature rtnFeature;
+        bool /*--*/ placed = false;
+        // 1. Choose the number of operands
+        uint Noper = randu( 1, min( operMax, (uint) addrs.size() ) );
+        uint Naddr = addrs.size();
+        // 2. Choose the addresses
+        rtnFeature.addrs = opAddrs;
+        // 3. Choose the operation type
+        rtnFeature.opType = typ;
+        // 4. Choose the parameter 
+        rtnFeature.pAvg = paramAvg;
+        rtnFeature.pVar = pVariance;
+        // 5. Place the feature, Report placement
+        uint maxLvl = 0;
+        uint nxtLvl;
+        for( array<uint,2> addr : opAddrs ){
+            if( addr[0] > maxLvl )  maxLvl = addr[0];
+        }
+        nxtLvl = maxLvl+1;
+        if(nxtLvl > dpthMax){
+            return false;
+        }else{
+            if(nxtLvl > layers.size())  layers.push_back( EFB_Layer{} );
+            layers[ nxtLvl-1 ].features.push_back( rtnFeature );
+            layers[ nxtLvl-1 ].y.push_back( 0.0 );
             return true;
         }
     }
 
     vd fetch_input( const vector<array<uint,2>>& addrs ){
         // Get the necessary inputs to this feature
-        vd rtnArr;
+        // NOTE: Layer 0 is the EFB input
+        vd   rtnArr;
         for( array<uint,2> addr_i : addrs ){
-            rtnArr.push_back( layers[ addr_i[0] ].y[ addr_i[1] ] );
+            if( addr_i[0] == 0 ){
+                rtnArr.push_back( x[ addr_i[1] ] );
+            }else{
+                rtnArr.push_back( layers[ addr_i[0]-1 ].y[ addr_i[1] ] );
+            }
         }
         return rtnArr;
     }
@@ -271,7 +317,28 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    
-
-    
+    vd get_output(){
+        // Return the output of the last layer
+        return layers.back().y;
+    }
 };
+
+////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
+
+int main(){
+
+    ///// Test 1: Manually Add One Feature /////
+    if( true ){
+        EFB efb{ 1, 10, 5 };
+        vector<array<uint,2>> inAddr;
+        inAddr.push_back( {0,0} );
+        efb.create_feature( inAddr, ADD, 5.0, 0.5 );
+        cout << "There are " << efb.layers.size() << " layers!" << endl;
+        efb.load_input( {2.0} );
+        efb.apply();
+        efb.publish_output();
+        cout << "EFB output: " << efb.get_output() << endl;
+    }
+
+    return 0;
+}
