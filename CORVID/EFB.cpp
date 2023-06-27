@@ -1,10 +1,10 @@
 /*
 EFB.cpp
 Evolutionary Feature Bus (EFB)
-g++ EFB.cpp -std=gnu++17 -O3 -I /usr/include/eigen3
 g++ EFB.cpp -std=gnu++17 -O3 -I ../include -I /usr/include/eigen3
 EFB is an experimental attempt to use Genetic Programming for automated feature engineering
 This program is to test if EFB can represent an arbitrary function.
+WARNING: MASSIVE INEFFICIENCIES, EXPERIMENT ONLY
 */
 
 ////////// INIT ////////////////////////////////////////////////////////////////////////////////////
@@ -26,6 +26,7 @@ using Eigen::MatrixXd;
 
 ///// Aliases ////////////////////////////////////
 typedef Eigen::MatrixXd matxX;
+typedef array<uint,2>   address;
 
 ////////// EVOLUTIONARY FEATURE BUS ////////////////////////////////////////////////////////////////
 
@@ -48,17 +49,15 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // 2023-06-21: Members could have probably been represented as matrices at the layer level, just MVP at this point please 
 
     /// Members ///
-    EFB_Op /*----------*/ opType; // Type of operation
-    vector<array<uint,2>> addrs; //- Addresses for operand lookup
-    double /*----------*/ param; //- Tuning parameter for the feature
-    double /*----------*/ pAvg; // - Tuning parameter mean
-    double /*----------*/ pVar; // - Tuning parameter variance
-    double /*----------*/ lr; // --- Learning rate 
-    double /*----------*/ output; // Output 
-    uint /*------------*/ Nhst; // - Steps of history to retain
-    deque<double> /*---*/ vHst; // - History of values, used for Delay
-    deque<double> /*---*/ pHst; // - History of parameter values
-    deque<double> /*---*/ eHst; // - History of error
+    EFB_Op /*----*/ opType; // Type of operation
+    vector<address> addrs; //- Addresses for operand lookup
+    double /*----*/ param; //- Tuning parameter for the feature
+    double /*----*/ pAvg; // - Tuning parameter mean
+    double /*----*/ pVar; // - Tuning parameter variance
+    double /*----*/ lr; // --- Learning rate 
+    double /*----*/ output; // Output 
+    uint /*------*/ Nhst; // - Steps of history to retain
+    deque<double>   vHst; // - History of values, used for Delay
     
     /// Constructor ///
 
@@ -77,15 +76,11 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         param = Box_Muller_normal_sample( pAvg, pVar );
     }
 
-    void store_step_values( double error_t ){
+    void store_step_values(){
         // Store the parameter and the error associated with it
-        vHst.push_front( output  );
-        pHst.push_front( param   );
-        eHst.push_front( error_t );
-        while( pHst.size() > Nhst ){
+        vHst.push_front( output );
+        while( vHst.size() > Nhst ){
             vHst.pop_back();
-            pHst.pop_back();
-            eHst.pop_back();
         }
     }
 
@@ -132,34 +127,7 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return output;
     }
 
-    double param_grad_descent(){
-        // Calc gradient and adjust the parameter
-        uint  Nelem = pHst.size();
-        matxX P     = matxX::Ones( Nelem, 2 );
-        matxX E     = matxX::Ones( Nelem, 1 );
-        for( uint i = 0; i < Nelem; i++ ){
-            P(i,0) = pHst[i];
-            E(i,0) = eHst[i];
-        }
-        matxX  soln = (P.transpose() * P).ldlt().solve(P.transpose() * E);
-        double grad = soln(0,0);
-        pAvg -= grad * lr;
-        return grad;
-    }
-
-    matxX get_history(){
-        // Get the history of each of the queues
-        // NOTE: ROWS OF MATRIX IN REVERSE TIME ORDER
-        matxX rtnArr = matxX::Zero( Nhst, 3 );
-        for( uint i = 0; i < Nhst; i++ ){
-            if( i < vHst.size() ){
-                rtnArr(i,0) = vHst[i];
-                rtnArr(i,1) = pHst[i];
-                rtnArr(i,2) = eHst[i];
-            }
-        }
-        return rtnArr;
-    }
+    
 };
 
 ///// Layer Struct ///////////////////////////////
@@ -174,14 +142,7 @@ struct EFB_Layer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     /// Methods ///
 
-    matxX get_history(){
-        // Get the history of all features 
-        matxX rtnArr = matxX::Zero( Nhst, 3*features.size() );
-        for( uint i = 0; i < Nhst; i++ ){
-            rtnArr.block( 0, i*3, Nhst, 3 ) = features[i].get_history();
-        }
-        return rtnArr;
-    }
+    
 
 };
 
@@ -189,25 +150,29 @@ struct EFB_Layer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // Simplest Evolutionary Feature Bus (EFB)
-    uint /*------------*/ dI; // ------- Input dimension 
-    vd /*--------------*/ x; // -------- Input vector
-    uint /*------------*/ operMax; // -- Max number of operands for any operation
-    uint /*------------*/ dpthMax; // -- Max depth beyond input
-    uint /*------------*/ Nhst; // ----- Steps of history to retain
-    vector<EFB_Layer>     layers; // --- Layers that define the bus
-    vector<array<uint,2>> addrs; // ---- Available addresses
-    array<double,2> /*-*/ paramRange; // Range that a parameter can take
-    double /*----------*/ paramVar; // - Variance of parameters
+    uint /*--------*/ dI; // ------- Input dimension 
+    vd /*----------*/ x; // -------- Input vector
+    uint /*--------*/ operMax; // -- Max number of operands for any operation
+    uint /*--------*/ dpthMax; // -- Max depth beyond input
+    uint /*--------*/ Nhst; // ----- Steps of history to retain
+    vector<EFB_Layer> layers; // --- Layers that define the bus
+    vector<address>   addrs; // ---- Available addresses
+    array<double,2>   paramRange; // Range that a parameter can take
+    double /*------*/ paramVar; // - Variance of parameters
+    deque<vd> /*---*/ vHst; // ----- History of values, used for Delay
+    deque<vd> /*---*/ pHst; // ----- History of parameter values
+    deque<vd> /*---*/ lHst; // ----- History of loss
 
     /// Constructor ///
 
-    EFB( uint inputDim, uint maxOperands, uint maxDepth ){
+    EFB( uint inputDim, uint maxOperands, uint maxDepth, const array<double,2>& pRange ){
         // Init input
         dI = inputDim;
         // The input is Layer 0
         for( uint i = 0; i < dI; i++ ){  addrs.push_back( {0, i} );  }
-        operMax = maxOperands;
-        dpthMax = maxDepth;
+        operMax    = maxOperands;
+        dpthMax    = maxDepth;
+        paramRange = pRange;
     }
 
     /// Methods ///
@@ -228,8 +193,8 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         uint Noper = randu( 1, min( operMax, (uint) addrs.size() ) );
         uint Naddr = addrs.size();
         // 2. Choose the addresses
-        vector<array<uint,2>> opAddrs;
-        array<uint,2> /*---*/ oneAddr;
+        vector<address> opAddrs;
+        address /*---*/ oneAddr;
         for( uint i = 0; i < Noper; i++ ){
             oneAddr = addrs[ randu(0, Naddr-1) ];
             while( is_arg_in_vec( oneAddr, opAddrs ) ){  oneAddr = addrs[ randu(0, Naddr-1) ];  }
@@ -258,7 +223,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    bool create_feature( const vector<array<uint,2>>& opAddrs, EFB_Op typ, double paramAvg, double pVariance ){
+    bool create_feature( const vector<address>& opAddrs, EFB_Op typ, double paramAvg, double pVariance ){
         // Create a new feature, assuming the decision to create the feature has already been made
         // 0. Init
         EFB_Feature rtnFeature;
@@ -290,7 +255,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    vd fetch_input( const vector<array<uint,2>>& addrs ){
+    vd fetch_input( const vector<address>& addrs ){
         // Get the necessary inputs to this feature
         // NOTE: Layer 0 is the EFB input
         vd   rtnArr;
@@ -306,6 +271,15 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return rtnArr;
     }
 
+    void sample_parameters(){
+        // Run all features
+        for( EFB_Layer& layer : layers ){
+            for( EFB_Feature& feature : layer.features ){
+                feature.sample_parameter();
+            }
+        }
+    }
+
     void publish_output(){
         // Move output from features to output arrays
         for( EFB_Layer& layer : layers ){
@@ -315,15 +289,6 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 i++;
             }
             cout << "Published: " << layer.y << endl;
-        }
-    }
-
-    void sample_parameters(){
-        // Run all features
-        for( EFB_Layer& layer : layers ){
-            for( EFB_Feature& feature : layer.features ){
-                feature.sample_parameter();
-            }
         }
     }
 
@@ -342,6 +307,30 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Return the output of the last layer
         return layers.back().y;
     }
+
+    vd get_output_params(){
+        // Get the parameters of the output layer for this iteration
+        vd rtnParams;
+        for( EFB_Feature& feature : layers.back().features ){  rtnParams.push_back( feature.output );  }  
+        return rtnParams;
+    }
+
+    void store_iter( const vd& loss ){
+        // Store info for this iteration
+        // NOTE: This function assumes that `sample_parameters` and `publish_output` have already been run this iteration
+        const EFB_Layer& lastLayer = layers.back();
+        vHst.push_front( get_output() );
+        lHst.push_front( loss );
+        pHst.push_front( get_output_params() );
+    }
+
+    // FIXME, START HERE: ASSIGN UTILITY TO INDIVIDUAL FEATURES
+
+    double backprop( const vd& loss ){
+        // Perform backpropagation similar to NN?
+        // NOTE: This function assumes that `sample_parameters` and `publish_output` have already been run this iteration
+        store_iter( loss ); // FIXME: DO I ACTUALLY NEED THIS?
+    }
 };
 
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
@@ -352,8 +341,8 @@ int main(){
 
     ///// Test 1: Manually Add One Feature /////
     if( true ){
-        EFB efb{ 1, 10, 5 };
-        vector<array<uint,2>> inAddr;
+        EFB efb{ 1, 10, 5, {1.0,10.0} };
+        vector<address> inAddr;
         inAddr.push_back( {0,0} );
         efb.create_feature( inAddr, ADD, 5.0, 0.5 );
         cout << "There are " << efb.layers.size() << " layers!" << endl;
@@ -366,3 +355,70 @@ int main(){
 
     return 0;
 }
+
+/*//////// SPARE PARTS /////////////////////////////////////////////////////////////////////////////
+
+struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    // A single operation
+    // 2023-06-20: At this time, each feature has a scalar output, but the idea of batch operations makes sense
+    // 2023-06-21: Members could have probably been represented as matrices at the layer level, just MVP at this point please 
+
+    // ...
+
+    double param_grad_descent(){
+        // Calc gradient and adjust the parameter
+        uint  Nelem = pHst.size();
+        matxX P     = matxX::Ones( Nelem, 2 );
+        matxX E     = matxX::Ones( Nelem, 1 );
+        for( uint i = 0; i < Nelem; i++ ){
+            P(i,0) = pHst[i];
+            E(i,0) = eHst[i];
+        }
+        matxX  soln = (P.transpose() * P).ldlt().solve(P.transpose() * E);
+        double grad = soln(0,0);
+        pAvg -= grad * lr;
+        return grad;
+    }
+
+    matxX get_history(){
+        // Get the history of each of the queues
+        // NOTE: ROWS OF MATRIX IN REVERSE TIME ORDER
+        matxX rtnArr = matxX::Zero( Nhst, 3 );
+        for( uint i = 0; i < Nhst; i++ ){
+            if( i < vHst.size() ){
+                rtnArr(i,0) = vHst[i];
+                rtnArr(i,1) = pHst[i];
+                rtnArr(i,2) = eHst[i];
+            }
+        }
+        return rtnArr;
+    }
+
+    // ...
+
+};
+
+///////////////////////////////////////////////////////////////////////////
+
+struct EFB_Layer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    // A layer of transformed input
+
+    // ...
+
+    matxX get_history(){
+        // Get the history of all features 
+        matxX rtnArr = matxX::Zero( Nhst, 3*features.size() );
+        for( uint i = 0; i < Nhst; i++ ){
+            rtnArr.block( 0, i*3, Nhst, 3 ) = features[i].get_history();
+        }
+        return rtnArr;
+    }
+
+    // ...
+
+};
+
+///////////////////////////////////////////////////////////////////////////
+
+
+*/
