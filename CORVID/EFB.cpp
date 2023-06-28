@@ -28,6 +28,13 @@ using Eigen::MatrixXd;
 typedef Eigen::MatrixXd matxX;
 typedef array<uint,2>   address;
 
+////////// HELPER FUNCTIONS ////////////////////////////////////////////////////////////////////////
+
+double precent_difference( double op1, double op2 ){
+    // Calc the Percent Difference according to https://www.mathsisfun.com/percentage-difference.html
+    return abs( op1 - op2 ) / ( (op1+op2)/2.0 ) * 100.0;
+}
+
 ////////// EVOLUTIONARY FEATURE BUS ////////////////////////////////////////////////////////////////
 
 ///// Operation Types ////////////////////////////
@@ -58,6 +65,7 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double /*----*/ output; // Output 
     uint /*------*/ Nhst; // - Steps of history to retain
     deque<double>   vHst; // - History of values, used for Delay
+    double /*----*/ score; //- Fitness value of this feature
     
     /// Constructor ///
 
@@ -67,6 +75,7 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         param  =  0.0;
         Nhst   = 10;
         lr     =  0.001;
+        score  = -1e9;
     }
 
     /// Methods ///
@@ -324,7 +333,31 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         pHst.push_front( get_output_params() );
     }
 
-    // FIXME, START HERE: ASSIGN UTILITY TO INDIVIDUAL FEATURES
+    vd score_output_and_calc_loss( double signalTs ){
+        // Given the ground truth `signalTs`, Score each of the outputs and the features they depend on
+        vd /*-------*/ outLoss;
+        double /*---*/ loss_i, score_i;
+        uint /*-----*/ i = 0;
+        deque<address> frontier;
+        address /*--*/ addr_j;
+        for( double Yfeat : layers.back().y ){
+            loss_i  = signalTs - Yfeat; // Actual - Predicted
+            outLoss.push_back( loss_i );
+            score_i = 100.0 - precent_difference( signalTs, Yfeat );
+            frontier.push_back( {(uint)layers.size()-1, (uint)i} );
+            while( frontier.size() ){
+                addr_j = frontier.front();
+                frontier.pop_front();
+                if( addr_j[0] > 0 ){
+                    if(layers[ addr_j[0]-1 ].features[ addr_j[1] ].score < score_i){
+                        layers[ addr_j[0]-1 ].features[ addr_j[1] ].score == score_i;
+                        // FIXME, START HERE: PUSH ALL PARENTS TO FRONTIER, IF THEY EXIST
+                    }
+                }
+            }
+            i++;
+        }  
+    }
 
     double backprop( const vd& loss ){
         // Perform backpropagation similar to NN?
