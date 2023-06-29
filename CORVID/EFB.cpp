@@ -303,7 +303,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     void apply(){
         // Run all features
-        sample_parameters();
+        // sample_parameters();
         for( EFB_Layer& layer : layers ){
             for( EFB_Feature& feature : layer.features ){
                 feature.output = feature.apply( fetch_input( feature.addrs ) );
@@ -315,6 +315,15 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     vd get_output(){
         // Return the output of the last layer
         return layers.back().y;
+    }
+
+    vd forward( const vd& input ){
+        // Run one input --to-> output cycle and return
+        load_input( input );
+        sample_parameters();
+        apply();
+        publish_output();
+        return get_output();
     }
 
     vd get_output_params(){
@@ -335,28 +344,32 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     vd score_output_and_calc_loss( double signalTs ){
         // Given the ground truth `signalTs`, Score each of the outputs and the features they depend on
+        // 0. Init
         vd /*-------*/ outLoss;
         double /*---*/ loss_i, score_i;
         uint /*-----*/ i = 0;
         deque<address> frontier;
         address /*--*/ addr_j;
+        // 1. For each output feature, compare to the actual
         for( double Yfeat : layers.back().y ){
+            // 2. Calculate loss and score
             loss_i  = signalTs - Yfeat; // Actual - Predicted
             outLoss.push_back( loss_i );
             score_i = 100.0 - precent_difference( signalTs, Yfeat );
+            // 3. Update parents
             frontier.push_back( {(uint)layers.size()-1, (uint)i} );
             while( frontier.size() ){
                 addr_j = frontier.front();
                 frontier.pop_front();
                 if( addr_j[0] > 0 ){
-                    if(layers[ addr_j[0]-1 ].features[ addr_j[1] ].score < score_i){
-                        layers[ addr_j[0]-1 ].features[ addr_j[1] ].score == score_i;
-                        // FIXME, START HERE: PUSH ALL PARENTS TO FRONTIER, IF THEY EXIST
-                    }
+                    EFB_Feature& currFeat = layers[ addr_j[0]-1 ].features[ addr_j[1] ];
+                    if( currFeat.score < score_i){  currFeat.score = score_i;  }
+                    for( address parentAddr : currFeat.addrs ){  frontier.push_back( parentAddr );  }
                 }
             }
             i++;
-        }  
+        }
+        return outLoss;  
     }
 
     double backprop( const vd& loss ){
@@ -366,6 +379,42 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }
 };
 
+////////// TEST HARNESS ////////////////////////////////////////////////////////////////////////////
+
+
+struct SineWave{
+    // Simplest sine wave
+
+    /// Members ///
+    double ampl; // Amplitude
+    double freq; // Frequency [rad/s]
+    double phas; // Phase Shift
+    double ofst; // Offset
+    double step; // Timestep
+    double t; // -- Current time
+
+    /// Constructor ///
+
+    SineWave( double A, double omega, double phi, double b, double ts ){
+        // Set the sine wave params
+        ampl = A;
+        freq = omega;
+        phas = phi;
+        ofst = b;
+        step = ts;
+        t    = 0.0;
+    }
+
+    /// Methods ///
+
+    double update( double ts = -1.0 ){
+        // Advance the time and output the current function value
+        t += ((ts < 0.0) ? step : ts);
+        return ampl * sin( freq * t + phas ) + ofst;
+    }
+};
+
+
 ////////// MAIN ////////////////////////////////////////////////////////////////////////////////////
 
 int main(){
@@ -373,17 +422,27 @@ int main(){
     seed_rand();
 
     ///// Test 1: Manually Add One Feature /////
-    if( true ){
+    if( false ){
         EFB efb{ 1, 10, 5, {1.0,10.0} };
         vector<address> inAddr;
         inAddr.push_back( {0,0} );
         efb.create_feature( inAddr, ADD, 5.0, 0.5 );
         cout << "There are " << efb.layers.size() << " layers!" << endl;
         efb.load_input( {2.0} );
-        // efb.sample_parameters();
+        efb.sample_parameters();
         efb.apply();
         efb.publish_output();
         cout << "EFB output: " << efb.get_output() << endl;
+    }
+
+    ///// Test 2: Test Harness w/ Manual Feature /////
+    if( true ){
+        EFB efb{ 1, 10, 5, {1.0,10.0} };
+        vector<address> inAddr;
+        inAddr.push_back( {0,0} );
+        efb.create_feature( inAddr, ADD, 5.0, 0.5 );
+        SineWave wave{ 2.0, 2*M_PI, 0.0, 0.0, 0.1 };
+        // FIXME, START HERE: EXAMINE OUTPUT OF EFB
     }
 
     return 0;
