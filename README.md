@@ -22,8 +22,19 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 ## The CORVID Project: Cognitive Architecture  
 **C**ognition, **O**bservation, and **R**eaction for **V**aried **I**ntelligence **D**omains
-1. `[31]` Evolutionary Feature Bus (EFB) 
+
+&nbsp;
+
+1. `[>]` Evolutionary Feature Bus (EFB) 
+    * `[Y]` T: Output with sine input, 2023-06-30: Works as designed
+    * `[ ]` Random feature generation
+    * `[ ]` Average fitness evaluation after N steps
+    * `[ ]` Cull and repopulate according to fitness
     * `[ ]` T: Predict sine wave with +pi/2.0 phase shift
+    * `{ }` Parameter backprop?
+
+&nbsp;
+
 1. `[32]` Continuous, Interpolated Q-Learning (Julia)
     * `[ ]` Complete `DEV PLAN` as previously formulated
     * `[?]` Port highest-performing agent to C++?

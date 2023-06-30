@@ -14,6 +14,7 @@ WARNING: MASSIVE INEFFICIENCIES, EXPERIMENT ONLY
 /// Standard ///
 #include <deque>
 using std::deque;
+#include <iomanip>
 
 /// Eigen3 ///
 #include <Eigen/Dense>
@@ -33,6 +34,12 @@ typedef array<uint,2>   address;
 double precent_difference( double op1, double op2 ){
     // Calc the Percent Difference according to https://www.mathsisfun.com/percentage-difference.html
     return abs( op1 - op2 ) / ( (op1+op2)/2.0 ) * 100.0;
+}
+
+void set_cout_precision( uint decPlaces ){
+    // Set the decimal precision of displayed floating point numbers when printing to the terminal
+    std::cout << std::fixed;
+    std::cout << std::setprecision( decPlaces );
 }
 
 ////////// EVOLUTIONARY FEATURE BUS ////////////////////////////////////////////////////////////////
@@ -95,26 +102,27 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     double apply( const vd& operands ){
         // Apply the operation to the input operands to produce a scalar output signal
+        bool _DEBUG = false;
         output = 0.0;
         uint delay;
         switch( opType ){
             case ADD: // Add
-                cout << "Apply ADD ..." << endl;
+                if( _DEBUG )  cout << "Apply ADD ..." << endl;
                 for( double operand : operands ){  output += operand;  }
                 output += param;
                 break;
             case SUB: // Subtract
-                cout << "Apply SUB ..." << endl;
+                if( _DEBUG )  cout << "Apply SUB ..." << endl;
                 output = operands[0];
                 for( size_t i = 1; i < operands.size(); i++ ){  output -= operands[i];  }
                 output -= param;
                 break;
             case CON: // Constant
-                cout << "Apply CON ..." << endl;
+                if( _DEBUG )  cout << "Apply CON ..." << endl;
                 output = param;
                 break;
             case DLY: //Delay
-                cout << "Apply DLY ..." << endl;
+                if( _DEBUG )  cout << "Apply DLY ..." << endl;
                 delay  = (uint) max( 0.0, param );
                 if( vHst.size() ){
                     if( vHst.size() >= delay ){
@@ -127,12 +135,12 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 }
                 break;
             case NOP:
-                cout << "Apply NOP ..." << endl;
+                if( _DEBUG )  cout << "Apply NOP ..." << endl;
             default:
-                cout << "Apply `default` ..." << endl;
+                if( _DEBUG )  cout << "Apply `default` ..." << endl;
                 // output = 0.0;
         }
-        cout << "Feature Output: " << output << endl;
+        if( _DEBUG )  cout << "Feature Output: " << output << endl;
         return output;
     }
 
@@ -190,7 +198,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Copy the input and return the length of the input
         x.clear();
         x = input;
-        if( x.size() != dI )  cout << "Input dimension " << x.size() << ", but expected " << dI << " !" << endl;
+        // if( x.size() != dI )  cout << "Input dimension " << x.size() << ", but expected " << dI << " !" << endl;
     }
 
     bool create_feature(){
@@ -268,7 +276,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Get the necessary inputs to this feature
         // NOTE: Layer 0 is the EFB input
         vd   rtnArr;
-        cout << "Retrieve Operands: " << addrs << endl;
+        // cout << "Retrieve Operands: " << addrs << endl;
         for( array<uint,2> addr_i : addrs ){
             if( addr_i[0] == 0 ){
                 rtnArr.push_back( x[ addr_i[1] ] );
@@ -276,7 +284,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 rtnArr.push_back( layers[ addr_i[0]-1 ].y[ addr_i[1] ] );
             }
         }
-        cout << "Input Obtained!: " << rtnArr << endl;
+        // cout << "Input Obtained!: " << rtnArr << endl;
         return rtnArr;
     }
 
@@ -289,26 +297,22 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    void publish_output(){
-        // Move output from features to output arrays
+    void apply(){
+        // Run all features
+        // 1. For each layer
         for( EFB_Layer& layer : layers ){
+            // 2. Fire all features in the layer
+            for( EFB_Feature& feature : layer.features ){
+                feature.output = feature.apply( fetch_input( feature.addrs ) );
+                // cout << "Feature stored: " << feature.output << endl;
+            }
+            // 3. The output needs to be advertized at the layer, so that it can be fetched by successive layers
             uint i = 0;
             for( EFB_Feature& feature : layer.features ){
                 layer.y[i] = feature.output;
                 i++;
             }
-            cout << "Published: " << layer.y << endl;
-        }
-    }
-
-    void apply(){
-        // Run all features
-        // sample_parameters();
-        for( EFB_Layer& layer : layers ){
-            for( EFB_Feature& feature : layer.features ){
-                feature.output = feature.apply( fetch_input( feature.addrs ) );
-                cout << "Feature stored: " << feature.output << endl;
-            }
+            // cout << "Published: " << layer.y << endl;
         }
     }
 
@@ -322,7 +326,6 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         load_input( input );
         sample_parameters();
         apply();
-        publish_output();
         return get_output();
     }
 
@@ -372,11 +375,11 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return outLoss;  
     }
 
-    double backprop( const vd& loss ){
-        // Perform backpropagation similar to NN?
-        // NOTE: This function assumes that `sample_parameters` and `publish_output` have already been run this iteration
-        store_iter( loss ); // FIXME: DO I ACTUALLY NEED THIS?
-    }
+    // double backprop( const vd& loss ){
+    //     // Perform backpropagation similar to NN?
+    //     // NOTE: This function assumes that `sample_parameters` and `publish_output` have already been run this iteration
+    //     store_iter( loss ); // FIXME: DO I ACTUALLY NEED THIS?
+    // }
 };
 
 ////////// TEST HARNESS ////////////////////////////////////////////////////////////////////////////
@@ -420,30 +423,42 @@ struct SineWave{
 int main(){
 
     seed_rand();
+    set_cout_precision( 4 );
 
     ///// Test 1: Manually Add One Feature /////
     if( false ){
-        EFB efb{ 1, 10, 5, {1.0,10.0} };
+        EFB /*-------*/ efb{ 1, 10, 5, {1.0,10.0} };
         vector<address> inAddr;
         inAddr.push_back( {0,0} );
         efb.create_feature( inAddr, ADD, 5.0, 0.5 );
-        cout << "There are " << efb.layers.size() << " layers!" << endl;
+        // cout << "There are " << efb.layers.size() << " layers!" << endl;
         efb.load_input( {2.0} );
         efb.sample_parameters();
         efb.apply();
-        efb.publish_output();
-        cout << "EFB output: " << efb.get_output() << endl;
+        // cout << "EFB output: " << efb.get_output() << endl;
     }
 
     ///// Test 2: Test Harness w/ Manual Feature /////
     if( true ){
-        EFB efb{ 1, 10, 5, {1.0,10.0} };
+        EFB /*-------*/ efb{ 1, 10, 5, {1.0,10.0} };
         vector<address> inAddr;
+        uint /*------*/ N = 100;
+        double /*----*/ val;
+        double /*----*/ out;
+        SineWave /*--*/ wave{ 2.0, 2*M_PI, 0.0, 0.0, 0.05 };
         inAddr.push_back( {0,0} );
         efb.create_feature( inAddr, ADD, 5.0, 0.5 );
-        SineWave wave{ 2.0, 2*M_PI, 0.0, 0.0, 0.1 };
-        // FIXME, START HERE: EXAMINE OUTPUT OF EFB
+        for( uint i = 0; i < N; i++ ){  
+            val = wave.update();
+            efb.load_input( {val} );
+            efb.sample_parameters();
+            efb.apply();
+            out = efb.get_output()[0];
+            cout << val << "\t--efb->\t" << out << endl;
+        }  
     }
+
+    ///// Test 3: Create a Random Feature /////
 
     return 0;
 }
