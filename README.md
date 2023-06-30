@@ -38,6 +38,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 1. `[32]` Continuous, Interpolated Q-Learning (Julia)
     * `[ ]` Complete `DEV PLAN` as previously formulated
     * `[?]` Port highest-performing agent to C++?
+1. `[32.10]` Hugging-Face Deep-RL MOOC
 1. `[33]` Active Inference Tutorial
     * `[34]` Think about how active inference is pertinent to the Partially Observable Lunar Lander.  Are there different behavior modes that are required?
 1. `[40]` Run a POMDP solver on Partially Observable Lunar Lander
