@@ -201,43 +201,14 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // if( x.size() != dI )  cout << "Input dimension " << x.size() << ", but expected " << dI << " !" << endl;
     }
 
-    bool create_feature(){
-        // Create a new feature, assuming the decision to create the feature has already been made
-        // 0. Init
-        EFB_Feature rtnFeature;
-        bool /*--*/ placed = false;
-        // 1. Choose the number of operands
-        uint Noper = randu( 1, min( operMax, (uint) addrs.size() ) );
-        uint Naddr = addrs.size();
-        // 2. Choose the addresses
-        vector<address> opAddrs;
-        address /*---*/ oneAddr;
-        for( uint i = 0; i < Noper; i++ ){
-            oneAddr = addrs[ randu(0, Naddr-1) ];
-            while( is_arg_in_vec( oneAddr, opAddrs ) ){  oneAddr = addrs[ randu(0, Naddr-1) ];  }
-            opAddrs.push_back( oneAddr );
-        }
-        rtnFeature.addrs = opAddrs;
-        // 3. Choose the operation type
-        rtnFeature.opType = static_cast<EFB_Op>( randu(1, 4) );
-        // 4. Choose the parameter 
-        rtnFeature.pAvg = randd( paramRange[0], paramRange[1] );
-        rtnFeature.pVar = paramVar;
-        // 5. Place the feature, Report placement
-        uint maxLvl = 0;
-        uint nxtLvl;
-        for( array<uint,2> addr : opAddrs ){
-            if( addr[0] > maxLvl )  maxLvl = addr[0];
-        }
-        nxtLvl = maxLvl+1;
-        if(nxtLvl > dpthMax){
-            return false;
-        }else{
-            if(nxtLvl > layers.size())  layers.push_back( EFB_Layer{} );
-            layers[ nxtLvl-1 ].features.push_back( rtnFeature );
-            layers[ nxtLvl-1 ].y.push_back( 0.0 );
-            return true;
-        }
+    uint size_features(){
+        // Return the number of total features
+        return addrs.size() - dI;
+    }
+
+    uint size_addrs(){
+        // Return the number of valid addresses
+        return addrs.size(); // The network inputs are valid addresses
     }
 
     bool create_feature( const vector<address>& opAddrs, EFB_Op typ, double paramAvg, double pVariance ){
@@ -245,9 +216,6 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // 0. Init
         EFB_Feature rtnFeature;
         bool /*--*/ placed = false;
-        // 1. Choose the number of operands
-        uint Noper = randu( 1, min( operMax, (uint) addrs.size() ) );
-        uint Naddr = addrs.size();
         // 2. Choose the addresses
         rtnFeature.addrs = opAddrs;
         // 3. Choose the operation type
@@ -262,15 +230,51 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             if( addr[0] > maxLvl )  maxLvl = addr[0];
         }
         nxtLvl = maxLvl+1;
-        if(nxtLvl > dpthMax){
+        // 6. Do not violate the 
+        if( nxtLvl > dpthMax ){
             return false;
         }else{
             if(nxtLvl > layers.size())  layers.push_back( EFB_Layer{} );
             layers[ nxtLvl-1 ].features.push_back( rtnFeature );
             layers[ nxtLvl-1 ].y.push_back( 0.0 );
+            addrs.push_back( { nxtLvl, (uint) (layers[ nxtLvl-1 ].features.size()-1) } );
             return true;
         }
     }
+
+    bool create_feature(){
+        // Create a new feature, assuming the decision to create the feature has already been made
+        // 0. Init
+        EFB_Feature rtnFeature;
+        bool /*--*/ placed = false;
+        // 1. Choose the number of operands
+        uint Noper = randu( 1, min( operMax, (uint) addrs.size() ) );
+        uint Naddr = addrs.size();
+        uint mxTry = 50;
+        // 2. Choose the addresses
+        vector<address> opAddrs;
+        address /*---*/ oneAddr;
+        uint /*------*/ j;
+        for( uint i = 0; i < Noper; i++ ){
+            oneAddr = addrs[ randu(0, Naddr-1) ];
+            j /*-*/ = 0;
+            while( (is_arg_in_vec( oneAddr, opAddrs ) || (oneAddr[0] >= dpthMax)) && ( j < mxTry ) ){  
+                oneAddr = addrs[ randu(0, Naddr-1) ];
+                j++;  
+            }
+            if( j >= mxTry )  return false;
+            opAddrs.push_back( oneAddr );
+        }
+        // 3. Attempt feature creation
+        return create_feature( 
+            opAddrs, 
+            static_cast<EFB_Op>( randu(1, 4) ), 
+            randd( paramRange[0], paramRange[1] ), 
+            paramVar
+        );
+    }
+
+    
 
     vd fetch_input( const vector<address>& addrs ){
         // Get the necessary inputs to this feature
@@ -336,15 +340,6 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return rtnParams;
     }
 
-    void store_iter( const vd& loss ){
-        // Store info for this iteration
-        // NOTE: This function assumes that `sample_parameters` and `publish_output` have already been run this iteration
-        const EFB_Layer& lastLayer = layers.back();
-        vHst.push_front( get_output() );
-        lHst.push_front( loss );
-        pHst.push_front( get_output_params() );
-    }
-
     vd score_output_and_calc_loss( double signalTs ){
         // Given the ground truth `signalTs`, Score each of the outputs and the features they depend on
         // 0. Init
@@ -375,11 +370,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return outLoss;  
     }
 
-    // double backprop( const vd& loss ){
-    //     // Perform backpropagation similar to NN?
-    //     // NOTE: This function assumes that `sample_parameters` and `publish_output` have already been run this iteration
-    //     store_iter( loss ); // FIXME: DO I ACTUALLY NEED THIS?
-    // }
+    
 };
 
 ////////// TEST HARNESS ////////////////////////////////////////////////////////////////////////////
@@ -524,6 +515,31 @@ struct EFB_Layer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // ...
 
 };
+
+///////////////////////////////////////////////////////////////////////////
+
+struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    // ...
+
+    void store_iter( const vd& loss ){
+        // Store info for this iteration
+        // NOTE: This function assumes that `sample_parameters` and `publish_output` have already been run this iteration
+        const EFB_Layer& lastLayer = layers.back();
+        vHst.push_front( get_output() );
+        lHst.push_front( loss );
+        pHst.push_front( get_output_params() );
+    }
+
+    double backprop( const vd& loss ){
+        // Perform backpropagation similar to NN?
+        // NOTE: This function assumes that `sample_parameters` and `publish_output` have already been run this iteration
+        store_iter( loss ); // FIXME: DO I ACTUALLY NEED THIS?
+    }
+
+    // ...
+
+}
 
 ///////////////////////////////////////////////////////////////////////////
 
