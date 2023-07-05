@@ -68,11 +68,13 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double /*----*/ param; //- Tuning parameter for the feature
     double /*----*/ pAvg; // - Tuning parameter mean
     double /*----*/ pVar; // - Tuning parameter variance
-    double /*----*/ lr; // --- Learning rate 
+    double /*----*/ lr; // --- Learning rate, NOT USED?
     double /*----*/ output; // Output 
     uint /*------*/ Nhst; // - Steps of history to retain
     deque<double>   vHst; // - History of values, used for Delay
     double /*----*/ score; //- Fitness value of this feature
+    double /*----*/ accum; //- Accumulated fitness for this episode
+    uint /*------*/ Nruns; //- Number of calculations for this episode
     
     /// Constructor ///
 
@@ -83,9 +85,28 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         Nhst   = 10;
         lr     =  0.001;
         score  = -1e9;
+        accum  = 0.0;
+        Nruns  = 0;
     }
 
     /// Methods ///
+
+    double set_score( double s ){
+        // Set the current score and return the current average score
+        score = s;
+        accum += score;
+        Nruns++;
+        return accum / (1.0*Nruns);
+    }
+
+    double reset_score(){
+        // Wipe score and average and return the previous average score
+        double rtnAvg = accum / (1.0*Nruns);
+        score = -1e9;
+        accum = 0.0;
+        Nruns = 0;
+        return rtnAvg;
+    }
 
     void sample_parameter(){
         // Draw a parameter from a normal dist
@@ -102,7 +123,7 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     double apply( const vd& operands ){
         // Apply the operation to the input operands to produce a scalar output signal
-        bool _DEBUG = false;
+        bool _DEBUG = true;
         output = 0.0;
         uint delay;
         switch( opType ){
@@ -143,8 +164,6 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         if( _DEBUG )  cout << "Feature Output: " << output << endl;
         return output;
     }
-
-    
 };
 
 ///// Layer Struct ///////////////////////////////
@@ -274,8 +293,6 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         );
     }
 
-    
-
     vd fetch_input( const vector<address>& addrs ){
         // Get the necessary inputs to this feature
         // NOTE: Layer 0 is the EFB input
@@ -328,7 +345,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     vd forward( const vd& input ){
         // Run one input --to-> output cycle and return
         load_input( input );
-        sample_parameters();
+        // sample_parameters();
         apply();
         return get_output();
     }
@@ -361,7 +378,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 frontier.pop_front();
                 if( addr_j[0] > 0 ){
                     EFB_Feature& currFeat = layers[ addr_j[0]-1 ].features[ addr_j[1] ];
-                    if( currFeat.score < score_i){  currFeat.score = score_i;  }
+                    if( currFeat.score < score_i){  currFeat.set_score( score_i );  }
                     for( address parentAddr : currFeat.addrs ){  frontier.push_back( parentAddr );  }
                 }
             }
@@ -369,8 +386,6 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
         return outLoss;  
     }
-
-    
 };
 
 ////////// TEST HARNESS ////////////////////////////////////////////////////////////////////////////
@@ -430,7 +445,7 @@ int main(){
     }
 
     ///// Test 2: Test Harness w/ Manual Feature /////
-    if( true ){
+    if( false ){
         EFB /*-------*/ efb{ 1, 10, 5, {1.0,10.0} };
         vector<address> inAddr;
         uint /*------*/ N = 100;
@@ -450,6 +465,24 @@ int main(){
     }
 
     ///// Test 3: Create a Random Feature /////
+    if( false ){
+        /// Init ///
+        EFB /**/ efb{ 1, 10, 5, {1.0,10.0} };
+        uint     N = 100;
+        double   val;
+        double   out;
+        SineWave wave{ 2.0, 2*M_PI, 0.0, 0.0, 0.05 };
+        /// Create Feature ///
+        efb.create_feature();
+        efb.sample_parameters();
+        for( uint i = 0; i < N; i++ ){  
+            val = wave.update();
+            efb.load_input( {val} );
+            efb.apply();
+            out = efb.get_output()[0];
+            cout << val << "\t--efb->\t" << out << endl;
+        }  
+    }
 
     return 0;
 }
