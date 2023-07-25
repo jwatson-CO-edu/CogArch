@@ -2,8 +2,10 @@
 EFB.cpp
 Evolutionary Feature Bus (EFB)
 g++ EFB.cpp -std=gnu++17 -O3 -I ../include -I /usr/include/eigen3
+
 EFB is an experimental attempt to use Genetic Programming for automated feature engineering
 This program is to test if EFB can represent an arbitrary function.
+
 WARNING: MASSIVE INEFFICIENCIES, EXPERIMENT ONLY
 */
 
@@ -99,6 +101,8 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return accum / (1.0*Nruns);
     }
 
+    double get_avg_score(){  return accum / (1.0*Nruns);  } // Return the current average score
+
     double reset_score(){
         // Wipe score and average and return the previous average score
         double rtnAvg = accum / (1.0*Nruns);
@@ -123,7 +127,7 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     double apply( const vd& operands ){
         // Apply the operation to the input operands to produce a scalar output signal
-        bool _DEBUG = true;
+        bool _DEBUG = false;
         output = 0.0;
         uint delay;
         switch( opType ){
@@ -378,7 +382,8 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 frontier.pop_front();
                 if( addr_j[0] > 0 ){
                     EFB_Feature& currFeat = layers[ addr_j[0]-1 ].features[ addr_j[1] ];
-                    if( currFeat.score < score_i){  currFeat.set_score( score_i );  }
+                    // if( currFeat.score < score_i ){  currFeat.set_score( score_i );  }
+                    currFeat.set_score( score_i );
                     for( address parentAddr : currFeat.addrs ){  frontier.push_back( parentAddr );  }
                 }
             }
@@ -386,6 +391,15 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
         return outLoss;  
     }
+
+    vd get_avg_score(){
+        vd fitness;
+        for( EFB_Feature& feature : layers.back().features ){
+            fitness.push_back( feature.get_avg_score() );
+        }
+        return fitness;
+    }
+
 };
 
 ////////// TEST HARNESS ////////////////////////////////////////////////////////////////////////////
@@ -482,6 +496,31 @@ int main(){
             out = efb.get_output()[0];
             cout << val << "\t--efb->\t" << out << endl;
         }  
+    }
+
+    ///// Test 4: Calc Fitness of a Random Feature /////
+    if( true ){
+        /// Init ///
+        EFB /**/ efb{ 1, 10, 5, {1.0,10.0} };
+        uint     N = 100;
+        double   val, out, tru;
+        vd /*-*/ loss;
+        SineWave inpt{ 2.0, 2*M_PI, 0.0 , 0.0, 0.05 };
+        SineWave outp{ 2.0, 2*M_PI, M_PI, 0.0, 0.05 };
+        /// Create Feature ///
+        efb.create_feature();
+        efb.sample_parameters();
+        for( uint i = 0; i < N; i++ ){  
+            val = inpt.update();
+            tru = outp.update();
+            efb.load_input( {val} );
+            efb.apply();
+            loss = efb.score_output_and_calc_loss( tru );
+            out = efb.get_output()[0];
+            cout << val << "\t--efb->\t" << out << " -vs- " << tru << endl;
+            cout << "Loss: " << loss << endl;
+        }  
+        cout << "Avg. Fitness: " << efb.get_avg_score() << endl;
     }
 
     return 0;
