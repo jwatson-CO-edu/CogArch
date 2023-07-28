@@ -505,7 +505,7 @@ int main(){
     }
 
     ///// Test 4: Calc Fitness of a Random Feature /////
-    if( true ){
+    if( false ){
         /// Init ///
         EFB /**/ efb{ 1, 10, 5, {1.0,10.0} };
         uint     N = 100;
@@ -523,6 +523,32 @@ int main(){
             efb.apply();
             loss = efb.score_output_and_calc_loss( tru );
             out = efb.get_output()[0];
+            cout << val << "\t--efb->\t" << out << " -vs- " << tru << endl;
+            cout << "Loss: " << loss << endl;
+        }  
+        cout << "Avg. Fitness: " << efb.get_avg_score() << endl;
+    }
+
+    ///// Test 5: Multiple Random Feature /////
+    if( true ){
+        /// Init ///
+        uint     N = 100; // Number of iterations
+        uint     M =  10; // Number of features
+        EFB /**/ efb{ 1, M, 5, {1.0,10.0} };
+        double   val, tru;
+        vd /*-*/ loss, out;
+        SineWave inpt{ 2.0, 2*M_PI, 0.0 , 0.0, 0.05 };
+        SineWave outp{ 2.0, 2*M_PI, M_PI, 0.0, 0.05 };
+        /// Create Feature(s) ///
+        for( uint i = 0; i < M; ++i ){  efb.create_feature();  }
+        efb.sample_parameters();
+        for( uint i = 0; i < N; i++ ){  
+            val = inpt.update();
+            tru = outp.update();
+            efb.load_input( {val} );
+            efb.apply();
+            loss = efb.score_output_and_calc_loss( tru );
+            out  = efb.get_output();
             cout << val << "\t--efb->\t" << out << " -vs- " << tru << endl;
             cout << "Loss: " << loss << endl;
         }  
