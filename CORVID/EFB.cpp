@@ -35,7 +35,7 @@ typedef array<uint,2>   address;
 
 double precent_difference( double op1, double op2 ){
     // Calc the Percent Difference according to https://www.mathsisfun.com/percentage-difference.html
-    return abs( op1 - op2 ) / ( (op1+op2)/2.0 ) * 100.0;
+    return abs( op1 - op2 ) / abs( (op1+op2)/2.0 ) * 100.0;
 }
 
 void set_cout_precision( uint decPlaces ){
@@ -58,6 +58,7 @@ enum EFB_Op{
 };
 
 ///// Individual Operation ///////////////////////
+uint EFBF_No = 0;
 
 struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // A single operation
@@ -77,6 +78,7 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double /*----*/ score; //- Fitness value of this feature
     double /*----*/ accum; //- Accumulated fitness for this episode
     uint /*------*/ Nruns; //- Number of calculations for this episode
+    uint /*------*/ ID;
     
     /// Constructor ///
 
@@ -89,6 +91,8 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         score  = -1e9;
         accum  = 0.0;
         Nruns  = 0;
+        ID     = EFBF_No;
+        ++EFBF_No;
     }
 
     /// Methods ///
@@ -98,6 +102,7 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         score = s;
         accum += score;
         Nruns++;
+        cout << "Score set for feature " << ID << ": " << score << endl;
         return accum / (1.0*Nruns);
     }
 
@@ -376,7 +381,8 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             outLoss.push_back( loss_i );
             score_i = 100.0 - precent_difference( signalTs, Yfeat );
             // 3. Update parents
-            frontier.push_back( {(uint)layers.size()-1, (uint)i} );
+            // frontier.push_back( {(uint)layers.size()-1, (uint)i} );
+            frontier.push_back( {(uint)layers.size(), (uint)i} );
             while( frontier.size() ){
                 addr_j = frontier.front();
                 frontier.pop_front();
