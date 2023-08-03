@@ -388,8 +388,8 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 frontier.pop_front();
                 if( addr_j[0] > 0 ){
                     EFB_Feature& currFeat = layers[ addr_j[0]-1 ].features[ addr_j[1] ];
-                    // if( currFeat.score < score_i ){  currFeat.set_score( score_i );  }
-                    currFeat.set_score( score_i );
+                    if( currFeat.score < score_i ){  currFeat.set_score( score_i );  }
+                    // currFeat.set_score( score_i );
                     for( address parentAddr : currFeat.addrs ){  frontier.push_back( parentAddr );  }
                 }
             }
@@ -404,6 +404,24 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             fitness.push_back( feature.get_avg_score() );
         }
         return fitness;
+    }
+
+    void cull_and_replace_pop( double cullFrac ){
+        // Destroy members that have the lowest score and replace them with new elements
+
+        // FIXME, START HERE: IDENTIFY WORST PERFORMERS AND REPLACE WHILE MAINTAINING CONNECTIONS
+
+         for( EFB_Layer& layer : layers ){
+            for( EFB_Feature& feature : layer.features ){
+                
+            }
+            // 3. The output needs to be advertized at the layer, so that it can be fetched by successive layers
+            uint i = 0;
+            for( EFB_Feature& feature : layer.features ){
+                
+            }
+            // cout << "Published: " << layer.y << endl;
+        }
     }
 
 };
