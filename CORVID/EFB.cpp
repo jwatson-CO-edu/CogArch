@@ -33,7 +33,7 @@ typedef array<uint,2>   address;
 
 ////////// HELPER FUNCTIONS ////////////////////////////////////////////////////////////////////////
 
-double precent_difference( double op1, double op2 ){
+double percent_difference( double op1, double op2 ){
     // Calc the Percent Difference according to https://www.mathsisfun.com/percentage-difference.html
     return abs( op1 - op2 ) / abs( (op1+op2)/2.0 ) * 100.0;
 }
@@ -102,7 +102,7 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         score = s;
         accum += score;
         Nruns++;
-        cout << "Score set for feature " << ID << ": " << score << endl;
+        // cout << "Score set for feature " << ID << ": " << score << endl;
         return accum / (1.0*Nruns);
     }
 
@@ -379,7 +379,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             // 2. Calculate loss and score
             loss_i  = signalTs - Yfeat; // Actual - Predicted
             outLoss.push_back( loss_i );
-            score_i = 100.0 - precent_difference( signalTs, Yfeat );
+            score_i = 100.0 - percent_difference( signalTs, Yfeat );
             // 3. Update parents
             // frontier.push_back( {(uint)layers.size()-1, (uint)i} );
             frontier.push_back( {(uint)layers.size(), (uint)i} );
@@ -533,8 +533,8 @@ int main(){
     if( true ){
         /// Init ///
         uint     N = 100; // Number of iterations
-        uint     M =  10; // Number of features
-        EFB /**/ efb{ 1, M, 5, {1.0,10.0} };
+        uint     M = 100; // Number of features
+        EFB /**/ efb{ 1, M, 15, {1.0,10.0} };
         double   val, tru;
         vd /*-*/ loss, out;
         SineWave inpt{ 2.0, 2*M_PI, 0.0 , 0.0, 0.05 };
@@ -552,7 +552,7 @@ int main(){
             cout << val << "\t--efb->\t" << out << " -vs- " << tru << endl;
             cout << "Loss: " << loss << endl;
         }  
-        cout << "Avg. Fitness: " << efb.get_avg_score() << endl;
+        cout << endl << endl << "Avg. Fitness: " << efb.get_avg_score() << endl;
     }
 
     return 0;
