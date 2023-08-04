@@ -14,6 +14,7 @@ WARNING: MASSIVE INEFFICIENCIES, EXPERIMENT ONLY
 ///// Imports ////////////////////////////////////
 
 /// Standard ///
+using std::sort;
 #include <deque>
 using std::deque;
 #include <iomanip>
@@ -406,12 +407,43 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         return fitness;
     }
 
+    EFB_Feature* get_at_addr( address ad ){
+        // Get a pointer to the feature at the particular address
+        if( ad[0] > 0 ){
+            return &(layers[ad[0]-1].features[ad[1]]);
+        }else{
+            return nullptr;
+        }
+    }
+
     void cull_and_replace_pop( double cullFrac ){
         // Destroy members that have the lowest score and replace them with new elements
 
-        // FIXME, START HERE: IDENTIFY WORST PERFORMERS AND REPLACE WHILE MAINTAINING CONNECTIONS
+        // 0. Calc how many features to replace
+        uint Ncul = (uint) size_features() * cullFrac;
 
-         for( EFB_Layer& layer : layers ){
+        // 1. Create a vector of pairs of (Feature Address, Feature Score)
+        vector<pair<address,double>> ranking;
+        for( address ad : addrs ){
+            if( ad[0] > 0 ){
+                ranking.push_back( { ad , get_at_addr( ad )->reset_score() } );
+            }
+        }
+
+        // 2. Sort created features by ascending score
+        sort(
+            ranking.begin(), 
+            ranking.end(), 
+            [](const std::pair<address,double> &left, const std::pair<address,double> &right){
+                return left.second < right.second;
+            }
+        );
+
+        // 3. Kill the first `Ncul` features and replace
+        // FIXME, START HERE: CULL AND REPLACE
+        // FIXME: PRINT TO TS CORRECT ORDER
+
+        for( EFB_Layer& layer : layers ){
             for( EFB_Feature& feature : layer.features ){
                 
             }
@@ -572,6 +604,8 @@ int main(){
         }  
         cout << endl << endl << "Avg. Fitness: " << efb.get_avg_score() << endl;
     }
+
+    // FIXME: ENFORCE THE CORRECT NUMBER OF FEATURES, RETRY ON FAILED CREATION
 
     return 0;
 }
