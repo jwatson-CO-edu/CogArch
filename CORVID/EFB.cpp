@@ -14,6 +14,7 @@ WARNING: MASSIVE INEFFICIENCIES, EXPERIMENT ONLY
 ///// Imports ////////////////////////////////////
 
 /// Standard ///
+#include <algorithm>
 using std::sort;
 #include <deque>
 using std::deque;
@@ -109,7 +110,9 @@ struct EFB_Feature{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     double get_avg_score(){  return accum / (1.0*Nruns);  } // Return the current average score
 
-    double reset_score(){
+    void reset_score(){  score = -1e9;  } // Reset the score to some low value
+
+    double reset_fitness(){
         // Wipe score and average and return the previous average score
         double rtnAvg = accum / (1.0*Nruns);
         score = -1e9;
@@ -320,11 +323,9 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     }
 
     void sample_parameters(){
-        // Run all features
+        // Set the parameter
         for( EFB_Layer& layer : layers ){
-            for( EFB_Feature& feature : layer.features ){
-                feature.sample_parameter();
-            }
+            for( EFB_Feature& feature : layer.features ){  feature.sample_parameter();  }
         }
     }
 
@@ -416,7 +417,14 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    void cull_and_replace_pop( double cullFrac ){
+    void reset_score(){
+        // Set all scores to some low number
+        for( EFB_Layer& layer : layers ){
+            for( EFB_Feature& feature : layer.features ){  feature.reset_score();  }
+        }
+    }
+
+    void cull_and_replace_pop( double cullFrac = 0.25 ){
         // Destroy members that have the lowest score and replace them with new elements
 
         // 0. Calc how many features to replace
@@ -426,7 +434,7 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         vector<pair<address,double>> ranking;
         for( address ad : addrs ){
             if( ad[0] > 0 ){
-                ranking.push_back( { ad , get_at_addr( ad )->reset_score() } );
+                ranking.push_back( { ad , get_at_addr( ad )->reset_fitness() } );
             }
         }
 
@@ -439,21 +447,33 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             }
         );
 
+        // PRINT TO TS CORRECT ORDER
+        // cout << endl;
+        // for( pair<address,double> p : ranking ){
+        //     cout << p.first << ": " << p.second << endl;
+        // }
+        // cout << endl;
+
         // 3. Kill the first `Ncul` features and replace
         // FIXME, START HERE: CULL AND REPLACE
-        // FIXME: PRINT TO TS CORRECT ORDER
+        
+        for( uint i = 0; i < Ncul; ++i ){
+            // A. Fetch feature
+            EFB_Feature* currOp = get_at_addr( ranking[i].first );
 
-        for( EFB_Layer& layer : layers ){
-            for( EFB_Feature& feature : layer.features ){
-                
+            // FIXME: WITH SOME PROB, ADJUST THE PARAMETER ONLY
+
+            uint /*---*/ Noper  = randu( 1, min( operMax, (uint) addrs.size() ) );
+            // B. Set new inputs
+            currOp->addrs.clear();
+            for( uint j = 0; j < Noper; ++j ){
+                // FIXME, START HERE: GET NEW RANDOM INPUTS
             }
-            // 3. The output needs to be advertized at the layer, so that it can be fetched by successive layers
-            uint i = 0;
-            for( EFB_Feature& feature : layer.features ){
-                
-            }
-            // cout << "Published: " << layer.y << endl;
+            // C. Set new type
+            // D. Set new parameter
         }
+
+        
     }
 
 };
@@ -580,7 +600,7 @@ int main(){
     }
 
     ///// Test 5: Multiple Random Feature /////
-    if( true ){
+    if( false ){
         /// Init ///
         uint     N = 100; // Number of iterations
         uint     M = 100; // Number of features
@@ -606,6 +626,33 @@ int main(){
     }
 
     // FIXME: ENFORCE THE CORRECT NUMBER OF FEATURES, RETRY ON FAILED CREATION
+
+    ///// Test 6: Culling and Replication /////
+    if( true ){
+        /// Init ///
+        uint     N = 100; // Number of iterations
+        uint     M = 100; // Number of features
+        EFB /**/ efb{ 1, M, 15, {1.0,10.0} };
+        double   val, tru;
+        vd /*-*/ loss, out;
+        SineWave inpt{ 2.0, 2*M_PI, 0.0 , 0.0, 0.05 };
+        SineWave outp{ 2.0, 2*M_PI, M_PI, 0.0, 0.05 };
+        /// Create Feature(s) ///
+        for( uint i = 0; i < M; ++i ){  efb.create_feature();  }
+        efb.sample_parameters();
+        for( uint i = 0; i < N; i++ ){  
+            val = inpt.update();
+            tru = outp.update();
+            efb.load_input( {val} );
+            efb.apply();
+            loss = efb.score_output_and_calc_loss( tru );
+            out  = efb.get_output();
+            cout << val << "\t--efb->\t" << out << " -vs- " << tru << endl;
+            cout << "Loss: " << loss << endl;
+        }  
+        cout << endl << endl << "Avg. Fitness: " << efb.get_avg_score() << endl;
+        efb.cull_and_replace_pop();
+    }
 
     return 0;
 }
