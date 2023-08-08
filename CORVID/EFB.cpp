@@ -274,18 +274,12 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         }
     }
 
-    bool create_feature(){
-        // Create a new feature, assuming the decision to create the feature has already been made
-        // 0. Init
-        EFB_Feature rtnFeature;
-        bool /*--*/ placed = false;
-        // 1. Choose the number of operands
-        uint Noper = randu( 1, min( operMax, (uint) addrs.size() ) );
-        uint Naddr = addrs.size();
-        uint mxTry = 50;
-        // 2. Choose the addresses
+    vector<address> rand_unique_addresses( uint Noper = 2, uint maxAttempts = 50 ){
+        // Return `Noper` non-repeating addresses that exist on the bus
         vector<address> opAddrs;
-        address /*---*/ oneAddr;
+        uint /*------*/ Naddr   = addrs.size();
+        uint /*------*/ mxTry   = maxAttempts;
+        address /*---*/ oneAddr = addrs[ randu(0, Naddr-1) ];
         uint /*------*/ j;
         for( uint i = 0; i < Noper; i++ ){
             oneAddr = addrs[ randu(0, Naddr-1) ];
@@ -294,9 +288,19 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 oneAddr = addrs[ randu(0, Naddr-1) ];
                 j++;  
             }
-            if( j >= mxTry )  return false;
+            if( j >= mxTry )  return opAddrs;
             opAddrs.push_back( oneAddr );
         }
+        return opAddrs;
+    }
+
+    bool create_feature(){
+        // Create a new feature, assuming the decision to create the feature has already been made
+        // 0. Init
+        EFB_Feature rtnFeature;
+        bool /*--*/ placed = false;
+        // 1. Choose the number of operands && Choose the addresses
+        vector<address> opAddrs = rand_unique_addresses( randu( 1, min( operMax, (uint) addrs.size() ) ) );
         // 3. Attempt feature creation
         return create_feature( 
             opAddrs, 
@@ -460,22 +464,19 @@ struct EFB{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         for( uint i = 0; i < Ncul; ++i ){
             // A. Fetch feature
             EFB_Feature* currOp = get_at_addr( ranking[i].first );
-
-            // FIXME: WITH SOME PROB, ADJUST THE PARAMETER ONLY
-
-            uint /*---*/ Noper  = randu( 1, min( operMax, (uint) addrs.size() ) );
-            // B. Set new inputs
-            currOp->addrs.clear();
-            for( uint j = 0; j < Noper; ++j ){
-                // FIXME, START HERE: GET NEW RANDOM INPUTS
+            // B. In most cases replace the feature entirely
+            if( randd() >= cullFrac ){
+                // i. Set new operands
+                currOp->addrs.clear();
+                currOp->addrs = rand_unique_addresses( randu( 1, min( operMax, (uint) addrs.size() ) ) );
+                // ii. Set new type
+                currOp->opType = static_cast<EFB_Op>( randu(1, 4) );    
             }
-            // C. Set new type
-            // D. Set new parameter
+            // C. Else, adjust the param only, 2023-08-08: Not descending params at this time
+            // iii. Set new parameter in every case
+            currOp->sample_parameter();
         }
-
-        
     }
-
 };
 
 ////////// TEST HARNESS ////////////////////////////////////////////////////////////////////////////
@@ -632,6 +633,7 @@ int main(){
         /// Init ///
         uint     N = 100; // Number of iterations
         uint     M = 100; // Number of features
+        uint     Q =  25; // Number of generations
         EFB /**/ efb{ 1, M, 15, {1.0,10.0} };
         double   val, tru;
         vd /*-*/ loss, out;
@@ -640,18 +642,20 @@ int main(){
         /// Create Feature(s) ///
         for( uint i = 0; i < M; ++i ){  efb.create_feature();  }
         efb.sample_parameters();
-        for( uint i = 0; i < N; i++ ){  
-            val = inpt.update();
-            tru = outp.update();
-            efb.load_input( {val} );
-            efb.apply();
-            loss = efb.score_output_and_calc_loss( tru );
-            out  = efb.get_output();
-            cout << val << "\t--efb->\t" << out << " -vs- " << tru << endl;
-            cout << "Loss: " << loss << endl;
-        }  
-        cout << endl << endl << "Avg. Fitness: " << efb.get_avg_score() << endl;
-        efb.cull_and_replace_pop();
+
+        for( uint j = 0; j < Q; ++j ){
+            for( uint i = 0; i < N; i++ ){  
+                val = inpt.update();
+                tru = outp.update();
+                efb.load_input( {val} );
+                efb.apply();
+                efb.score_output_and_calc_loss( tru );
+                efb.get_output();
+            }  
+            cout << endl << endl << "Avg. Fitness: " << efb.get_avg_score() << endl;
+            efb.cull_and_replace_pop( 0.25 );
+            efb.reset_score();
+        }
     }
 
     return 0;
