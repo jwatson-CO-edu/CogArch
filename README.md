@@ -26,7 +26,9 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 &nbsp;
 
 1. `[>]` Continuous, Interpolated Q-Learning (Julia), Complete `DEV PLAN` as previously formulated
-    * `[?]` Port highest-performing agent to C++?
+    * `[Y]` Test structures, 2023-08-09: Everything seems to be in place
+    * `[>]` Reinstate best settings from the report
+    * `{?}` Port highest-performing agent to C++?
 
 &nbsp;
 

@@ -1,7 +1,13 @@
+### C++ ###
 *.out
 */*.out
 */*/*.out
 
+### Jupyter ###
+*/.ipynb_checkpoints/
+*/*/.ipynb_checkpoints/
+*/*/*/.ipynb_checkpoints/
+*/*/*/*/.ipynb_checkpoints/
 
 # Compiled Object files
 *.o
