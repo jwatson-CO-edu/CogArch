@@ -25,19 +25,11 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 &nbsp;
 
-1. `[>]` Evolutionary Feature Bus (EFB) 
-    * `[Y]` T: Output with sine input, 2023-06-30: Works as designed
-    * `[ ]` Random feature generation
-    * `[ ]` Average fitness evaluation after N steps
-    * `[ ]` Cull and repopulate according to fitness
-    * `[ ]` T: Predict sine wave with +pi/2.0 phase shift
-    * `{ }` Parameter backprop?
+1. `[>]` Continuous, Interpolated Q-Learning (Julia), Complete `DEV PLAN` as previously formulated
+    * `[?]` Port highest-performing agent to C++?
 
 &nbsp;
 
-1. `[32]` Continuous, Interpolated Q-Learning (Julia)
-    * `[ ]` Complete `DEV PLAN` as previously formulated
-    * `[?]` Port highest-performing agent to C++?
 1. `[32.10]` Hugging-Face Deep-RL MOOC
 1. `[33]` Active Inference Tutorial
     * `[34]` Think about how active inference is pertinent to the Partially Observable Lunar Lander.  Are there different behavior modes that are required?
@@ -114,30 +106,22 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     - FANN?
 * [Adam Optimizer](https://optimization.cbe.cornell.edu/index.php?title=Adam#:~:text=Adam%20optimizer%20is%20the%20extended,was%20first%20introduced%20in%202014.)
 
-# Suspended Projects
-
-1. `[~]` Bayesian Neural Network (BNN, C++), 2023-06-05: The convolutional BNN is a complex network that would take significant time to make from scratch, Delaying this in favor of other projects
-    * `[Y]` Reading Plan
-        - `[Y]` https://arxiv.org/pdf/2007.06823.pdf, 2023-05-01
-        - `[Y]` https://sanjaykthakur.com/2018/12/05/the-very-basics-of-bayesian-neural-networks/, 2023-05-04
-        - `[Y]` https://neptune.ai/blog/bayesian-neural-networks-with-jax, 2023-05-05
-        - `[~]` https://wjmaddox.github.io/assets/BNN_tutorial_CILVR.pdf, 2023-05-05
-        - `[N]` https://towardsdatascience.com/making-your-neural-network-say-i-dont-know-bayesian-nns-using-pyro-and-pytorch-b1c24e6ab8cd, 2023-05-05: Not so helpful
-        - `[N]` https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
-        - `[N]` https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks, 2023-05-05: Maths and proofs if I need them
-        - 
-    * `DEV PLAN`
-        - `[Y]` Choose (Distributiuon over Weights) -OR- (Distribution over Activations), 2023-05-19: Distribution over Activations will be simpler
-        - 2023-05-23: Need more detail in order to write the implementation, Mini Reading Plan:
-            * `[>]` Y. Gal, R. Islam, and Z. Ghahramani, “Deep Bayesian active learning with image data,” in Proc. 34th Int. Conf. Mach. Learn., 2017, vol. 70, pp. 1183 –1192.
-            * `[ ]` J. Zeng, A. Lesnikowski, and J. M. Alvarez, “The relevance of Bayesian layer positioning to model uncertainty in deep Bayesian active learning,” 2018. [Online]. Available: http://ar xiv.org/abs/1811.12535
-        - `[Y]` Choose a classification/inference problem, 2023-05-26: MNIST OK, Maybe skin cancer diagnosis from lesion images (ISIC2016 task)
-            * Here?: https://github.com/french-paragon/BayesianNeuralNetwork-Tutorial-Metarepos 
-        - `[ ]` Test normal sampling function from RBM, is it Guassian?
-        - `[ ]` Basic BNN Class
-        - `[ ]` Basic BNN Test
 
 # Completed Projects
+
+1. `[>]` Evolutionary Feature Bus (EFB) 
+    * `[Y]` T: Output with sine input, 2023-06-30: Works as designed
+    * `[Y]` Random feature generation, 2023-08-09: Random operations with random input features
+    * `[Y]` Average fitness evaluation after N steps, 2023-08-09: Culling and reporduction works
+    * `[Y]` Cull and repopulate according to fitness, 2023-08-09: Culling and reporduction works
+    * `[Y]` T: Predict sine wave with +pi/2.0 phase shift, 2023-08-09: Fitness continually improves, at this point I don't particularly care how well, but there are improvements to be made if I resume the project
+        - Plot outputs for evaluation and troubleshooting
+        - Find out why output calculation is so slow and fix it
+        - Test as input to a neural network and make necessary changes
+        - Test as output to a neural network and make necessary changes
+        - Test as an intermediate layer between neural network layers and make necessary changes
+    * `{N}` Parameter backprop?, 2023-08-09: This will not be persued at this time.  It's not fun right now.
+
 1. `[Y]` Self-Organizing Map (SOM, C++), 2023-06-19: Seems to converge, not going to count clusters at this time
     ```
     ########## Self-Organizing Map Report ##########
@@ -156,7 +140,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - `[~]` https://github.com/abhinavralhan/kohonen-maps, 2023-05-09: Code might be useful
     * `DEV PLAN`
         - `[Y]` Choose a classification/inference problem (from the reading plan if available), 2023-06-05: Seizure Datasets
-1. `[Y]` Perceptrons + MLP, 2023-04: Re-write in C++ / Eigen3, 2023-05-18: 80% accuracy achieved, anything above this is just tuning  
+1. `[Y]` Perceptrons + MLP, 2023-04: Re-write in C++ / Eigen3, 2023-05-18: 80% accuracy achieved, anything above this is just tuning.  This is pretty poor performance, but in the case that MLP will be applied to a C++ project, I will use an established library for it.
     Running Best:  
 
     ```
@@ -204,3 +188,27 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[Y]` Test reconstruction accuracy for full input, 2023-04-06: 0.819597, Reconstruction accuracy is 0.8% better than the D implementation
     * `[Y]` Test reconstruction accuracy for partial input, 2023-04-06: Turns out the test set was already partial
     * `[Y]` Add `typedef`s, 2023-04-08: Aliases work and save space
+
+# Suspended Projects
+
+1. `[~]` Bayesian Neural Network (BNN, C++), 2023-06-05: The convolutional BNN is a complex network that would take significant time to make from scratch, Delaying this in favor of other projects
+    * `[Y]` Reading Plan
+        - `[Y]` https://arxiv.org/pdf/2007.06823.pdf, 2023-05-01
+        - `[Y]` https://sanjaykthakur.com/2018/12/05/the-very-basics-of-bayesian-neural-networks/, 2023-05-04
+        - `[Y]` https://neptune.ai/blog/bayesian-neural-networks-with-jax, 2023-05-05
+        - `[~]` https://wjmaddox.github.io/assets/BNN_tutorial_CILVR.pdf, 2023-05-05
+        - `[N]` https://towardsdatascience.com/making-your-neural-network-say-i-dont-know-bayesian-nns-using-pyro-and-pytorch-b1c24e6ab8cd, 2023-05-05: Not so helpful
+        - `[N]` https://www.pymc.io/projects/docs/en/v3/pymc-examples/examples/variational_inference/bayesian_neural_network_advi.html
+        - `[N]` https://www.uv.es/gonmagar/blog/2018/03/15/BayesianNeuralNetworks, 2023-05-05: Maths and proofs if I need them
+        - 
+    * `DEV PLAN`
+        - `[Y]` Choose (Distributiuon over Weights) -OR- (Distribution over Activations), 2023-05-19: Distribution over Activations will be simpler
+        - 2023-05-23: Need more detail in order to write the implementation, Mini Reading Plan:
+            * `[>]` Y. Gal, R. Islam, and Z. Ghahramani, “Deep Bayesian active learning with image data,” in Proc. 34th Int. Conf. Mach. Learn., 2017, vol. 70, pp. 1183 –1192.
+            * `[ ]` J. Zeng, A. Lesnikowski, and J. M. Alvarez, “The relevance of Bayesian layer positioning to model uncertainty in deep Bayesian active learning,” 2018. [Online]. Available: http://ar xiv.org/abs/1811.12535
+        - `[Y]` Choose a classification/inference problem, 2023-05-26: MNIST OK, Maybe skin cancer diagnosis from lesion images (ISIC2016 task)
+            * Here?: https://github.com/french-paragon/BayesianNeuralNetwork-Tutorial-Metarepos 
+        - `[ ]` Test normal sampling function from RBM, is it Guassian?
+        - `[ ]` Basic BNN Class
+        - `[ ]` Basic BNN Test
+
