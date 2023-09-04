@@ -25,13 +25,13 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 &nbsp;
 
-1. `[>]` Continuous, Interpolated Q-Learning (Julia), Complete `DEV PLAN` as previously formulated  
+1. `[P]` Continuous, Interpolated Q-Learning (Julia), Complete `DEV PLAN` as previously formulated  
     **Stopping Criterion**: Averge of $\geq 30.0$ seconds vertical across 64 runs
-    * `[Y]` Test structures, 2023-08-09: Everything seems to be in place
-    * `[N]` Reinstate best settings from the report, 2023-08-22: The model from the report **was not properly tuned**!
+    * `[ ]` Test with discrete Q-Learning FIRST
+    
     * `[Y]` Implement Temporal Difference target, 2023-08-22: Seems overall better, but requires tuning
-    * `[>]` TD Learning
-        - `[>]` Tune learning rate
+    * `[P]` TD Learning
+        - `[P]` Tune learning rate
         - `[ ]` Tune swap frequency
     * `[ ]` Eligibility Traces
         - `[ ]` Backtracking method
@@ -45,6 +45,9 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 &nbsp;
 
 1. `[32.10]` Hugging-Face Deep-RL MOOC
+
+&nbsp;
+
 1. `[33]` Active Inference Tutorial
     * `[34]` Think about how active inference is pertinent to the Partially Observable Lunar Lander.  Are there different behavior modes that are required?
 1. `[40]` Run a POMDP solver on Partially Observable Lunar Lander
