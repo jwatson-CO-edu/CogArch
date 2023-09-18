@@ -15,7 +15,7 @@ using std::cout, std::endl, std::flush, std::ostream;
 ///// Type Defines ///////////////////////////////
 typedef vector<double> /*---*/ vf;
 typedef vector<vector<double>> vvf;
-typedef unsigned char /*---*/ ubyte;
+typedef unsigned char /*----*/ ubyte;
 
 ////////// MNIST DATA PARSING //////////////////////////////////////////////////////////////////////
 
@@ -27,7 +27,7 @@ void fetch_next_int( ifstream& file, int* numVar ){
     }
 }
 
-void fetch_next_ubyte( ifstream& file, ubyte* numVar  ){
+void fetch_next_ubyte( ifstream& file, ubyte* numVar ){
     // Fetch 1 byte from `buffer` and cast as an `int`
     if( !file.eof() && file.is_open() ){
         file.read( reinterpret_cast<char*>( numVar ), sizeof( ubyte ) );

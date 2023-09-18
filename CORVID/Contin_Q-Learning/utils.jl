@@ -123,6 +123,43 @@ function val_weighted_avg( vals, wgts )
 end
 
 
+"""
+Calc the unit vector in the same direction as arg
+"""
+function vec_unit( vec )
+    len = norm( vec )
+    if len == 0.0
+        return vec
+    else
+        return vec / len
+    end
+end
+
+
+"""
+Compute a weighted average value from `vals`, `wgts`, but only for positive `vals` 
+NOTE: This function assumes that the scalar elements of `wgts` sum to 1.0
+"""
+function val_weighted_avg_pos( vals, wgts )
+    nPts = size( vals, 1 )
+    r    = 0.0
+    wgtP = wgts[:]
+    for j in 1:nPts
+        v = vals[j]
+        if v < 0.0
+            wgtP[j] = 0.0
+        end
+    end
+    wgtP = vec_unit( wgtP )
+    for j in 1:nPts
+        v = vals[j]
+        w = wgts[j]
+        r += (w * v)
+    end
+    return r
+end
+
+
 
 ########## TESTING FUNCTIONS #######################################################################
 
@@ -245,17 +282,7 @@ function clamp_vec( x::Union{Vector, Array}, dom::Matrix{ Float64 } )
 end
 
 
-"""
-Calc the unit vector in the same direction as arg
-"""
-function vec_unit( vec )
-    len = norm( vec )
-    if len == 0.0
-        return vec
-    else
-        return vec / len
-    end
-end
+
 
 
 ##### Manhattan Distance #########################
