@@ -25,25 +25,6 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 &nbsp;
 
-1. `[P]` Continuous, Interpolated Q-Learning (Julia), Complete `DEV PLAN` as previously formulated  
-    **Stopping Criterion**: Averge of $\geq 30.0$ seconds vertical across 64 runs
-    * `[ ]` Test with discrete Q-Learning FIRST
-    
-    * `[Y]` Implement Temporal Difference target, 2023-08-22: Seems overall better, but requires tuning
-    * `[P]` TD Learning
-        - `[P]` Tune learning rate
-        - `[ ]` Tune swap frequency
-    * `[ ]` Eligibility Traces
-        - `[ ]` Backtracking method
-        - `[ ]` Sutton & Barto Method
-    * `[ ]` Actor-Critic
-        - `[ ]` Separate the policy and the value function
-        - `[ ]` Probabilistic action selection
-        - `{?}` Dyna-AC
-    * `{?}` Port highest-performing agent to C++?
-
-&nbsp;
-
 1. `[32.10]` Hugging-Face Deep-RL MOOC
 
 &nbsp;
@@ -243,6 +224,25 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[Y]` Add `typedef`s, 2023-04-08: Aliases work and save space
 
 # Suspended Projects
+
+1. `[P]` Continuous, Interpolated Q-Learning (Julia), Complete `DEV PLAN` as previously formulated  
+    **Stopping Criterion**: Averge of $\geq 30.0$ seconds vertical across 64 runs
+    * `[ ]` Test with discrete Q-Learning FIRST
+    
+    * `[Y]` Implement Temporal Difference target, 2023-08-22: Seems overall better, but requires tuning
+    * `[P]` TD Learning
+        - `[P]` Tune learning rate
+        - `[ ]` Tune swap frequency
+    * `[ ]` Eligibility Traces
+        - `[ ]` Backtracking method
+        - `[ ]` Sutton & Barto Method
+    * `[ ]` Actor-Critic
+        - `[ ]` Separate the policy and the value function
+        - `[ ]` Probabilistic action selection
+        - `{?}` Dyna-AC
+    * `{?}` Port highest-performing agent to C++?
+
+&nbsp;
 
 1. `[P]` Continuous, Interpolated Q-Learning (Julia), Complete `DEV PLAN` as previously formulated  
     **Stopping Criterion**: Averge of $\geq 30.0$ seconds vertical across 64 runs
