@@ -25,26 +25,11 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 &nbsp;
 
-1. `[>]` Continuous, Interpolated Q-Learning (Julia), Complete `DEV PLAN` as previously formulated  
-    **Stopping Criterion**: Averge of $\geq 30.0$ seconds vertical across 64 runs
-    * `[Y]` Test structures, 2023-08-09: Everything seems to be in place
-    * `[N]` Reinstate best settings from the report, 2023-08-22: The model from the report **was not properly tuned**!
-    * `[Y]` Implement Temporal Difference target, 2023-08-22: Seems overall better, but requires tuning
-    * `[>]` TD Learning
-        - `[>]` Tune learning rate
-        - `[ ]` Tune swap frequency
-    * `[ ]` Eligibility Traces
-        - `[ ]` Backtracking method
-        - `[ ]` Sutton & Barto Method
-    * `[ ]` Actor-Critic
-        - `[ ]` Separate the policy and the value function
-        - `[ ]` Probabilistic action selection
-        - `{?}` Dyna-AC
-    * `{?}` Port highest-performing agent to C++?
+1. `[32.10]` Hugging-Face Deep-RL MOOC
+    * `[ ]` Any topics from the TAMP literature?
 
 &nbsp;
 
-1. `[32.10]` Hugging-Face Deep-RL MOOC
 1. `[33]` Active Inference Tutorial
     * `[34]` Think about how active inference is pertinent to the Partially Observable Lunar Lander.  Are there different behavior modes that are required?
 1. `[40]` Run a POMDP solver on Partially Observable Lunar Lander
@@ -73,6 +58,33 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - Stack Sandwich
         - Parrallel Stack
     * Embedded domain mini-planner (Q-Learner?)
+1. `[4000]` HOUSE-Bot: Household Online Understanding System for Execution
+    * `[4100]` Navigate rooms with robust SLAM
+        - `[ ]` Build/buy a robust but reasonable platform
+            * `[ ]` Add perception
+            * `[ ]` Add data logging
+        - `[ ]` NAMO: Navigation Among Movable Obstacles
+    * `[4200]` Mobile Manipulator
+        - `[ ]` Build/buy a robust but reasonable manipulator
+            * `[ ]` Add perception
+        - `[ ]` Integrate platform + manipulator
+        - `[ ]` TAMP: Task and Motion Planning
+            * `[ ]` Implement
+            * `[ ]` Extend
+    * `[4300]` Lifelong Learning
+        - Increase capability one task and concept at a time
+            * Sweep
+            * Vacuum? Dust?
+            * Identify, Pick up, and discard clutter
+            * Identify, Pick up, and put away objects
+            * ?? More ??
+        - Read intelligence "philosophy"
+        - Choose simplest and most applicable cognitive architecture
+            * ONLY add complexity as NEEDED
+        - Re-implement TAMP in the context of this architecture
+    * `[4400]` Stretch Goals
+        - Training by example
+        - Training from verbal input
 
 ## Backend
 * `[~~~]` Parallel Programming
@@ -95,6 +107,15 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - http://versor.mat.ucsb.edu/
         - https://bivector.net/lib.html
 
+1. `[~~~]` Modeling Plasma Physics  
+    1. `[ ]` Find a small scale plasma experiment online
+    1. `[ ]` Repeat experiment
+    1. `[ ]` Find a plasma model in literature
+    1. `[ ]` Model experiment with Geometric Algebra (See above)
+    1. `[ ]` Model stellerator
+    1. `[ ]` Model "Inductive Fusion"
+    * `{ }` Are quantum mechanics required?
+    * `{ }` Are relativistic effects considered?
 
 ## Frameworks & Environments
 #### YOU SHOULD AVOID BUILDING AN ENVIRONMENT IF A SIMILAR ONE IS FREELY AVAILABLE!
@@ -123,7 +144,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 # Completed Projects
 
-1. `[>]` Evolutionary Feature Bus (EFB) 
+1. `[Y]` Evolutionary Feature Bus (EFB), 2023-08-09: Fitness continually improves, at this point I don't particularly care how well, but there are improvements to be made if I resume the project 
     * `[Y]` T: Output with sine input, 2023-06-30: Works as designed
     * `[Y]` Random feature generation, 2023-08-09: Random operations with random input features
     * `[Y]` Average fitness evaluation after N steps, 2023-08-09: Culling and reporduction works
@@ -204,6 +225,26 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[Y]` Add `typedef`s, 2023-04-08: Aliases work and save space
 
 # Suspended Projects
+
+1. `[P]` Continuous, Interpolated Q-Learning (Julia), Complete `DEV PLAN` as previously formulated  
+    **Stopping Criterion**: Averge of $\geq 30.0$ seconds vertical across 64 runs
+    * `[Y]` Test structures, 2023-08-09: Everything seems to be in place
+    * `[N]` Reinstate best settings from the report, 2023-08-22: The model from the report **was not properly tuned**!
+    * `[Y]` Implement Temporal Difference target, 2023-08-22: Seems overall better, but requires tuning
+    * `[P]` Discrete TD Learning
+    * `[P]` TD Learning
+        - `[P]` Tune learning rate
+        - `[ ]` Tune swap frequency
+    * `[ ]` Eligibility Traces
+        - `[ ]` Backtracking method
+        - `[ ]` Sutton & Barto Method
+    * `[ ]` Actor-Critic
+        - `[ ]` Separate the policy and the value function
+        - `[ ]` Probabilistic action selection
+        - `{?}` Dyna-AC
+    * `{?}` Port highest-performing agent to C++?
+
+&nbsp;
 
 1. `[~]` Bayesian Neural Network (BNN, C++), 2023-06-05: The convolutional BNN is a complex network that would take significant time to make from scratch, Delaying this in favor of other projects
     * `[Y]` Reading Plan
