@@ -9,6 +9,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 1. `[50]` Graph Convolutional Network (GATv2, Python, Tensorflow)
     * `[ ]` Take notes and develop a dev plan
+    * `[ ]` Choose and install library, 2023-11-19: FANN
 1. `[60]` Graph Generation with GCPN: Graph Convolutional Policy Network (You et al. 2018, Python, Tensorflow)  
     * `[ ]` Take notes and develop a dev plan
         - `[ ]` https://jian-tang.com/files/AAAI19/aaai-grltutorial-part3-generation.pdf
