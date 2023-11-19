@@ -323,6 +323,7 @@ struct BinaryPerceptronLayer{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     void scale_grad(){
         // Scale the gradient to an appropriate magnitude
         double mag = grad.norm();
+        // if( mag > gs )  grad = (grad / mag) * gs;
         grad = (grad / mag) * gs;
     }
 
@@ -495,6 +496,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             if( !gradOK )  break; // Do not descend if the gradient is fucked
             layers[i]->store_previous_loss();
             if( pScaleGrad ){
+                // layers[i]->gs *= 0.99;
                 layers[i]->scale_grad();
             }
             layers[i]->descend_grad();
@@ -539,6 +541,7 @@ struct MLP{ EIGEN_MAKE_ALIGNED_OPERATOR_NEW
                 layers[i]->set_grad_to_accum();
                 layers[i]->store_previous_loss();
                 if( pScaleGrad ){
+                    // layers[i]->gs *= 0.99;
                     layers[i]->scale_grad();
                 }
                 layers[i]->descend_grad();
@@ -716,6 +719,7 @@ int main(){
         net.append_dense_layer(  64,  32 );
         net.append_dense_layer(  32,  10 );
         net.random_weight_init( -0.75, +0.75 );  cout << "Weights init!"    << endl;
+        // net.random_weight_init( -0.1, +0.75 );  cout << "Weights init!"    << endl;
         net.print_arch();
     }
     
