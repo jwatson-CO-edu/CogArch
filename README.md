@@ -29,7 +29,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         * Physical
     - Enable exchange of rich knowledge between robots
 ### Preliminary: 
-#### Gain understanding of Graph Neural Networks
+#### Graph Neural Networks
 1. `[50]` Graph Convolutional Network (GATv2, Python, Tensorflow)
     * `[Y]` Take notes and develop a dev plan, 2023-11-20: Identified major types of GNN that *may* require further study
     * `[Y]` Choose and install library, 2023-11-19: FANN, `torch_geometric`, See installation instructions in "Graph-NN_01.md"
@@ -38,8 +38,14 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     * `[ ]` Take notes and develop a dev plan
         - `[ ]` https://jian-tang.com/files/AAAI19/aaai-grltutorial-part3-generation.pdf
 
+#### Decision Making Under Uncertainty: POMDP
+1. `[ ]` Implement simplest MCTS
+1. `[55]` Run a POMDP solver on Partially Observable Lunar Lander
+    * `[ ]` E: Which language to use?
+    * `[ ]` POMCPOW or VOMCPOW
+    * `[ ]` Can you add a learned transition model to it?
+
 ### Stage 0: Engram-guided MCTS
-* `[ ]` Implement simplest MCTS
 * `[ ]` Q: What semantic data can be added to states / samples automatically?
 * `[ ]` Implement semantically "decorated" state graphs
 * `[ ]` Learn a value function over "decorated" state graphs
@@ -86,13 +92,6 @@ Concept: Extend probabilistic knowledge graphs into a complete cognitive archite
 
 1. `[33]` Active Inference Tutorial
     * `[34]` Think about how active inference is pertinent to the Partially Observable Lunar Lander.  Are there different behavior modes that are required?
-
-### Decision Making Under Uncertainty
-
-1. `[55]` Run a POMDP solver on Partially Observable Lunar Lander
-    * `[ ]` E: Which language to use?
-    * `[ ]` POMCPOW or VOMCPOW
-    * `[ ]` Can you add a learned transition model to it?
 
 ### Exploratory: Neuro-Cognitive Elements
 
