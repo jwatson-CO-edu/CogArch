@@ -5,14 +5,68 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 # `DEV PLAN`
 
-## Artificial Neural Networks
-
+## The BLUE-J Project: Neurosymbolic Agent
+**B**asic **L**anguage **U**nderstanding with **E**ngram-**J**umps  
+* Knowledge/Concept graphs as the basic unit of cognition and memory
+    - Should be probabilistic in nature
+* Connections, Sequences, and Relationships represented by rich probabilistic Edges
+* Relevant structures and edges should inspire and activate relevant agent actions
+* Goals: 
+    - Build and operate over structures that simulate the structure of the environment.
+    - Build multimodal knowledge graphs with visual, state, and semantic data
+    - Learn generalizations over grounded graphs that improve decision-making
+    - Extend LLMs with engrams that allow optimal, long-term reasoning
+* Daydreams: 
+    - Conitive Graphs (Engrams) that can represent all data required for perception, action, and planning
+        * Relationships
+        * Memory
+        * Objects, Percepts
+        * Affordances, Options
+        * Actions
+        * States, State Changes, Sequences, Episodes
+    - Personal Assistant
+        * Digital
+        * Physical
+    - Enable exchange of rich knowledge between robots
+### Preliminary: 
+#### Gain understanding of Graph Neural Networks
 1. `[50]` Graph Convolutional Network (GATv2, Python, Tensorflow)
-    * `[ ]` Take notes and develop a dev plan
-    * `[ ]` Choose and install library, 2023-11-19: FANN
+    * `[Y]` Take notes and develop a dev plan, 2023-11-20: Identified major types of GNN that *may* require further study
+    * `[Y]` Choose and install library, 2023-11-19: FANN, `torch_geometric`, See installation instructions in "Graph-NN_01.md"
+
 1. `[60]` Graph Generation with GCPN: Graph Convolutional Policy Network (You et al. 2018, Python, Tensorflow)  
     * `[ ]` Take notes and develop a dev plan
         - `[ ]` https://jian-tang.com/files/AAAI19/aaai-grltutorial-part3-generation.pdf
+
+### Stage 0: Engram-guided MCTS
+* `[ ]` Implement simplest MCTS
+* `[ ]` Q: What semantic data can be added to states / samples automatically?
+* `[ ]` Implement semantically "decorated" state graphs
+* `[ ]` Learn a value function over "decorated" state graphs
+* `[ ]` Demonstrate improved performance when we preferentially sample from high-value state grapghs
+### Stage 1: Planning over engrams with Hand-Coded Architecture
+Concept: Replace pure symbols with probabilistic graphical symbols in both deliberative and reactive planning as a means to achieve both generality and adaptability.
+#### Reactive?
+Concept: BOBCAT over knowledge graphs
+#### Deliberative?
+Concept: TAMP over knowledge graphs
+#### Reactive + Deliberative?
+Concept: MAGPIE over knowledge graphs
+### Stage 2: Neurosymbolic Plan Synthesis
+Concept: Extend probabilistic graphical symbols to probabilistic graphical plans that contain rich representation of state changes and options.
+### Stage 3: Neurosymbolic Probabilistic Knowledge Graph Architecture
+Concept: Extend probabilistic knowledge graphs into a complete cognitive architecture that handles learning, recall, and planning in a cohesived and flexible manner.
+
+### Exploratory: Neuro-Cognitive Elements
+
+1. `[70]` Dynamic, Resizable ANN, Neuroplastic capability
+    * `[ ]` E: Python lib(s)?
+    * `[ ]` E: C++ lib(s)?
+1. `[80]` CPPN-NEAT Architecture Search
+    * `[ ]` E: Find most accessible existing implementation & test
+
+## Artificial Neural Networks
+
 1. `[600]` Alternatives to Backpropagation (C++)
     * `[ ]` Take notes
         - `[ ]` Manneschi, Luca, and Eleni Vasilaki. "An alternative to backpropagation through time." Nature Machine Intelligence 2, no. 3 (2020): 155-156.
@@ -24,7 +78,7 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 ## The CORVID Project: Cognitive Architecture  
 **C**ognition, **O**bservation, and **R**eaction for **V**aried **I**ntelligence **D**omains
 
-&nbsp;
+### Deep Reinforcement Learning
 
 1. `[32.10]` Hugging-Face Deep-RL MOOC
 
@@ -32,15 +86,16 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 
 1. `[33]` Active Inference Tutorial
     * `[34]` Think about how active inference is pertinent to the Partially Observable Lunar Lander.  Are there different behavior modes that are required?
-1. `[40]` Run a POMDP solver on Partially Observable Lunar Lander
+
+### Decision Making Under Uncertainty
+
+1. `[55]` Run a POMDP solver on Partially Observable Lunar Lander
     * `[ ]` E: Which language to use?
     * `[ ]` POMCPOW or VOMCPOW
     * `[ ]` Can you add a learned transition model to it?
-1. `[70]` Dynamic, Resizable ANN
-    * `[ ]` E: Python lib(s)?
-    * `[ ]` E: C++ lib(s)?
-1. `[80]` CPPN-NEAT Architecture Search
-    * `[ ]` E: Find most accessible existing implementation & test
+
+### Exploratory: Neuro-Cognitive Elements
+
 1. `[1000]` CORVID Unit
     * `[ ]` Reconcile Unit daydreams with Active Inference
     * Recognizer
@@ -58,6 +113,9 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
         - Stack Sandwich
         - Parrallel Stack
     * Embedded domain mini-planner (Q-Learner?)
+
+### Applications and Tests
+
 1. `[4000]` HOUSE-Bot: Household Online Understanding System for Execution
     * `[4100]` Navigate rooms with robust SLAM
         - `[ ]` Build/buy a robust but reasonable platform
