@@ -46,5 +46,7 @@ Graph Generation: learns from sample graph distribution to generate a new but si
 # Graph Convolutional Network (GCN)
 * The convolution in GCN is the same as a convolution in image CNNs. It multiplies neurons with filters to learn from data features.
 * A model learns the features from neighboring nodes.
+# Graph Attention Networks (GAT)
+* Uses masked self-attentional layers to address the drawbacks of GCNConv
 # Recurrent Graph Neural Networks (RGNNs)
 # Gated Graph Neural Networks (GGNNs)
