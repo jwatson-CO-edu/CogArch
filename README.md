@@ -1,9 +1,37 @@
 # CogArch
-Experiments in AI, ML, and Cognitive Architecture. Mostly in C++.  
+Experiments in AI, ML, and Cognitive Architecture. Mostly in C++ and Python.  
 For educational purposes. This is to satisfy my own curiousity and deepen my understanding.  
 The content herein is not guaranteed to be correct, functional, or readable. No warrantee offered or implied.  
 
 # `DEV PLAN`
+
+## PLOVER: Rich, Real-World Representation
+**P**robabilistic **L**anguage **O**ver **V**olumes for **E**nvironment **R**epresentation  
+The fastest route to a general robotic cognitive architecture is **T**ask **A**nd **M**otion **P**lanning!  
+The most interesting route to TAMP is one *unrestricted* by PDDL. That is, one based on richer symbols.  
+* Goals: 
+    - Gain contemporary skills in ROS2
+    - Represent objects and semantic regions probabilistically
+    - Compactly represent nested constraints that speed up planning and search
+### Preliminary: Exploring the Intellectual Space
+* `[ ]` Reading Plan @ Trello
+### Preliminary: ROS2 Setup
+* `[ ]` Skim Reading Plan for simulation environments
+* `[ ]` Find an existing segmentation framework that outputs scene graphs
+    - `[ ]` Q: Does it have a github?
+    - `[ ]` Q: Does it use ROS?
+    - `[ ]` Q: What is the simulation environment?
+    - `[ ]` Q: Do you have access to the evaluation environment used in the article?
+    - `[ ]` Q: Is there documentation?
+### Preliminary: Identify Needs and Gaps
+* `[ ]` Q: How are symbols described?
+* `[ ]` Q: How are symbols manipulated?
+* `[ ]` Q: Are there architecture components that need to be swapped out?
+* `[ ]` Q: What is the architecture missing?
+* `[ ]` Q: Can the symbols be improved?
+* `[ ]` Q: What articles describe TAMP as transforms on scene graphs?
+
+
 
 ## The BLUE-J Project: Neurosymbolic Agent
 **B**asic **L**anguage **U**nderstanding with **E**ngram-**J**umps  
