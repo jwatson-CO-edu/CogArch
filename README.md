@@ -51,7 +51,8 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
     - `[>]` Create sublist of methods using PyBullet
 
 #### PyBullet + Environment Setup
-* `[ ]` TODO
+* `python3.9 -m pip install pybullet --upgrade --user` 
+* 2023-11-26: Kuka + cubes example works!
 ### Preliminary: Identify Needs and Gaps
 * `[ ]` Q: How are symbols described?
 * `[ ]` Q: How are symbols manipulated?
