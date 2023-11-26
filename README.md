@@ -1,28 +1,57 @@
-# CogArch
+# CogArch (Cognitive Architecture)
 Experiments in AI, ML, and Cognitive Architecture. Mostly in C++ and Python.  
 For educational purposes. This is to satisfy my own curiousity and deepen my understanding.  
-The content herein is not guaranteed to be correct, functional, or readable. No warrantee offered or implied.  
+The content herein is not guaranteed to be correct, functional, or readable. No warrantee offered or implied!  
 
 # `DEV PLAN`
 
 ## PLOVER: Rich, Real-World Representation
 **P**robabilistic **L**anguage **O**ver **V**olumes for **E**nvironment **R**epresentation  
-The fastest route to a general robotic cognitive architecture is **T**ask **A**nd **M**otion **P**lanning!  
-The most interesting route to TAMP is one *unrestricted* by PDDL. That is, one based on richer symbols.  
-* Goals: 
-    - Gain contemporary skills in ROS2
-    - Represent objects and semantic regions probabilistically
-    - Compactly represent nested constraints that speed up planning and search
+### Tenets
+#### PLOVER is based on these beliefs:
+* The current, fastest route to a general robotic cognitive architecture is **T**ask **A**nd **M**otion **P**lanning!
+* The most interesting route to TAMP is one based on rich **geometric** symbols.  
+    - Symbols should have geometric properties that makes their evaluation lightweight, intuitive to humans, and relevant to solving physical problems.
+    - Composable graphs of geometric symbols can represent complex, context-sensitive relationships
+* Symbols are still relevant to AI, especially Explainable Artificial Intelligence (XAI).
+    - Symbols should make troubleshooting (and editing) plans produced by automated systems intuitive to humans.
+    - Graphs can be decorated with semantic information that supports search and reasoning
+* Composable Graphic Symbols offer opportunities
+    - Flexible combination of scene graphs, semantic graphs, and constraint graphs
+    - GNN methods including Graph Transformers
+    - NLP methods including LLMs
+    - Neurosymbolic methods that directly or indirectly relate embedded spaces to 3D space.
+#### Development Approach
+* Minimum Viable Prototype (MVP)
+    - Have a reason for each feature.
+    - Simplest possible implementation
+* Test as you go.
+* Discard approaches that are slowing you down.
+* Stay *independent* of ROS until it is applied to a robotic problem.
+* Prototype in Python for ease. Python will drive adoption.
+* `[ ]` Q: Should I move to C++ for speed and experience?  
+    - `[ ]` Q: Do I still need to practice C++ for coding interviews?
+    - `[ ]` Q: If so, how to keep the C++ component cross-platform?
+### Goals
+#### Framework Goals
+* Represent objects and semantic regions probabilistically
+* Compactly represent nested constraints that speed up planning and search
+* Provide structure to allow a robot to discover new objects and their affordances, and thus use new objects to solve problems.  
+#### Professional Goals:  
+* Gain contemporary skills in ROS2
+* Gain mastery of modern C++
+### Questions
+* `[ ]` Q: Does PLOVER define a grammar?
+* `[ ]` Q: If not, is it something other than a language?
+* `[ ]` Q: What does PLOVER offer beyond previous scene graph, semantic graph, and constraint graph representations?
 ### Preliminary: Exploring the Intellectual Space
 * `[ ]` Reading Plan @ Trello
-### Preliminary: ROS2 Setup
-* `[ ]` Skim Reading Plan for simulation environments
-* `[ ]` Find an existing segmentation framework that outputs scene graphs
-    - `[ ]` Q: Does it have a github?
-    - `[ ]` Q: Does it use ROS?
-    - `[ ]` Q: What is the simulation environment?
-    - `[ ]` Q: Do you have access to the evaluation environment used in the article?
-    - `[ ]` Q: Is there documentation?
+### Preliminary: Environment Setup
+* `[>]` Skim Reading Plan for simulation environments, 2023-11-26: PyBullet is the most prevalent
+    - `[>]` Create sublist of methods using PyBullet
+
+#### PyBullet + Environment Setup
+* `[ ]` TODO
 ### Preliminary: Identify Needs and Gaps
 * `[ ]` Q: How are symbols described?
 * `[ ]` Q: How are symbols manipulated?
@@ -30,8 +59,102 @@ The most interesting route to TAMP is one *unrestricted* by PDDL. That is, one b
 * `[ ]` Q: What is the architecture missing?
 * `[ ]` Q: Can the symbols be improved?
 * `[ ]` Q: What articles describe TAMP as transforms on scene graphs?
-
-
+    - `[ ]` Elephants Don't Pack Groceries (+ at least one article from the same lab)
+### Stage 0: Simplest Predicate(s), Fully Observable
+1. `[ ]` Implement an environment with at least one object on a table (PyBullet)
+1. `[ ]` Instantiate a scene graph that represents this environment with meshes and poses
+1. `[ ]` Create the `Above` predicate
+1. `[ ]` Create the `InContact` predicate
+1. `[ ]` Create the (nested) `On` predicate
+1. `[ ]` Evaluate the (nested) `On` predicate
+### Stage 1: Simplest Segmentation, Noisy Observations
+1. `[ ]` Implement RGB-D sensory input like RealSense using PyBullet
+    * `{ }` If PyBullet does not offer this, then investigate AI2-Thor / Manipula-Thor
+1. `[ ]` Skim papers with PyBullet environments and identify segmentation pipelines
+    - `[ ]` Q: Does it have a github?
+    - `[ ]` Q: Does it use ROS?
+    - `[ ]` Q: Do you have access to the evaluation environment used in the article?
+    - `[ ]` Q: Is there documentation?
+1. `[ ]` Choose an open-source segmentation scheme from among methods using PyBullet
+1. `[ ]` Implement a belief representation based on (Bayesian) accumulation of evidence
+1. `[ ]` Test accumulation of evidence and show narrowing distribution
+1. `[ ]` Evaluate the (nested) `On` predicate to yield a probability that this predicate is true
+### Stage 2: Action Preimage(s)
+1. `[ ]` Implement `Move` preimage
+1. `[ ]` Implement `Grasp` preimage
+1. `[ ]` Implement estimates of success based on preimage geometry
+1. `[ ]` Imagine an RRT task planner that uses action preimages as segments
+1. `[ ]` Implement simplest task RRT
+1. `[ ]` Solve goal: `Robot` holding `Object` with $90\%$ certainty
+1. `[ ]` Refine returned plan
+1. `[ ]` Execute refined plan
+    * `[ ]` Q: Behavior Trees?
+* `[ ]` Q: How to handle uncertainty over preimages?
+    * Distribution?
+    * Samples?
+### Interlude: Decision Making Under Uncertainty with POMDPs
+1. `[ ]` Implement simplest MCTS
+1. `[55]` Run a POMDP solver on Partially Observable Lunar Lander
+    * `[ ]` E: Which language to use?
+    * `[ ]` POMCPOW or VOMCPOW
+    * `[ ]` Can you add a learned transition model to it?
+* `[ ]` Q: What is the applicability to TAMP?
+### Stage 3: Long-Term Manipulation Planning Under Uncertainty with Reactive Execution
+#### Execution Framework
+* `[ ]` TODO, ROS2?
+* `[ ]` Q: How to integrate MAGPIE architecture concepts? --> `DEV PLAN` below
+#### GRACKLE: *G*eometric *R*easoning *A*rchitecture using *C*omposable *K*nowledge of a *L*ive *E*nvironment
+* ROS2 Simulation
+1. `[ ]` Perception Process
+1. `[ ]` Geometric Symbol Process
+1. `[ ]` Anytime Stochastic Shortest Path Process
+1. `[ ]` Anytime Plan Management Process
+1. `[ ]` Exeuction Process
+1. `[ ]` Compare solution time and quality with an open source solver
+#### TAMP with Mobile Manipulation
+1. `[ ]` TODO: Choose problem and Build environment
+1. `[ ]` TODO: `DEV PLAN`
+1. `[ ]` Compare solution time and quality with an open source solver
+### Stage 4: TAMP IRL
+#### WARNING: DO NOT ATTEMPT THIS STAGE WITHOUT AN ESTABLISHED CAREER
+1. `[ ]` Specify hardware requirements
+1. `[ ]` Choose manipulator hardware & Purchase
+1. `[ ]` Choose perception hardware & Purchase
+1. `[ ]` Setup basic ROS2 control / communication and determine changes needed for GRACKLE
+#### GRACKLE: Implementation, `DEV PLAN`
+1. `[ ]` TODO: `DEV PLAN`
+#### GRACKLE: Evaluaion In Real Life
+1. `[ ]` TODO: Create a real experiment similar to "Stage 2"
+1. `[ ]` TODO: Execute
+1. `[ ]` Compare solution time and quality with an open source solver
+### Stage 5: GRACKLE Applications and Tests
+#### WARNING: DO NOT ATTEMPT THIS STAGE WITHOUT AN ESTABLISHED CAREER
+#### Preliminary: Prepare to share your work!
+1. `[ ]` Choose recording equipment & Purchase
+1. `[ ]` Set up YouTube Channel
+1. `[ ]` Begin writing first script
+#### Your very own robot helper at home!
+1. `[ ]` Specify hardware requirements
+1. `[ ]` Choose mobile base & Purchase
+1. `[ ]` Hardware & Software Integration
+    * `[ ]` Add perception
+    * `[ ]` Add data logging
+    * `[ ]` Integrate platform + manipulator
+* `[4100]` Navigate rooms with robust SLAM
+    - Perfect localization is probably NOT needed to execute some plans!
+    - `[ ]` Q: How does PLOVER apply to SLAM?
+    - `[ ]` Q: How do probabilistic semantic regions help with navigation?
+    - `[ ]` NAMO: Navigation Among Movable Obstacles
+* `[4300]` Lifelong Learning
+    - Increase capability one task and concept at a time
+        * Sweep
+        * Vacuum? Dust?
+        * Identify, Pick up, and discard clutter
+        * Identify, Pick up, and put away objects
+        * ?? More ??
+* `[4400]` Stretch Goals
+    - Training by example
+    - Training from verbal input
 
 ## The BLUE-J Project: Neurosymbolic Agent
 **B**asic **L**anguage **U**nderstanding with **E**ngram-**J**umps  
@@ -57,6 +180,9 @@ The most interesting route to TAMP is one *unrestricted* by PDDL. That is, one b
         * Physical
     - Enable exchange of rich knowledge between robots
 ### Preliminary: 
+#### Where is this all going?
+1. `[ ]` Skim Philosophy reading list
+1. `[ ]` Philosophy reading & Notes
 #### Graph Neural Networks
 1. `[50]` Graph Convolutional Network (GATv2, Python, Tensorflow)
     * `[Y]` Take notes and develop a dev plan, 2023-11-20: Identified major types of GNN that *may* require further study
@@ -66,12 +192,7 @@ The most interesting route to TAMP is one *unrestricted* by PDDL. That is, one b
     * `[ ]` Take notes and develop a dev plan
         - `[ ]` https://jian-tang.com/files/AAAI19/aaai-grltutorial-part3-generation.pdf
 
-#### Decision Making Under Uncertainty: POMDP
-1. `[ ]` Implement simplest MCTS
-1. `[55]` Run a POMDP solver on Partially Observable Lunar Lander
-    * `[ ]` E: Which language to use?
-    * `[ ]` POMCPOW or VOMCPOW
-    * `[ ]` Can you add a learned transition model to it?
+
 
 ### Stage 0: Engram-guided MCTS
 * `[ ]` Q: What semantic data can be added to states / samples automatically?
@@ -141,35 +262,7 @@ Concept: Extend probabilistic knowledge graphs into a complete cognitive archite
         - Parrallel Stack
     * Embedded domain mini-planner (Q-Learner?)
 
-### Applications and Tests
 
-1. `[4000]` HOUSE-Bot: Household Online Understanding System for Execution
-    * `[4100]` Navigate rooms with robust SLAM
-        - `[ ]` Build/buy a robust but reasonable platform
-            * `[ ]` Add perception
-            * `[ ]` Add data logging
-        - `[ ]` NAMO: Navigation Among Movable Obstacles
-    * `[4200]` Mobile Manipulator
-        - `[ ]` Build/buy a robust but reasonable manipulator
-            * `[ ]` Add perception
-        - `[ ]` Integrate platform + manipulator
-        - `[ ]` TAMP: Task and Motion Planning
-            * `[ ]` Implement
-            * `[ ]` Extend
-    * `[4300]` Lifelong Learning
-        - Increase capability one task and concept at a time
-            * Sweep
-            * Vacuum? Dust?
-            * Identify, Pick up, and discard clutter
-            * Identify, Pick up, and put away objects
-            * ?? More ??
-        - Read intelligence "philosophy"
-        - Choose simplest and most applicable cognitive architecture
-            * ONLY add complexity as NEEDED
-        - Re-implement TAMP in the context of this architecture
-    * `[4400]` Stretch Goals
-        - Training by example
-        - Training from verbal input
 
 ## Backend
 * `[~~~]` Parallel Programming
