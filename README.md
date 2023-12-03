@@ -62,8 +62,8 @@ The content herein is not guaranteed to be correct, functional, or readable. No 
 * `[ ]` Q: What articles describe TAMP as transforms on scene graphs?
     - `[ ]` Elephants Don't Pack Groceries (+ at least one article from the same lab)
 ### Stage 0: Simplest Predicate(s), Fully Observable
-1. `[ ]` Implement an environment with at least one object on a table (PyBullet)
-1. `[ ]` Instantiate a scene graph that represents this environment with meshes and poses
+1. `[Y]` Implement an environment with at least one object on a table (PyBullet), 2023-12-02: Table + cuboid!
+1. `[>]` Instantiate a scene graph that represents this environment with meshes and poses
 1. `[ ]` Create the `Above` predicate
 1. `[ ]` Create the `InContact` predicate
 1. `[ ]` Create the (nested) `On` predicate
