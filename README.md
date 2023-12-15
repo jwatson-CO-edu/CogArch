@@ -245,11 +245,12 @@ Concept: Extend probabilistic knowledge graphs into a complete cognitive archite
 
 &nbsp;
 
-1. `[33]` Active Inference Tutorial
-    * `[34]` Think about how active inference is pertinent to the Partially Observable Lunar Lander.  Are there different behavior modes that are required?
+1. `[50]` Active Inference Tutorial
+    * `[51]` Think about how active inference is pertinent to the Partially Observable Lunar Lander.  Are there different behavior modes that are required?
 
 ### Exploratory: Neuro-Cognitive Elements
-
+1. `[>]` Exemplar Learning Kernel (ELK) Unit (RL, Policy Method)
+    * `[ ]` PoleCart
 1. `[1000]` CORVID Unit
     * `[ ]` Reconcile Unit daydreams with Active Inference
     * Recognizer
