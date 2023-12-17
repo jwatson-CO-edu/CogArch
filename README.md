@@ -250,6 +250,10 @@ Concept: Extend probabilistic knowledge graphs into a complete cognitive archite
 
 ### Exploratory: Neuro-Cognitive Elements
 1. `[>]` Exemplar Learning Kernel (ELK) Unit (RL, Policy Method)
+    * Note that this method is essentially a "flattened" version of Q-Learning
+        - Only the value of the **next** state is stored, without a discount
+        - There are no backups, Only a one-step policy is stored
+        - Can a system like this even learn?
     * `[ ]` PoleCart
 1. `[1000]` CORVID Unit
     * `[ ]` Reconcile Unit daydreams with Active Inference
