@@ -241,7 +241,15 @@ Concept: Extend probabilistic knowledge graphs into a complete cognitive archite
 
 ### Deep Reinforcement Learning
 
-1. `[32.10]` Hugging-Face Deep-RL MOOC
+1. `[>]` Hugging-Face Deep-RL MOOC
+    * `[Y]` Unit 1, 2023-12-18: Glean what you can, and efficiently!
+    * `[Y]` Unit 2, 2023-12-18: Glean what you can, and efficiently!
+    * `[Y]` Unit 3, 2023-12-18: Glean what you can, and efficiently!
+    * `[Y]` Unit 4, 2023-12-18: Glean what you can, and efficiently!
+    * `[>]` Unit 5
+    * `[ ]` Unit 6
+    * `[ ]` Unit 7
+    * `[ ]` Unit 8
 
 &nbsp;
 
@@ -255,6 +263,14 @@ Concept: Extend probabilistic knowledge graphs into a complete cognitive archite
         - There are no backups, Only a one-step policy is stored
         - Can a system like this even learn?
     * `[ ]` PoleCart
+       - `[ ]` Eval perf: Does it do swing-up and stay up 75% of the time?
+    * `[ ]` Q: Can Policy Optimization be used here?
+    * `[ ]` Add RBM "Sniffer", ?? https://github.com/yell/boltzmann-machines/blob/master/boltzmann_machines/rbm/base_rbm.py ??
+    * `[ ]` Add learner pool
+    * `[ ]` Lunar Lander (Continuous?)
+
+&nbsp;
+
 1. `[1000]` CORVID Unit
     * `[ ]` Reconcile Unit daydreams with Active Inference
     * Recognizer
